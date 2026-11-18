@@ -54,7 +54,9 @@ func (b *Binding) GetKey() string {
 }
 
 // GetInitialKeybindings is a function.
-func (gui *Gui) GetInitialKeybindings() []*Binding {
+// staticKeybindings is the key table with no GUI state involved, so tests can
+// inspect it without building panels and views.
+func (gui *Gui) staticKeybindings() []*Binding {
 	bindings := []*Binding{
 		{
 			ViewName: "",
@@ -227,6 +229,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerViewLogs,
 			Description: gui.Tr.ViewLogs,
+		},
+		{
+			ViewName:    "containers",
+			Key:         't',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerHealthcheckRun,
+			Description: gui.Tr.RunHealthcheck,
 		},
 		{
 			ViewName:    "containers",
@@ -504,6 +513,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.LcPrevScreenMode,
 		},
 	}
+
+	return bindings
+}
+
+// GetInitialKeybindings returns the static table plus the per-panel movement and
+// click bindings, which need the panels to exist.
+func (gui *Gui) GetInitialKeybindings() []*Binding {
+	bindings := gui.staticKeybindings()
 
 	for _, panel := range gui.allSidePanels() {
 		bindings = append(bindings, []*Binding{

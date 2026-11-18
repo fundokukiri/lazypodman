@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
 )
@@ -183,16 +184,38 @@ func (gui *Gui) setInitialViewContent() error {
 func (gui *Gui) getInformationContent() string {
 	content := gui.Config.Version
 
-	// When the Podman-native panel is unavailable, say why in the bottom-right
-	// corner instead of showing nothing. No popup: most users never need pods.
-	if gui.PodmanCommand != nil {
-		client := gui.PodmanCommand.Pods()
-		if client != nil && !client.Enabled() && client.Reason() != "" {
-			content += " | " + gui.Tr.PodsOff + " " + client.Reason()
-		}
+	for _, off := range gui.capabilityOffMessages() {
+		content += " | " + off
 	}
 
 	return content
+}
+
+// capabilityOffMessages says, in the bottom-right corner, why a Podman-native
+// feature is missing. Rule: one CLI-level line, then at most one per feature that
+// was actually probed and failed. Unprobed features claim nothing. No popups.
+func (gui *Gui) capabilityOffMessages() []string {
+	if gui.PodmanCommand == nil {
+		return nil
+	}
+
+	caps := gui.PodmanCommand.Capabilities()
+
+	if caps.CLI.State == commands.CapabilityUnavailable && caps.CLI.Reason != "" {
+		return []string{gui.Tr.CliOff + " " + caps.CLI.Reason}
+	}
+
+	messages := []string{}
+
+	if caps.Pods.State == commands.CapabilityUnavailable && caps.Pods.Reason != "" {
+		messages = append(messages, gui.Tr.PodsOff+" "+caps.Pods.Reason)
+	}
+
+	if caps.HealthRun.State == commands.CapabilityUnavailable && caps.HealthRun.Reason != "" {
+		messages = append(messages, gui.Tr.HealthRunOff+" "+caps.HealthRun.Reason)
+	}
+
+	return messages
 }
 
 func (gui *Gui) popupViewNames() []string {

@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,4 +60,66 @@ func TestPodmanCommandCapabilities(t *testing.T) {
 	// The returned value is a copy: mutating it must not leak back.
 	caps.HealthRun.Reason = "mutated"
 	assert.Equal(t, "no healthcheck subcommand", podmanCommand.Capabilities().HealthRun.Reason)
+}
+
+func TestHealthcheckCapabilityProbesOnce(t *testing.T) {
+	client := &fakePodClient{
+		enabled:         true,
+		probeCapability: Capability{State: CapabilityAvailable},
+	}
+	podmanCommand := &PodmanCommand{}
+	podmanCommand.SetPodClient(client)
+	podmanCommand.SetCapabilities(deriveCapabilities(CLICheck{Enabled: true}, PodsAuto))
+
+	var wg sync.WaitGroup
+
+	for range 8 {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			assert.Equal(t, CapabilityAvailable, podmanCommand.HealthcheckCapability(context.Background()).State)
+		}()
+	}
+
+	wg.Wait()
+	assert.Equal(t, 1, client.probeCalls, "eight concurrent presses must share one probe")
+
+	// Cached: another call does not probe again.
+	podmanCommand.HealthcheckCapability(context.Background())
+	assert.Equal(t, 1, client.probeCalls)
+}
+
+func TestHealthcheckCapabilityRetriesTransientOnly(t *testing.T) {
+	client := &fakePodClient{
+		enabled:         true,
+		probeCapability: Capability{State: CapabilityUnavailable, Reason: "probe timed out", Transient: true},
+	}
+	podmanCommand := &PodmanCommand{}
+	podmanCommand.SetPodClient(client)
+	podmanCommand.SetCapabilities(deriveCapabilities(CLICheck{Enabled: true}, PodsAuto))
+
+	podmanCommand.HealthcheckCapability(context.Background())
+	assert.Equal(t, 1, client.probeCalls)
+
+	client.probeCapability = Capability{State: CapabilityUnavailable, Reason: "no healthcheck subcommand"}
+	podmanCommand.HealthcheckCapability(context.Background())
+	assert.Equal(t, 2, client.probeCalls, "a transient failure is retried")
+
+	podmanCommand.HealthcheckCapability(context.Background())
+	assert.Equal(t, 2, client.probeCalls, "a permanent failure is cached")
+}
+
+func TestHealthcheckCapabilityInheritsCLIReason(t *testing.T) {
+	client := &fakePodClient{enabled: false}
+	podmanCommand := &PodmanCommand{}
+	podmanCommand.SetPodClient(client)
+	podmanCommand.SetCapabilities(deriveCapabilities(CLICheck{Reason: "podman CLI not found"}, PodsAuto))
+
+	capability := podmanCommand.HealthcheckCapability(context.Background())
+
+	assert.Equal(t, CapabilityUnavailable, capability.State)
+	assert.Equal(t, "podman CLI not found", capability.Reason)
+	assert.Equal(t, 0, client.probeCalls)
 }

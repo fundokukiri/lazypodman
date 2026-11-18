@@ -1,5 +1,7 @@
 package commands
 
+import "context"
+
 // CapabilityState is the tri-state answer to "can this Podman-native feature be
 // used here". Unknown is a real state: lazy features are not probed at startup so
 // that opening lazypodman never pays for a feature the session may not use.
@@ -79,4 +81,38 @@ func deriveCapabilities(check CLICheck, mode PodsMode) Capabilities {
 	caps.KubePlay = unavailable
 
 	return caps
+}
+
+// HealthcheckCapability returns the healthcheck capability, probing the CLI on
+// first use. Concurrent callers share one probe: the mutex is held across it, and
+// the result is cached. A transient failure (timeout) is retried on the next call;
+// a permanent one never is.
+func (c *PodmanCommand) HealthcheckCapability(ctx context.Context) Capability {
+	c.HealthcheckProbeMutex.Lock()
+	defer c.HealthcheckProbeMutex.Unlock()
+
+	capability := c.Capabilities().HealthRun
+	if capability.State == CapabilityAvailable {
+		return capability
+	}
+	if capability.State == CapabilityUnavailable && !capability.Transient {
+		return capability
+	}
+
+	// When the CLI itself is known to be unusable, probing a subcommand would be
+	// pointless: report the CLI reason the capability already inherited.
+	if c.Capabilities().CLI.State == CapabilityUnavailable {
+		return capability
+	}
+
+	client := c.Pods()
+
+	if client == nil {
+		return Capability{State: CapabilityUnavailable, Reason: "podman CLI not found"}
+	}
+
+	capability = client.ProbeHealthcheck(ctx)
+	c.SetCapability(FeatureHealthRun, capability)
+
+	return capability
 }

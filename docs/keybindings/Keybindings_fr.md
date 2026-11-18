@@ -24,6 +24,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: redémarrer
   <kbd>a</kbd>: attacher
   <kbd>m</kbd>: voir les enregistrements
+  <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>E</kbd>: exécuter le shell
   <kbd>c</kbd>: exécuter une commande prédéfinie
   <kbd>b</kbd>: voir les commandes groupées

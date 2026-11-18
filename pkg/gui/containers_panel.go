@@ -46,6 +46,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Render: gui.renderContainerStats,
 					},
 					{
+						Key:    "health",
+						Title:  gui.Tr.HealthTitle,
+						Render: gui.renderContainerHealth,
+					},
+					{
 						Key:    "env",
 						Title:  gui.Tr.EnvTitle,
 						Render: gui.renderContainerEnv,

@@ -55,7 +55,9 @@ type PodmanCommand struct {
 	PodStateMutex     deadlock.Mutex
 	infraContainers   map[string]container.Summary
 	capabilities      Capabilities
-	CapabilitiesMutex deadlock.Mutex
+	CapabilitiesMutex sync.Mutex
+	// HealthcheckProbeMutex serialises the lazy healthcheck probe.
+	HealthcheckProbeMutex sync.Mutex
 
 	Closers []io.Closer
 }

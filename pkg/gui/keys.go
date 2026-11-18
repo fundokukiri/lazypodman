@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 
+	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/jesseduffield/gocui"
 )
 
@@ -22,6 +23,10 @@ type sidePanelKey struct {
 func (gui *Gui) PodsEnabled() bool {
 	if gui.PodmanCommand == nil || gui.Views.Pods == nil {
 		return false
+	}
+
+	if pods := gui.PodmanCommand.Capabilities().Pods; pods.State != commands.CapabilityUnknown {
+		return pods.State == commands.CapabilityAvailable
 	}
 
 	client := gui.PodmanCommand.Pods()

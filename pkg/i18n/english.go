@@ -159,6 +159,22 @@ type TranslationSet struct {
 	PrunePods                string
 	ConfirmPrunePods         string
 	PodLogsOmittedContainers string
+
+	HealthTitle                string
+	HealthTimeHeader           string
+	HealthExitHeader           string
+	HealthOutputHeader         string
+	HealthStatusLabel          string
+	HealthFailingStreakLabel   string
+	NoHealthcheck              string
+	ContainerNotRunning        string
+	RunningHealthcheckStatus   string
+	RunHealthcheck             string
+	HealthcheckHealthyResult   string
+	HealthcheckUnhealthyResult string
+	HealthRunOff               string
+	CliOff                     string
+	NoProbeOutput              string
 }
 
 func englishSet() TranslationSet {
@@ -325,5 +341,21 @@ func englishSet() TranslationSet {
 		PrunePods:                "Prune stopped pods",
 		ConfirmPrunePods:         "Prune all stopped pods?",
 		PodLogsOmittedContainers: "only the first containers are streamed",
+
+		HealthTitle:                "Health",
+		HealthTimeHeader:           "Time",
+		HealthExitHeader:           "Exit",
+		HealthOutputHeader:         "Output",
+		HealthStatusLabel:          "Status",
+		HealthFailingStreakLabel:   "Failing streak",
+		NoHealthcheck:              "This container has no healthcheck",
+		ContainerNotRunning:        "Container is not running",
+		RunningHealthcheckStatus:   "Running healthcheck",
+		RunHealthcheck:             "Run healthcheck (recorded in the podman health log)",
+		HealthcheckHealthyResult:   "healthcheck: healthy",
+		HealthcheckUnhealthyResult: "healthcheck: unhealthy (exit %d)",
+		HealthRunOff:               "health run off:",
+		CliOff:                     "cli off:",
+		NoProbeOutput:              "(no output)",
 	}
 }

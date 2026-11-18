@@ -161,6 +161,33 @@ You may use the following go templates (such as `{{ .Container.ID }}` above) in 
 - [`{{ .Service }}`](https://pkg.go.dev/github.com/fundokukiri/lazypodman@v0.20.0/pkg/commands#Service) and its fields. For example: `{{ .Service.Name }}`
 
 
+## Kube
+
+The kube menu (`g` on the pods panel) generates a manifest from a pod and plays or
+downs manifests from one directory.
+
+```yaml
+gui:
+  kubeDir: ""   # default: <user config dir>/lazypodman/kube
+```
+
+`~` is expanded. The directory is both the save target for generate and the source
+for play/down.
+
+- **Generate** writes `<pod-name>.yaml` with mode `0600` (directory `0755`), and
+  only after a confirmation showing the full path. If the file exists the prompt
+  says so; cancelling leaves it untouched. The generated YAML contains environment
+  variables in plaintext and no Secrets, which the prompt warns about.
+- **Play / Down** list `*.yaml` and `*.yml` files (non-recursive) whose first 20
+  lines contain a top-level `kind:`. They never run automatically; both confirm
+  with the full path, and down says the pods will be stopped and removed. Output
+  streams into the main panel and a cancelled task kills the podman process.
+- The command syntax is probed lazily: `podman kube generate|play` first, then the
+  older `podman generate kube` / `podman play kube`. Nothing is assumed about the
+  version; when neither works the corner shows `kube generate off:` / `kube play off:`
+  only after a probe has actually failed. `--replace` and `--build` are never
+  passed in this version.
+
 ## Healthcheck
 
 Every container panel has a **Health** tab, after **Stats**. It reads the health

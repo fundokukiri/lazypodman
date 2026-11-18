@@ -78,6 +78,8 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Services (compose) | Gom container theo compose project/service, chạy up/down | Panel **Services**: `u` up service, `U` up project, `D` down project, `R` restart menu |
 | Pods | Xem/sửa pod Podman, logs gộp, stats tổng, container trong pod, config | Panel **Pods** (`3` khi bật) — chi tiết ở mục 5 |
 | Pod column | Cột pod trong danh sách container | Tự bật khi pods khả dụng; tắt bằng `gui.showPodColumn: false` |
+| Kube generate | Xuất pod ra file YAML để dùng với Kubernetes / lưu trữ | Panel **Pods** → `g` → **Generate kube YAML** → xem preview → xác nhận lưu |
+| Kube play / down | Chạy hoặc dừng pod từ file YAML | Panel **Pods** → `g` → **Play** hoặc **Down** → chọn file → xác nhận (hiện full path) |
 | Images | Xem, xoá, prune, custom command | Panel **Images**: `d`, `b` |
 | Volumes | Xem, xoá, prune | Panel **Volumes**: `d`, `b` |
 | Networks | Xem, xoá, prune | Panel **Networks**: `d`, `b` |
@@ -105,6 +107,7 @@ Có thể ép bằng `gui.pods.enabled: auto | always | never`.
 | `d` | menu xoá (thường / `--force`), luôn hỏi xác nhận |
 | `b` | bulk commands (có sẵn **Prune stopped pods**) |
 | `c` | custom command cho pod (`{{ .Pod.Name }}`, `{{ .Pod.ID }}`) |
+| `g` | menu **Kube**: generate YAML từ pod, play hoặc down file YAML |
 | `enter` | vào panel chính, `[` `]` đổi tab |
 
 **Tab của pod:**
@@ -118,6 +121,29 @@ Có thể ép bằng `gui.pods.enabled: auto | always | never`.
 - **Config**: `pod inspect`.
 
 Container hạ tầng (`*-infra`, pause) được lọc khỏi panel Containers giống `podman ps`.
+
+### Kube: generate / play / down
+
+Bấm `g` trong panel **Pods** để mở menu Kube:
+
+| Mục | Việc |
+| --- | --- |
+| **Generate kube YAML for this pod** | Chạy `podman kube generate` cho pod đang chọn, hiện YAML ở panel chính (preview), rồi hỏi lưu. File lưu vào `gui.kubeDir` với tên `<tên-pod>.yaml`, quyền `0600`. Hỏi xác nhận kèm **full path**; nếu file đã tồn tại thì hỏi ghi đè, Cancel thì giữ nguyên file cũ. |
+| **Play kube YAML…** | Liệt kê file `*.yaml` / `*.yml` trong `gui.kubeDir` có dòng `kind:` ở cấp cao nhất, chọn file rồi xác nhận (full path) mới chạy `podman kube play`. Output được stream nguyên văn vào panel chính. |
+| **Down kube YAML…** | Như trên nhưng chạy `podman kube play --down`; câu xác nhận nói rõ pod sẽ bị stop và xoá. |
+
+Chi tiết quan trọng:
+
+- Không bao giờ tự chạy: luôn qua menu + xác nhận.
+- Không truyền `--replace` hay `--build` ở phiên bản này.
+- Cú pháp được dò lazy: `podman kube generate|play` trước, fallback
+  `podman generate kube` / `podman play kube`. Không hard-code version; nếu cả hai
+  không có, góc dưới phải hiện `kube generate off:` / `kube play off:`.
+- File YAML chứa biến môi trường dạng plaintext (không có Secrets) — câu xác nhận
+  cảnh báo điều này.
+- Tác vụ stream có thể huỷ: chuyển tab/panel sẽ kill tiến trình `podman` con.
+- Có thể đổi thư mục bằng `gui.kubeDir`, hỗ trợ `~`.
+
 
 ## 6. Healthcheck (Phase 2, batch 1 — đã xong)
 
@@ -220,11 +246,14 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
 - Nếu `pod logs --names` không có, log gộp giới hạn 8 container mỗi lần.
 - Health tab hiện những gì inspect trả về (Podman giới hạn số probe), tối đa 20 dòng.
 - Exit code healthcheck ngoài `0` chưa được kiểm chứng trên máy thật.
+- Kube: không truyền `--replace` / `--build`; output play/down nằm ở panel chính
+  (đổi tab/panel để quay lại nội dung bình thường). Play/down cần thư mục
+  `gui.kubeDir` tồn tại, còn generate thì tự tạo.
+- Kube chỉ có trong panel Pods, nên máy chỉ có socket (không có CLI) không dùng được.
+
 
 ## 13. Chưa có (đừng tìm)
 
-- **Kube**: xuất pod ra YAML (`kube generate`) và chạy/down YAML (`kube play --down`) —
-  mới có bản thiết kế, chưa implement.
 - Command palette, chọn nhiều mục (multi-select), tab Events.
 - Quadlet / auto-update, push/pull image, secrets, podman machine.
 
@@ -232,7 +261,7 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
 
 - Những gì mô tả ở mục 4–10 là hành vi đã implement trong code và đã có unit test
   (chạy `GOFLAGS=-mod=vendor go test ./...` xanh, build Linux/Windows/macOS).
-- Các hành vi phụ thuộc Podman thật (pods, healthcheck, compose, socket) được kiểm thử
+- Các hành vi phụ thuộc Podman thật (pods, healthcheck, kube, compose, socket) được kiểm thử
   bằng **fixture tổng hợp**; **chưa ai chạy checklist tay trên Podman thật**. Khi bạn
   chạy thử, các mục trong checklist của
   [plan pods](docs/superpowers/plans/2026-11-18-pods.md) và

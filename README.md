@@ -238,9 +238,26 @@ stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach · `m` l
 `E` exec shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
-(menu, with force) · `b` bulk commands (prune stopped pods) · `c` custom command.
+(menu, with force) · `b` bulk commands (prune stopped pods) · `c` custom command ·
+`g` kube menu (generate, play or down a YAML manifest).
 Tabs: **Logs** (merged, prefixed with the container name), **Stats** (sum over
 the pod's containers), **Containers**, **Config** (`pod inspect`).
+
+The kube menu keeps manifests in `gui.kubeDir` (default
+`<user config dir>/lazypodman/kube`):
+
+- **Generate** exports the selected pod with `podman kube generate`, shows the
+  YAML as a preview and saves `<pod>.yaml` with mode `0600` only after a
+  confirmation that names the full path and warns that env vars are plaintext.
+  An existing file asks before it is overwritten.
+- **Play** and **Down** list `*.yaml`/`*.yml` files from that directory whose
+  top-level `kind:` makes them kube manifests. Nothing runs automatically: both
+  confirm with the full path, then stream the output of `podman kube play`
+  (`--down` for down) into the main panel. Cancelling a task kills the process.
+- Both features are probed lazily and fall back to the older
+  `podman generate kube` / `podman play kube` syntax. No version numbers are
+  assumed; if neither works the corner shows `kube generate off:` / `kube play off:`. 
+  `--replace` and `--build` are not passed.
 
 **Images, Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
 commands (prune).
@@ -370,6 +387,12 @@ Environment variables: `PODMAN_HOST`, `CONTAINER_HOST`, `DOCKER_HOST`,
   `CONTAINER_HOST=ssh://…` or macOS/Windows `podman machine`) stay fully usable,
   only without pods. `gui.pods.enabled: always` skips the store comparison and
   `never` disables pods outright.
+- **Kube**: `g` on the pods panel generates a manifest from a pod or plays/downs a
+  manifest from `gui.kubeDir`. The YAML is written `0600`; the directory `0755`.
+  The commands are discovered by probing `podman kube generate|play` first and the
+  older `podman generate kube` / `podman play kube` second. Warnings: the generated
+  file contains env vars in plaintext (no Secrets), and `play`/`down` always ask
+  with the full path.
 - **Compose flexibility**: `podman compose` is used when available, otherwise
   `podman-compose`; both `com.docker.compose.*` and `io.podman.compose.*`
   labels are understood.

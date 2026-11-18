@@ -132,3 +132,21 @@ for play/down.
 Everything here is **tested against synthetic fixtures only** until a human runs the
 checklist. Exit statuses of `podman kube play`, real YAML shapes and old-syntax
 availability are **not verified**.
+
+## Implementation status
+
+Implemented as designed:
+
+- `ProbeSubcommand` stores the working syntax (`["kube","generate"]` or
+  `["generate","kube"]`; `["kube","play"]` or `["play","kube"]`) and caches it; a
+  timeout is transient, a missing subcommand is permanent.
+- `KubeGenerate` and `StreamKube` live on `PodmanClient`; streaming merges stdout and
+  stderr line by line and kills the child when the task context is cancelled.
+- `ScanKubeDir` / `sniffKubeKind` / `SafeKubeFilename` / `WriteKubeFile` are in
+  `pkg/commands/kube_files.go`; `WriteKubeFile` is the only writer and always ends at
+  mode `0600`.
+- The `g` menu and both flows are in `pkg/gui/kube_menu.go`; `gui.kubeDir` resolves
+  the default and `~`.
+- Everything here is **tested against synthetic fixtures only** until the manual
+  checklist is run; the 9 checklist items are in
+  `docs/superpowers/plans/2026-11-18-kube.md`.

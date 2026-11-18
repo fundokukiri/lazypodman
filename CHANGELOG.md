@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Kube menu** (`g` on the pods panel): generate a Kubernetes YAML file from a
+  pod, or play/down a manifest from `gui.kubeDir` (default
+  `<user config dir>/lazypodman/kube`). Generated files are written with mode
+  `0600` after a confirmation that names the full path and warns that env vars are
+  plaintext; play/down always confirm with the full path and stream podman's output.
+  Commands are probed lazily with a fallback to the older `podman generate kube` /
+  `podman play kube` syntax. `--replace` and `--build` are not passed.
 - **Health** tab on the containers panel (after **Stats**) showing health
   status, failing streak and the recorded probes, all from inspect data the
   socket already provides.

@@ -136,7 +136,7 @@ type GuiConfig struct {
 
 	// KubeDir is where generated kube YAML is written and where play/down look for
 	// manifests. Empty means <user config dir>/lazypodman/kube.
-	KubeDir string `yaml:"kubeDir,omitempty"`
+	KubeDir string `yaml:"kubeDir"`
 
 	// Pods configures the Podman-native features (the pods panel). Availability is
 	// auto-detected; this only decides how hard we try.

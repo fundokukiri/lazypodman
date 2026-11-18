@@ -474,7 +474,14 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "main",
-			Key:         'L',
+			Key:         gocui.KeyCtrlL,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleFullLogs,
+			Description: gui.Tr.AllLogs,
+		},
+		{
+			ViewName:    "containers",
+			Key:         gocui.KeyCtrlL,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleFullLogs,
 			Description: gui.Tr.AllLogs,

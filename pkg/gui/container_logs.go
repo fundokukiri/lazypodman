@@ -92,12 +92,12 @@ func (gui *Gui) handleToggleFullLogs(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) logsOptionsMap() map[string]string {
 	options := map[string]string{
 		"PgUp/PgDn": gui.Tr.Scroll,
-		"L":         gui.Tr.AllLogs,
+		"ctrl+l":    gui.Tr.AllLogs,
 	}
 
 	if gui.Panels.Containers != nil {
 		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.logsFullFor(container) {
-			options["L"] = gui.Tr.RecentLogs
+			options["ctrl+l"] = gui.Tr.RecentLogs
 		}
 	}
 

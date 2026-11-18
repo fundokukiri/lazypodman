@@ -45,6 +45,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>b</kbd>: 查看批量命令
   <kbd>w</kbd>: 在浏览器中打开(第一个端口为http)
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>enter</kbd>: 聚焦主面板
   <kbd>[</kbd>: 上一个选项卡
   <kbd>]</kbd>: 下一个选项卡
@@ -114,7 +115,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## 主要
 
 <pre>
-  <kbd>L</kbd>: load all logs
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>esc</kbd>: 返回
 </pre>
 

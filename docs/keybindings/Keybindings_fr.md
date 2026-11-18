@@ -45,6 +45,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>c</kbd>: exécuter une commande prédéfinie
   <kbd>b</kbd>: voir les commandes groupées
   <kbd>w</kbd>: ouvrir dans le navigateur (le premier port est http)
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>enter</kbd>: focus panneau principal
   <kbd>[</kbd>: onglet précédent
   <kbd>]</kbd>: onglet suivant
@@ -114,7 +115,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Principal
 
 <pre>
-  <kbd>L</kbd>: load all logs
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>esc</kbd>: retour
 </pre>
 

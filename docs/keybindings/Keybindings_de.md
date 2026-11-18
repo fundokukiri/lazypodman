@@ -45,6 +45,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>c</kbd>: führe vordefinierten benutzerdefinierten Befehl aus
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>enter</kbd>: fokussieren aufs Hauptpanel
   <kbd>[</kbd>: vorheriges Tab
   <kbd>]</kbd>: nächstes Tab
@@ -114,7 +115,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Haupt
 
 <pre>
-  <kbd>L</kbd>: load all logs
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>esc</kbd>: zurück
 </pre>
 

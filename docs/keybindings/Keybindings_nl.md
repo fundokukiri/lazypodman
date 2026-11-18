@@ -45,6 +45,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>c</kbd>: draai een vooraf bedacht aangepaste opdracht
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>enter</kbd>: focus hoofdpaneel
   <kbd>[</kbd>: vorige tab
   <kbd>]</kbd>: volgende tab
@@ -114,7 +115,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Hoofd
 
 <pre>
-  <kbd>L</kbd>: load all logs
+  <kbd>ctrl+l</kbd>: load all logs
   <kbd>esc</kbd>: terug
 </pre>
 

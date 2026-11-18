@@ -46,9 +46,9 @@ systemctl --user status podman.socket 2>/dev/null || podman system service --tim
   - Logs: dòng của `web`/`side` xen kẽ, có prefix; dòng `side 12:00:00 tick: x` giữ nguyên.
   - Stats: tổng của pod; Containers: đúng 2 container; Config: JSON inspect.
   - Chuyển sang tab khác rồi `pgrep -a podman` → không còn process log treo.
-  - Mặc định chỉ tải **200 dòng cuối**; dòng dưới cùng hiện `L: load all logs`.
-  - Nhấn `L` → tải toàn bộ log của container đó, dòng dưới cùng đổi thành
-    `L: load recent logs`; nhấn `L` lần nữa quay lại 200 dòng. Container khác
+  - Mặc định chỉ tải **200 dòng cuối**; dòng dưới cùng hiện `ctrl+l: load all logs`.
+  - Nhấn `ctrl+l` → tải toàn bộ log của container đó, dòng dưới cùng đổi thành
+    `ctrl+l: load recent logs`; nhấn `ctrl+l` lần nữa quay lại 200 dòng. Container khác
     vẫn giữ mặc định 200.
 
 - [ ] **A4. Hành động**: `s` stop (có xác nhận), `S` start, `r` restart, `p` pause/unpause, `d` remove + force remove, `b` prune khi có 1 pod đã dừng.

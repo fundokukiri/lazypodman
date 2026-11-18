@@ -5,7 +5,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Global
 
 <pre>
-  <kbd></kbd>: Command palette
+  <kbd>ctrl+p</kbd>: Command palette
   <kbd>+</kbd>: next screen mode (normal/half/fullscreen)
   <kbd>_</kbd>: prev screen mode
   <kbd>1</kbd>: focus projects panel

@@ -5,7 +5,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Global
 
 <pre>
-  <kbd></kbd>: Command palette
+  <kbd>ctrl+p</kbd>: Command palette
   <kbd>+</kbd>: modo de tela seguinte (normal/meia/tela cheia)
   <kbd>_</kbd>: modo de tela anterior
   <kbd>1</kbd>: focus projects panel

@@ -277,8 +277,8 @@ commands (prune).
   `space` on a marked row unmarks it. Marks are keyed by container ID, so they
   survive a list refresh.
 - `ctrl+p` opens the **command palette**: jump to any panel, the kube menu, a
-  healthcheck run, `podman auto-update`, or quit. It calls the same handlers as
-  the keys, so it cannot drift from them.
+  healthcheck run, `podman auto-update`, the Quadlet export, or quit. It calls the
+  same handlers as the keys, so it cannot drift from them.
 - `Q` exports the selected container as a Quadlet `.container` unit. The preview
   is shown first; the file goes to `gui.quadletDir` (default
   `<user config dir>/containers/systemd`, where Podman looks for user units) as

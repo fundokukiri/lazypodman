@@ -13,7 +13,7 @@ func (gui *Gui) handleCommandPalette(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) paletteItems() []*types.MenuItem {
-	items := make([]*types.MenuItem, 0, len(gui.sidePanelKeys())+4)
+	items := make([]*types.MenuItem, 0, len(gui.sidePanelKeys())+5)
 
 	for _, panel := range gui.sidePanelKeys() {
 		panel := panel
@@ -35,6 +35,10 @@ func (gui *Gui) paletteItems() []*types.MenuItem {
 		&types.MenuItem{
 			LabelColumns: []string{gui.Tr.AutoUpdateContainers},
 			OnPress:      func() error { return gui.handleAutoUpdate() },
+		},
+		&types.MenuItem{
+			LabelColumns: []string{gui.Tr.QuadletExport},
+			OnPress:      func() error { return gui.handleContainerQuadletExport(nil, nil) },
 		},
 		&types.MenuItem{
 			LabelColumns: []string{gui.Tr.Quit},

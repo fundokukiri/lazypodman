@@ -1,6 +1,6 @@
 # Batch 2 — Kube generate / play / down
 
-**Status:** approved direction, implementation-ready. Same rules as batch 1: lazy
+**Status:** implemented and committed (`c3d6049`, `41fe5d5`). Same rules as batch 1: lazy
 capabilities, no UI goroutine blocking, graceful degradation, synthetic tests until
 a human records real output.
 

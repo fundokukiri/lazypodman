@@ -13,7 +13,7 @@ func TestPaletteItemsCoverPanelsAndActions(t *testing.T) {
 
 	items := gui.paletteItems()
 
-	assert.Len(t, items, len(gui.sidePanelKeys())+4)
+	assert.Len(t, items, len(gui.sidePanelKeys())+5)
 
 	labels := map[string]bool{}
 	for _, item := range items {

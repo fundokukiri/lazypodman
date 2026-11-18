@@ -36,6 +36,8 @@ func (b *Binding) GetKey() string {
 		return "enter"
 	case 32:
 		return "space"
+	case 9:
+		return "tab"
 	case 65514:
 		return "►"
 	case 65515:
@@ -48,6 +50,12 @@ func (b *Binding) GetKey() string {
 		return "PgUp"
 	case 65507:
 		return "PgDn"
+	}
+
+	// Control keys would otherwise render as invisible characters in the generated
+	// cheatsheets; name them the way a user would type them.
+	if key >= 1 && key <= 26 {
+		return "ctrl+" + string(rune('a'+key-1))
 	}
 
 	return fmt.Sprintf("%c", key)

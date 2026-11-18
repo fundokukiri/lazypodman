@@ -103,3 +103,20 @@ func TestSidePanelKeysWithPods(t *testing.T) {
 func (fakeEnabledPodClient) StreamPodman(context.Context, []string, func(string)) error {
 	return nil
 }
+
+func TestGetKeyRendersControlKeys(t *testing.T) {
+	cases := map[interface{}]string{
+		gocui.KeyCtrlP: "ctrl+p",
+		gocui.KeyCtrlA: "ctrl+a",
+		gocui.KeyCtrlZ: "ctrl+z",
+		' ':            "space",
+		'Q':            "Q",
+	}
+
+	for key, want := range cases {
+		binding := &Binding{Key: key}
+		if got := binding.GetKey(); got != want {
+			t.Errorf("GetKey(%v) = %q, want %q", key, got, want)
+		}
+	}
+}

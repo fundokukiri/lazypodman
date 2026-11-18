@@ -1,7 +1,7 @@
 # Lazypodman — Pods as first-class citizens (Phase 1) — design
 
 Date: 2026-11-18
-Status: awaiting approval
+Status: implemented and committed (tasks 1-11; see "Implementation status" below).
 Scope: Phase 1 of the Podman-native roadmap. Phases 2–4 (health/Kube, palette/multi-select/events, Quadlet/auto-update) get their own design docs.
 
 ## Intent and why

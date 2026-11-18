@@ -1,6 +1,6 @@
 # Batch 1 — Healthcheck + per-feature capabilities (design)
 
-Status: awaiting approval. Phase 2 of the Podman-native roadmap; kube is batches
+Status: implemented and committed (batch 1). Phase 2 of the Podman-native roadmap; kube is batches
 2a/2b and gets its own design.
 
 ## Intent and why

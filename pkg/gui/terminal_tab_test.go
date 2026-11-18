@@ -22,7 +22,7 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 		closeCount int
 		printables int
 		ctrlX      bool
-		escLeave   bool
+		ctrlO      bool
 	)
 
 	for _, binding := range gui.terminalKeyBindings() {
@@ -37,8 +37,8 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 			closeCount++
 		}
 
-		if binding.Key == gocui.KeyEsc && binding.Description == gui.Tr.LeaveShell {
-			escLeave = true
+		if binding.Key == gocui.KeyCtrlO {
+			ctrlO = true
 		}
 
 		if binding.Key == gocui.KeySpace || binding.Key == gocui.KeyEnter || binding.Key == gocui.KeyEsc {
@@ -48,7 +48,7 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 
 	assert.Equal(t, 94, printables, "all printable ASCII keys are forwarded")
 	assert.True(t, ctrlX)
-	assert.True(t, escLeave, "esc leaves the shell focused")
+	assert.True(t, ctrlO, "ctrl+o leaves the shell focused")
 	assert.Equal(t, 1, closeCount, "ctrl+x closes the shell exactly once")
 }
 
@@ -73,8 +73,8 @@ func TestTerminalOptionsShowHowToClose(t *testing.T) {
 	options := gui.terminalOptionsMap()
 
 	assert.Equal(t, map[string]string{
-		"esc":    gui.Tr.LeaveShell,
+		"ctrl+o": gui.Tr.LeaveShell,
 		"ctrl+x": gui.Tr.CloseShell,
 	}, options)
-	assert.Equal(t, "ctrl+x: close shell, esc: leave shell, keep it running", gui.optionsMapToString(options))
+	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+x: close shell", gui.optionsMapToString(options))
 }

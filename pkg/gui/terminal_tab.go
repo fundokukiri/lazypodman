@@ -315,7 +315,7 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 // (q, b, x) are forwarded to the container, so they must not be advertised here.
 func (gui *Gui) terminalOptionsMap() map[string]string {
 	return map[string]string{
-		"esc":    gui.Tr.LeaveShell,
+		"ctrl+o": gui.Tr.LeaveShell,
 		"ctrl+x": gui.Tr.CloseShell,
 	}
 }
@@ -353,8 +353,8 @@ func (gui *Gui) leaveTerminalFocus() error {
 }
 
 // terminalKeyBindings forwards keystrokes to the PTY. They live on the terminal
-// view only, so normal panels keep their bindings. esc leaves the shell focused
-// but keeps it running; ctrl+x closes it.
+// view only, so normal panels keep their bindings. ctrl+o leaves the shell
+// focused but keeps it running; ctrl+x closes it.
 func (gui *Gui) terminalKeyBindings() []*Binding {
 	bindings := make([]*Binding, 0, 140)
 
@@ -374,7 +374,7 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 		&Binding{ViewName: "terminal", Key: gocui.KeyTab, Modifier: gocui.ModNone, Handler: send("\t")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyBackspace, Modifier: gocui.ModNone, Handler: send("\x7f")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyBackspace2, Modifier: gocui.ModNone, Handler: send("\x7f")},
-		&Binding{ViewName: "terminal", Key: gocui.KeyEsc, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.leaveTerminalFocus() }, Description: gui.Tr.LeaveShell},
+		&Binding{ViewName: "terminal", Key: gocui.KeyEsc, Modifier: gocui.ModNone, Handler: send("\x1b")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyArrowUp, Modifier: gocui.ModNone, Handler: send("\x1b[A")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyArrowDown, Modifier: gocui.ModNone, Handler: send("\x1b[B")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyArrowRight, Modifier: gocui.ModNone, Handler: send("\x1b[C")},
@@ -389,7 +389,7 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 	)
 
 	for key := gocui.KeyCtrlA; key <= gocui.KeyCtrlZ; key++ {
-		if key == gocui.KeyCtrlX {
+		if key == gocui.KeyCtrlX || key == gocui.KeyCtrlO {
 			continue
 		}
 

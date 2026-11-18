@@ -60,3 +60,12 @@ func TestTerminalTabOnlyForItsContainer(t *testing.T) {
 	gui.setTerminal(nil)
 	assert.False(t, gui.terminalTabFor(container))
 }
+
+func TestTerminalOptionsShowHowToClose(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	options := gui.terminalOptionsMap()
+
+	assert.Equal(t, map[string]string{"ctrl+x": gui.Tr.CloseShell}, options)
+	assert.Equal(t, "ctrl+x: close shell", gui.optionsMapToString(options))
+}

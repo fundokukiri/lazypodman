@@ -304,6 +304,14 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 	})
 }
 
+// terminalOptionsMap is the bottom-line help for the shell: the global hints
+// (q, b, x) are forwarded to the container, so they must not be advertised here.
+func (gui *Gui) terminalOptionsMap() map[string]string {
+	return map[string]string{
+		"ctrl+x": gui.Tr.CloseShell,
+	}
+}
+
 // trimTerminalRows drops trailing blanks and zero bytes so the view does not
 // grow with invisible cells. Blank rows inside the screen are kept.
 func trimTerminalRows(rows []string) []string {

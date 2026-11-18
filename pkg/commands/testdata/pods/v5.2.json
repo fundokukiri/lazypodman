@@ -1,0 +1,33 @@
+[
+  {
+    "Id": "7d1f4c8f9a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5",
+    "Name": "web",
+    "Status": "Running",
+    "Created": "2026-11-18T09:12:31.123456789Z",
+    "InfraId": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "NumberOfContainers": 2,
+    "Labels": {"app": "web"},
+    "Networks": ["podman"],
+    "CreateCommand": ["podman", "pod", "create", "--name", "web"],
+    "_synthetic": true
+  },
+  {
+    "Id": "8e2f5d9f0b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6",
+    "Name": "batch",
+    "Status": "Exited",
+    "Created": "2026-11-17T22:01:00.000000000Z",
+    "InfraId": "2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a",
+    "NumberOfContainers": 0,
+    "Cgroup": "private",
+    "_synthetic": true
+  },
+  {
+    "Id": "9f3a6e0a1c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7",
+    "Name": "noinfra",
+    "Status": "Created",
+    "Created": "2026-11-18T10:00:00.000000000Z",
+    "InfraId": "",
+    "NumberOfContainers": 1,
+    "_synthetic": true
+  }
+]

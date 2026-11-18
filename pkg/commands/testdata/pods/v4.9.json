@@ -1,0 +1,20 @@
+[
+  {
+    "Id": "aa1f4c8f9a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5",
+    "Name": "legacy",
+    "Status": "Running",
+    "Created": "2 hours ago",
+    "InfraId": "bb2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "NumberOfContainers": 1,
+    "_synthetic": true
+  },
+  {
+    "Id": "cc3a6e0a1c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7",
+    "Name": "stopped",
+    "Status": "Stopped",
+    "InfraId": "dd4b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8",
+    "NumberOfContainers": 3,
+    "Labels": {},
+    "_synthetic": true
+  }
+]

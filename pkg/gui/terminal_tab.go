@@ -371,7 +371,18 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		height = 0
 	}
 
-	visible := terminalWindow(state.history, trimmed, height, state.scrollOffset)
+	var visible []string
+	if state.scrollOffset > 0 {
+		visible = terminalWindow(state.history, trimmed, height, state.scrollOffset)
+	} else {
+		// Live view: draw the screen exactly as the PTY has it, so the cursor row
+		// keeps matching and history lines never push the shell down.
+		visible = trimmed
+		if len(visible) > height {
+			visible = visible[len(visible)-height:]
+		}
+	}
+
 	state.mutex.Unlock()
 
 	content := terminalHeader(container, gui.Tr)

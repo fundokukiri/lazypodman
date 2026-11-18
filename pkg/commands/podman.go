@@ -50,10 +50,12 @@ type PodmanCommand struct {
 	// podClient backs the Podman-native features (pods). It is never nil: a
 	// disabled client answers Enabled() == false and keeps the socket backend
 	// untouched. podState is the last good snapshot, reused when a refresh fails.
-	podClient       PodmanClient
-	podState        *PodState
-	PodStateMutex   deadlock.Mutex
-	infraContainers map[string]container.Summary
+	podClient         PodmanClient
+	podState          *PodState
+	PodStateMutex     deadlock.Mutex
+	infraContainers   map[string]container.Summary
+	capabilities      Capabilities
+	CapabilitiesMutex deadlock.Mutex
 
 	Closers []io.Closer
 }
@@ -179,10 +181,15 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 		log.Warn(err.Error())
 	}
 
-	podmanCommand.SetPodClient(<-cliCheck)
+	podClient := <-cliCheck
+	podmanCommand.SetPodClient(podClient)
+	podmanCommand.SetCapabilities(deriveCapabilities(
+		podClient.check,
+		ParsePodsMode(config.UserConfig.Gui.Pods.Enabled),
+	))
 
-	if !podmanCommand.Pods().Enabled() {
-		log.Debugf("pods disabled: %s", podmanCommand.Pods().Reason())
+	if pods := podmanCommand.Capabilities().Pods; pods.State == CapabilityUnavailable {
+		log.Debugf("pods off: %s", pods.Reason)
 	}
 
 	// When the user passes -p outside of a compose directory, treat it as the
@@ -641,4 +648,35 @@ func (c *PodmanCommand) SetPodClient(client PodmanClient) {
 // refresh. Callers must not mutate it.
 func (c *PodmanCommand) PodStateSnapshot() *PodState {
 	return c.cachedPodState()
+}
+
+// Capabilities returns a copy of the current feature capabilities.
+func (c *PodmanCommand) Capabilities() Capabilities {
+	c.CapabilitiesMutex.Lock()
+	defer c.CapabilitiesMutex.Unlock()
+
+	return c.capabilities
+}
+
+// SetCapabilities replaces the whole set. Called once during startup.
+func (c *PodmanCommand) SetCapabilities(caps Capabilities) {
+	c.CapabilitiesMutex.Lock()
+	defer c.CapabilitiesMutex.Unlock()
+
+	c.capabilities = caps
+}
+
+// SetCapability records the outcome of a lazy probe.
+func (c *PodmanCommand) SetCapability(feature CapabilityFeature, capability Capability) {
+	c.CapabilitiesMutex.Lock()
+	defer c.CapabilitiesMutex.Unlock()
+
+	switch feature {
+	case FeatureHealthRun:
+		c.capabilities.HealthRun = capability
+	case FeatureKubeGenerate:
+		c.capabilities.KubeGenerate = capability
+	case FeatureKubePlay:
+		c.capabilities.KubePlay = capability
+	}
 }

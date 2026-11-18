@@ -34,9 +34,9 @@ func TestQuadletFilePathIsSafe(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 	gui.Config.UserConfig.Gui.QuadletDir = "/srv/units"
 
-	assert.Equal(t, "/srv/units/web.container", gui.quadletFilePath("web"))
+	assert.Equal(t, filepath.Join("/srv/units", "web.container"), gui.quadletFilePath("web"))
 	path := gui.quadletFilePath("../../etc/passwd")
-	assert.Equal(t, "/srv/units", filepath.Dir(path), "the name must stay a single segment")
+	assert.Equal(t, filepath.Dir(gui.quadletFilePath("web")), filepath.Dir(path), "the name must stay a single segment")
 	assert.Contains(t, filepath.Base(path), "etc-passwd")
 	assert.NotContains(t, filepath.Base(path), "/")
 }

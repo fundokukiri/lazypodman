@@ -45,13 +45,15 @@ func TestKubeDirKeepsAbsolutePath(t *testing.T) {
 func TestKubeSavePrompt(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, "/srv/kube")
 
-	prompt := gui.kubeSavePrompt("/srv/kube/web.yaml", false)
-	assert.Contains(t, prompt, "/srv/kube/web.yaml")
+	path := filepath.Join("/srv/kube", "web.yaml")
+
+	prompt := gui.kubeSavePrompt(path, false)
+	assert.Contains(t, prompt, path)
 	assert.Contains(t, prompt, "plaintext")
 
-	overwrite := gui.kubeSavePrompt("/srv/kube/web.yaml", true)
+	overwrite := gui.kubeSavePrompt(path, true)
 	assert.Contains(t, overwrite, "File exists")
-	assert.Contains(t, overwrite, "/srv/kube/web.yaml")
+	assert.Contains(t, overwrite, path)
 }
 
 func TestGenerateKubeWithoutPodSpawnsNothing(t *testing.T) {

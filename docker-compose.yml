@@ -1,0 +1,19 @@
+services:
+  lazypodman:
+    build:
+      context: https://github.com/lazypodman/lazypodman.git
+      args:
+        GOARCH: amd64
+        GOARM:
+    image: lazyteam/lazypodman
+    container_name: lazypodman
+    stdin_open: true
+    tty: true
+    environment:
+      # Point the app at the Podman service socket mounted below.
+      - CONTAINER_HOST=unix:///run/podman/podman.sock
+    volumes:
+      # Rootful Podman socket. For rootless, mount
+      # ${XDG_RUNTIME_DIR}/podman/podman.sock instead and adjust CONTAINER_HOST.
+      - /run/podman/podman.sock:/run/podman/podman.sock
+      - ./config:/root/.config/lazypodman

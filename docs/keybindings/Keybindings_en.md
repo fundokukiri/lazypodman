@@ -112,3 +112,19 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>5</kbd>: focus volumes panel
   <kbd>6</kbd>: focus networks panel
 </pre>
+
+## Pods
+
+<pre>
+  <kbd>d</kbd>: remove
+  <kbd>s</kbd>: Stop
+  <kbd>S</kbd>: Start
+  <kbd>r</kbd>: Restart
+  <kbd>p</kbd>: Pause
+  <kbd>b</kbd>: view bulk commands
+  <kbd>c</kbd>: run predefined custom command
+  <kbd>enter</kbd>: focus main panel
+  <kbd>[</kbd>: previous tab
+  <kbd>]</kbd>: next tab
+  <kbd>/</kbd>: filter list
+</pre>

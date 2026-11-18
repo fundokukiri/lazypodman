@@ -116,6 +116,31 @@ The available attributes are:
 - reverse # useful for high-contrast
 - underline
 
+## Pods
+
+The pods panel is detected automatically: it is shown when the `podman` CLI exists,
+is at least version 3.0 and talks to the same store as the socket lazypodman uses
+(Linux, same host). The Docker-compatible API has no pod endpoint, so pod data
+comes from the CLI.
+
+```yaml
+gui:
+  showPodColumn: true   # pod column in the containers panel (default true)
+  pods:
+    enabled: "auto"     # auto | always | never
+```
+
+- `auto` (default): run every check, disable pods when one fails.
+- `always`: skip the CLI/socket store comparison. Useful when the check is slow
+  on a rootless start; pods are then assumed to live in the same store.
+- `never`: never enable pods, never run the CLI.
+
+When pods are off the panel is hidden, the containers panel loses its pod column
+and the bottom-right corner shows `pods off: <reason>`. Nothing else changes:
+containers, services, images, volumes and networks keep working through the socket.
+Pods custom commands and bulk commands live under `customCommands.pods` and
+`bulkCommands.pods`, and can use `{{ .Pod.Name }}` / `{{ .Pod.ID }}`.
+
 ## Custom Commands
 
 You can add custom commands like so:

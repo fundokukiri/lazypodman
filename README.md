@@ -10,7 +10,8 @@ projects, logs and stats in one window, every common action one keypress away.
 ## Features
 
 - View the state of your Podman containers and compose services at a glance
-- View and follow logs for a container or a service
+- View **pods** with their containers, merged logs, container count and ports
+- View and follow logs for a container, a service or a pod
 - ASCII graphs of container CPU/memory, or of any stat path you configure
 - Attach to a container, exec a shell, view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services
@@ -197,15 +198,17 @@ Flags:
 | `-d, --debug` | debug logging |
 | `--version`, `-h` | version and help |
 
-Layout: the left column holds **Project → Services → Containers → Images →
-Volumes → Networks**; the main panel shows the selected item's **Logs / Stats /
-Config / Env / Top / Compose Config / About** tabs.
+Layout: the left column holds **Project → Services → Pods → Containers → Images
+→ Volumes → Networks**; the main panel shows the selected item's **Logs / Stats /
+Config / Env / Top / Compose Config / About** tabs. When the pods feature is
+unavailable the Pods panel is hidden and the remaining panels keep contiguous
+numbers (`1`…`6`).
 
 ### Navigation
 
 | Key | Action |
 | --- | --- |
-| `1`…`6` | focus Projects / Services / Containers / Images / Volumes / Networks |
+| `1`…`7` | focus Projects / Services / Pods / Containers / Images / Volumes / Networks (`6` keys when Pods is off) |
 | `tab` / `shift+tab` | next / previous panel (or `l` / `h`) |
 | `↑` `↓` / `k` `j` | move in the list |
 | `enter` | focus the main panel |
@@ -225,6 +228,11 @@ Config / Env / Top / Compose Config / About** tabs.
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach · `m` logs ·
 `E` exec shell · `c`/`b` custom / bulk command · `w` open port.
+
+**Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
+(menu, with force) · `b` bulk commands (prune stopped pods) · `c` custom command.
+Tabs: **Logs** (merged, prefixed with the container name), **Stats** (sum over
+the pod's containers), **Containers**, **Config** (`pod inspect`).
 
 **Images, Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
 commands (prune).
@@ -277,6 +285,9 @@ gui:
   returnImmediately: false
   screenMode: "normal"        # normal | half | fullscreen
   containerStatusHealthStyle: "long"   # long | short | icon
+  showPodColumn: true         # pod column in the containers panel
+  pods:
+    enabled: "auto"           # auto | always | never
 
 logs:
   timestamps: false
@@ -339,6 +350,13 @@ Environment variables: `PODMAN_HOST`, `CONTAINER_HOST`, `DOCKER_HOST`,
   context store is never read.
 - **Hidden infra containers**: the per-pod `-infra` (pause) containers are
   filtered out of the containers panel, like `podman ps` does.
+- **Pods**: the pods panel needs the `podman` CLI to talk to the same store as
+  the socket. It is enabled only when the binary exists, is Podman ≥ 3.0 and its
+  socket path matches the endpoint in use; otherwise the panel is hidden and the
+  bottom-right corner shows `pods off: <reason>`. Socket-only setups (for example
+  `CONTAINER_HOST=ssh://…` or macOS/Windows `podman machine`) stay fully usable,
+  only without pods. `gui.pods.enabled: always` skips the store comparison and
+  `never` disables pods outright.
 - **Compose flexibility**: `podman compose` is used when available, otherwise
   `podman-compose`; both `com.docker.compose.*` and `io.podman.compose.*`
   labels are understood.

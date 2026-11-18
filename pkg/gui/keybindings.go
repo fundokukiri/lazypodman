@@ -180,7 +180,9 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName: "menu",
-			Key:      ' ',
+			// gocui delivers the spacebar as KeySpace, not the ' ' rune (it clears
+			// the rune deliberately so it can match Key instead).
+			Key:      gocui.KeySpace,
 			Modifier: gocui.ModNone,
 			Handler:  wrappedHandler(gui.handleMenuPress),
 		},
@@ -253,8 +255,10 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Description: gui.Tr.RunHealthcheck,
 		},
 		{
-			ViewName:    "containers",
-			Key:         ' ',
+			ViewName: "containers",
+			// Must be KeySpace: gocui clears the rune for the spacebar, so a rune
+			// ' ' binding silently never fires.
+			Key:         gocui.KeySpace,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainersToggleMark,
 			Description: gui.Tr.ToggleMark,

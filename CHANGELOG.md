@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `space` now actually marks a container (and selects a menu item): gocui
+  delivers the spacebar as `KeySpace` with an empty rune, so the previous rune
+  `' '` bindings never fired.
+
 ### Added
 
 - **Integration tests** for Podman-native features: startup check timing and process

@@ -120,3 +120,30 @@ func TestGetKeyRendersControlKeys(t *testing.T) {
 		}
 	}
 }
+
+// gocui's tcell driver turns the spacebar into KeySpace with an empty rune, so a
+// binding declared as the rune ' ' never matches. This test exists because that
+// bug shipped once and made multi-select look broken.
+func TestSpaceBindingsUseKeySpace(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	found := 0
+
+	for _, binding := range gui.staticKeybindings() {
+		if _, isRune := binding.Key.(rune); isRune && binding.Key.(rune) == ' ' {
+			t.Errorf("binding %q uses the rune ' ', which gocui never delivers for the spacebar", binding.Description)
+		}
+
+		if binding.Key == gocui.KeySpace {
+			found++
+
+			if binding.GetKey() != "space" {
+				t.Errorf("KeySpace binding renders as %q, want \"space\"", binding.GetKey())
+			}
+		}
+	}
+
+	if found != 2 {
+		t.Errorf("expected the menu and containers space bindings, found %d", found)
+	}
+}

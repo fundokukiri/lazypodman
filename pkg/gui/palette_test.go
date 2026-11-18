@@ -42,15 +42,19 @@ func TestPaletteKeyIsBoundOnce(t *testing.T) {
 func TestMultiSelectKeysAreBoundOnce(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
-	counts := map[rune]int{}
+	counts := map[string]int{}
 	for _, binding := range gui.staticKeybindings() {
 		if binding.ViewName == "containers" {
 			if key, ok := binding.Key.(rune); ok {
-				counts[key]++
+				counts[string(key)]++
+			}
+
+			if binding.Key == gocui.KeySpace {
+				counts["space"]++
 			}
 		}
 	}
 
-	assert.Equal(t, 1, counts[' '], "space toggles the mark exactly once")
-	assert.Equal(t, 1, counts['Q'], "Q exports exactly once")
+	assert.Equal(t, 1, counts["space"], "space toggles the mark exactly once")
+	assert.Equal(t, 1, counts["Q"], "Q exports exactly once")
 }

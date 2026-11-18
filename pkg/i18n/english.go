@@ -122,6 +122,10 @@ type TranslationSet struct {
 	RunContainerOff             string
 	RunContainerImage           string
 	RunContainerDefault         string
+	RunContainerUnset           string
+	RunContainerImageDefault    string
+	RunContainerContainerID     string
+	RunContainerAuto            string
 	RunContainerLabels          map[string]string
 	ViewBulkCommands            string
 	FilterList                  string
@@ -337,6 +341,10 @@ func englishSet() TranslationSet {
 		RunContainerOff:             "off",
 		RunContainerImage:           "Image",
 		RunContainerDefault:         "default",
+		RunContainerUnset:           "unset",
+		RunContainerImageDefault:    "image default",
+		RunContainerContainerID:     "container ID",
+		RunContainerAuto:            "auto",
 		ViewBulkCommands:            "view bulk commands",
 		FilterList:                  "filter list",
 		OpenInBrowser:               "open in browser (first port is http)",

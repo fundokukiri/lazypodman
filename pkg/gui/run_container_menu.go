@@ -62,23 +62,63 @@ func (gui *Gui) trString(value, fallback string) string {
 }
 
 func (gui *Gui) runValueLabel(state *runContainerState, field runField) string {
+	defaultSuffix := func(value string) string {
+		return fmt.Sprintf("%s (%s)", value, gui.trString(gui.Tr.RunContainerDefault, "default"))
+	}
+
 	switch field.Kind {
 	case runListField:
 		values := state.lists[field.Key]
 		if len(values) == 0 {
-			return gui.trString(gui.Tr.RunContainerEmpty, "none")
+			return defaultSuffix(gui.trString(gui.Tr.RunContainerEmpty, "none"))
 		}
 		return fmt.Sprintf("%d %s", len(values), gui.trString(gui.Tr.RunContainerItems, "items"))
 	case runToggleField:
-		if state.toggles[field.Key] {
-			return gui.trString(gui.Tr.RunContainerOn, "on")
+		on := field.DefaultOn
+		if state.dirty[field.Key] {
+			on = state.toggles[field.Key]
 		}
-		return gui.trString(gui.Tr.RunContainerOff, "off")
-	default:
-		if value := state.text[field.Key]; value != "" {
+		value := gui.trString(gui.Tr.RunContainerOff, "off")
+		if on {
+			value = gui.trString(gui.Tr.RunContainerOn, "on")
+		}
+		if state.dirty[field.Key] {
 			return value
 		}
-		return gui.trString(gui.Tr.RunContainerDefault, "default")
+		return defaultSuffix(value)
+	default:
+		value := state.text[field.Key]
+		if state.dirty[field.Key] {
+			if value != "" {
+				return value
+			}
+			if field.Key == "name" {
+				return gui.trString(gui.Tr.RunContainerAuto, "auto")
+			}
+			return gui.runDefaultLabel(field)
+		}
+
+		if field.Key == "name" && value != "" {
+			return defaultSuffix(value)
+		}
+		if value != "" {
+			return value
+		}
+
+		return defaultSuffix(gui.runDefaultLabel(field))
+	}
+}
+
+func (gui *Gui) runDefaultLabel(field runField) string {
+	switch field.Default {
+	case "image_default":
+		return gui.trString(gui.Tr.RunContainerImageDefault, "image default")
+	case "container_id":
+		return gui.trString(gui.Tr.RunContainerContainerID, "container ID")
+	case "":
+		return gui.trString(gui.Tr.RunContainerUnset, "unset")
+	default:
+		return field.Default
 	}
 }
 
@@ -197,6 +237,7 @@ func (gui *Gui) activateRunContainerField(state *runContainerState, field runFie
 	switch field.Kind {
 	case runToggleField:
 		state.toggles[field.Key] = !state.toggles[field.Key]
+		state.markDirty(field.Key)
 		return back()
 	case runChoiceField:
 		return gui.showRunContainerChoice(state, field, back)
@@ -205,6 +246,7 @@ func (gui *Gui) activateRunContainerField(state *runContainerState, field runFie
 	default:
 		return gui.editRunContainerValue(field.Key, state.text[field.Key], func(value string) {
 			state.text[field.Key] = value
+			state.markDirty(field.Key)
 		}, back)
 	}
 }
@@ -215,6 +257,7 @@ func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField,
 			LabelColumns: []string{gui.trString(gui.Tr.RunContainerDefault, "default")},
 			OnPress: func() error {
 				delete(state.text, field.Key)
+				delete(state.dirty, field.Key)
 				return back()
 			},
 		},
@@ -226,6 +269,7 @@ func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField,
 			LabelColumns: []string{choice},
 			OnPress: func() error {
 				state.text[field.Key] = choice
+				state.markDirty(field.Key)
 				return back()
 			},
 		})

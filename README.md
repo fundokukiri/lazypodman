@@ -306,8 +306,10 @@ commands (prune).
 ### Run a new container
 
 - Select an image and press `r` (also the first item in the `x` menu) to open the
-  run menu. The image is prefilled; everything else is optional, so pressing
-  **Run** without changes runs that image detached with Podman's defaults.
+  run menu. The image is prefilled with a readable default name
+  (`<image>_<timestamp>`) and every untouched row shows its value with a
+  `(default)` marker, for example `on (default)` or `missing (default)`. Pressing
+  **Run** without changes runs that image detached with those values.
 - `enter` edits a value, `space` toggles a switch. Ports, volumes, env, labels and
   the other repeatable flags open a list where `enter` edits or deletes a value
   and **add** creates one.
@@ -549,6 +551,9 @@ Lazypodman itself is distributed under the **MIT License**:
 MIT License
 
 Copyright (c) 2026 Fundoku
+
+This project is a fork of lazydocker. Portions are 
+Copyright (c) 2018 Jesse Duffield, see CREDITS.md.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,7 +1,10 @@
 package gui
 
 import (
+	"fmt"
 	"strings"
+	"time"
+	"unicode"
 
 	"github.com/mgutz/str"
 )
@@ -24,6 +27,10 @@ type runField struct {
 	Choices []string
 	// Equals renders `--flag=value` instead of `--flag value`.
 	Equals bool
+	// Default is the value Podman uses when the flag is omitted.
+	Default string
+	// DefaultOn is the value of a toggle when the flag is omitted.
+	DefaultOn bool
 }
 
 type runFieldGroup struct {
@@ -34,18 +41,18 @@ type runFieldGroup struct {
 // runContainerFields is the root menu. Order is also argv order.
 var runContainerFields = []runField{
 	{Key: "name", Flag: "--name", Kind: runTextField},
-	{Key: "command", Kind: runTextField},
-	{Key: "entrypoint", Flag: "--entrypoint", Kind: runTextField},
-	{Key: "workdir", Flag: "--workdir", Kind: runTextField},
-	{Key: "user", Flag: "-u", Kind: runTextField},
-	{Key: "hostname", Flag: "--hostname", Kind: runTextField},
+	{Key: "command", Kind: runTextField, Default: "image_default"},
+	{Key: "entrypoint", Flag: "--entrypoint", Kind: runTextField, Default: "image_default"},
+	{Key: "workdir", Flag: "--workdir", Kind: runTextField, Default: "image_default"},
+	{Key: "user", Flag: "-u", Kind: runTextField, Default: "image_default"},
+	{Key: "hostname", Flag: "--hostname", Kind: runTextField, Default: "container_id"},
 	{Key: "ports", Flag: "-p", Kind: runListField},
 	{Key: "volumes", Flag: "-v", Kind: runListField},
 	{Key: "env", Flag: "-e", Kind: runListField},
 	{Key: "labels", Flag: "-l", Kind: runListField},
-	{Key: "network", Flag: "--network", Kind: runTextField},
-	{Key: "restart", Flag: "--restart", Kind: runChoiceField, Choices: []string{"no", "on-failure", "always", "unless-stopped"}},
-	{Key: "detach", Flag: "-d", Kind: runToggleField},
+	{Key: "network", Flag: "--network", Kind: runTextField, Default: "podman"},
+	{Key: "restart", Flag: "--restart", Kind: runChoiceField, Choices: []string{"no", "on-failure", "always", "unless-stopped"}, Default: "no"},
+	{Key: "detach", Flag: "-d", Kind: runToggleField, DefaultOn: true},
 	{Key: "rm", Flag: "--rm", Kind: runToggleField},
 	{Key: "interactive", Flag: "-i", Kind: runToggleField},
 	{Key: "tty", Flag: "-t", Kind: runToggleField},
@@ -87,7 +94,7 @@ var runContainerGroups = []runFieldGroup{
 			{Key: "tmpfs", Flag: "--tmpfs", Kind: runListField},
 			{Key: "volumes_from", Flag: "--volumes-from", Kind: runListField},
 			{Key: "read_only", Flag: "--read-only", Kind: runToggleField},
-			{Key: "image_volume", Flag: "--image-volume", Kind: runChoiceField, Choices: []string{"anonymous", "tmpfs", "ignore"}},
+			{Key: "image_volume", Flag: "--image-volume", Kind: runChoiceField, Choices: []string{"anonymous", "tmpfs", "ignore"}, Default: "anonymous"},
 			{Key: "chrootdirs", Flag: "--chrootdirs", Kind: runListField},
 		},
 	},
@@ -134,19 +141,19 @@ var runContainerGroups = []runFieldGroup{
 		Key: "health_group",
 		Fields: []runField{
 			{Key: "health_cmd", Flag: "--health-cmd", Kind: runTextField},
-			{Key: "health_interval", Flag: "--health-interval", Kind: runTextField},
-			{Key: "health_timeout", Flag: "--health-timeout", Kind: runTextField},
-			{Key: "health_retries", Flag: "--health-retries", Kind: runTextField},
-			{Key: "health_start_period", Flag: "--health-start-period", Kind: runTextField},
-			{Key: "health_start_interval", Flag: "--health-start-interval", Kind: runTextField},
+			{Key: "health_interval", Flag: "--health-interval", Kind: runTextField, Default: "30s"},
+			{Key: "health_timeout", Flag: "--health-timeout", Kind: runTextField, Default: "30s"},
+			{Key: "health_retries", Flag: "--health-retries", Kind: runTextField, Default: "3"},
+			{Key: "health_start_period", Flag: "--health-start-period", Kind: runTextField, Default: "0s"},
+			{Key: "health_start_interval", Flag: "--health-start-interval", Kind: runTextField, Default: "0s"},
 			{Key: "health_startup_cmd", Flag: "--health-startup-cmd", Kind: runTextField},
 			{Key: "health_startup_interval", Flag: "--health-startup-interval", Kind: runTextField},
 			{Key: "health_startup_retries", Flag: "--health-startup-retries", Kind: runTextField},
 			{Key: "health_startup_success", Flag: "--health-startup-success", Kind: runTextField},
-			{Key: "health_on_failure", Flag: "--health-on-failure", Kind: runChoiceField, Choices: []string{"none", "kill", "restart", "stop"}},
-			{Key: "health_log_destination", Flag: "--health-log-destination", Kind: runTextField},
-			{Key: "health_max_log_count", Flag: "--health-max-log-count", Kind: runTextField},
-			{Key: "health_max_log_size", Flag: "--health-max-log-size", Kind: runTextField},
+			{Key: "health_on_failure", Flag: "--health-on-failure", Kind: runChoiceField, Choices: []string{"none", "kill", "restart", "stop"}, Default: "none"},
+			{Key: "health_log_destination", Flag: "--health-log-destination", Kind: runTextField, Default: "local"},
+			{Key: "health_max_log_count", Flag: "--health-max-log-count", Kind: runTextField, Default: "5"},
+			{Key: "health_max_log_size", Flag: "--health-max-log-size", Kind: runTextField, Default: "500"},
 			{Key: "no_healthcheck", Flag: "--no-healthcheck", Kind: runToggleField},
 		},
 	},
@@ -154,14 +161,14 @@ var runContainerGroups = []runFieldGroup{
 		Key: "runtime_group",
 		Fields: []runField{
 			{Key: "init", Flag: "--init", Kind: runToggleField},
-			{Key: "systemd", Flag: "--systemd", Kind: runChoiceField, Choices: []string{"true", "false", "always"}},
+			{Key: "systemd", Flag: "--systemd", Kind: runChoiceField, Choices: []string{"true", "false", "always"}, Default: "true"},
 			{Key: "sdnotify", Flag: "--sdnotify", Kind: runChoiceField, Choices: []string{"container", "conmon", "healthy", "ignore"}},
 			{Key: "stop_signal", Flag: "--stop-signal", Kind: runTextField},
-			{Key: "stop_timeout", Flag: "--stop-timeout", Kind: runTextField},
+			{Key: "stop_timeout", Flag: "--stop-timeout", Kind: runTextField, Default: "10"},
 			{Key: "timeout", Flag: "--timeout", Kind: runTextField},
-			{Key: "log_driver", Flag: "--log-driver", Kind: runTextField},
+			{Key: "log_driver", Flag: "--log-driver", Kind: runTextField, Default: "journald"},
 			{Key: "log_opt", Flag: "--log-opt", Kind: runListField},
-			{Key: "pull", Flag: "--pull", Kind: runChoiceField, Choices: []string{"always", "missing", "never", "newer"}},
+			{Key: "pull", Flag: "--pull", Kind: runChoiceField, Choices: []string{"always", "missing", "never", "newer"}, Default: "missing"},
 			{Key: "retry", Flag: "--retry", Kind: runTextField},
 			{Key: "retry_delay", Flag: "--retry-delay", Kind: runTextField},
 			{Key: "platform", Flag: "--platform", Kind: runTextField},
@@ -174,12 +181,12 @@ var runContainerGroups = []runFieldGroup{
 			{Key: "replace", Flag: "--replace", Kind: runToggleField},
 			{Key: "requires", Flag: "--requires", Kind: runListField},
 			{Key: "tz", Flag: "--tz", Kind: runTextField},
-			{Key: "umask", Flag: "--umask", Kind: runTextField},
+			{Key: "umask", Flag: "--umask", Kind: runTextField, Default: "0022"},
 			{Key: "detach_keys", Flag: "--detach-keys", Kind: runTextField},
 			{Key: "attach", Flag: "--attach", Kind: runListField},
-			{Key: "sig_proxy", Flag: "--sig-proxy", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true},
-			{Key: "http_proxy", Flag: "--http-proxy", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true},
-			{Key: "tls_verify", Flag: "--tls-verify", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true},
+			{Key: "sig_proxy", Flag: "--sig-proxy", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true, Default: "true"},
+			{Key: "http_proxy", Flag: "--http-proxy", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true, Default: "true"},
+			{Key: "tls_verify", Flag: "--tls-verify", Kind: runChoiceField, Choices: []string{"true", "false"}, Equals: true, Default: "true"},
 			{Key: "authfile", Flag: "--authfile", Kind: runTextField},
 			{Key: "creds", Flag: "--creds", Kind: runTextField},
 			{Key: "cert_dir", Flag: "--cert-dir", Kind: runTextField},
@@ -210,6 +217,7 @@ type runContainerState struct {
 	text      map[string]string
 	toggles   map[string]bool
 	lists     map[string][]string
+	dirty     map[string]bool
 }
 
 func newRunContainerState(image string) *runContainerState {
@@ -218,10 +226,39 @@ func newRunContainerState(image string) *runContainerState {
 		text:    map[string]string{},
 		toggles: map[string]bool{},
 		lists:   map[string][]string{},
+		dirty:   map[string]bool{},
 	}
 	state.toggles["detach"] = true
+	state.text["name"] = defaultRunContainerName(image, time.Now())
 
 	return state
+}
+
+// defaultRunContainerName builds a readable, unique-enough name from the image.
+func defaultRunContainerName(image string, now time.Time) string {
+	base := image
+	if index := strings.LastIndex(base, "/"); index >= 0 {
+		base = base[index+1:]
+	}
+	if index := strings.Index(base, ":"); index >= 0 {
+		base = base[:index]
+	}
+
+	base = strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '-' || r == '.' {
+			return r
+		}
+		return '-'
+	}, base)
+	base = strings.Trim(base, "-._")
+	if base == "" {
+		base = "container"
+	}
+	if len(base) > 40 {
+		base = base[:40]
+	}
+
+	return fmt.Sprintf("%s_%s", base, now.Format("20060102_150405"))
 }
 
 // argv builds the exact argument list after "run". It never uses a shell.
@@ -288,12 +325,17 @@ func (s *runContainerState) argv(extraArgs string) []string {
 	return args
 }
 
+func (s *runContainerState) markDirty(key string) {
+	s.dirty[key] = true
+}
+
 func (s *runContainerState) addListValue(key, value string) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return
 	}
 	s.lists[key] = append(s.lists[key], value)
+	s.markDirty(key)
 }
 
 func (s *runContainerState) removeListValue(key string, index int) {
@@ -302,6 +344,7 @@ func (s *runContainerState) removeListValue(key string, index int) {
 		return
 	}
 	s.lists[key] = append(values[:index], values[index+1:]...)
+	s.markDirty(key)
 }
 
 func (s *runContainerState) setListValue(key string, index int, value string) {
@@ -310,6 +353,7 @@ func (s *runContainerState) setListValue(key string, index int, value string) {
 		return
 	}
 	s.lists[key][index] = value
+	s.markDirty(key)
 }
 
 func runFieldByKey(key string) runField {

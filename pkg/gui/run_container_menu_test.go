@@ -68,12 +68,18 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 	gui := &Gui{Tr: translations()}
 	state := newRunContainerState("alpine")
 
-	assert.Equal(t, "default", gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}))
-	assert.Equal(t, "on", gui.runValueLabel(state, runField{Key: "detach", Kind: runToggleField}))
-	assert.Equal(t, "none", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
+	assert.Contains(t, gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), " (default)")
+	assert.Equal(t, "on (default)", gui.runValueLabel(state, runFieldByKey("detach")))
+	assert.Equal(t, "none (default)", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
+	assert.Equal(t, "image default (default)", gui.runValueLabel(state, runFieldByKey("command")))
+	assert.Equal(t, "unset (default)", gui.runValueLabel(state, runFieldByKey("cpus")))
 
 	state.addListValue("ports", "8080:80")
 	assert.Equal(t, "1 items", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
+
+	state.toggles["detach"] = false
+	state.markDirty("detach")
+	assert.Equal(t, "off", gui.runValueLabel(state, runFieldByKey("detach")))
 }
 
 func TestDockerImageSummaryRepoTagsTypeIsUsed(t *testing.T) {

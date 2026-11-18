@@ -8,14 +8,14 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/fatih/color"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/config"
+	"github.com/fundokukiri/lazypodman/pkg/gui/panels"
+	"github.com/fundokukiri/lazypodman/pkg/gui/presentation"
+	"github.com/fundokukiri/lazypodman/pkg/gui/types"
+	"github.com/fundokukiri/lazypodman/pkg/tasks"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/jesseduffield/gocui"
-	"github.com/lazypodman/lazypodman/pkg/commands"
-	"github.com/lazypodman/lazypodman/pkg/config"
-	"github.com/lazypodman/lazypodman/pkg/gui/panels"
-	"github.com/lazypodman/lazypodman/pkg/gui/presentation"
-	"github.com/lazypodman/lazypodman/pkg/gui/types"
-	"github.com/lazypodman/lazypodman/pkg/tasks"
-	"github.com/lazypodman/lazypodman/pkg/utils"
 	"github.com/samber/lo"
 )
 

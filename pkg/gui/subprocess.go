@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/lazypodman/lazypodman/pkg/utils"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 )
 
 func (gui *Gui) runSubprocess(cmd *exec.Cmd) error {

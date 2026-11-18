@@ -1,10 +1,10 @@
 package gui
 
 import (
-	"github.com/lazypodman/lazypodman/pkg/gui/panels"
-	"github.com/lazypodman/lazypodman/pkg/gui/presentation"
-	"github.com/lazypodman/lazypodman/pkg/gui/types"
-	"github.com/lazypodman/lazypodman/pkg/utils"
+	"github.com/fundokukiri/lazypodman/pkg/gui/panels"
+	"github.com/fundokukiri/lazypodman/pkg/gui/presentation"
+	"github.com/fundokukiri/lazypodman/pkg/gui/types"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 )
 
 type CreateMenuOptions struct {

@@ -2,9 +2,9 @@ package presentation
 
 import (
 	"github.com/fatih/color"
-	"github.com/lazypodman/lazypodman/pkg/commands"
-	"github.com/lazypodman/lazypodman/pkg/config"
-	"github.com/lazypodman/lazypodman/pkg/utils"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/config"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 )
 
 func GetServiceDisplayStrings(guiConfig *config.GuiConfig, service *commands.Service) []string {

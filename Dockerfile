@@ -25,9 +25,9 @@ FROM quay.io/podman/stable:latest
 
 LABEL \
     org.opencontainers.image.authors="lazypodman" \
-    org.opencontainers.image.url="https://github.com/lazypodman/lazypodman" \
-    org.opencontainers.image.documentation="https://github.com/lazypodman/lazypodman" \
-    org.opencontainers.image.source="https://github.com/lazypodman/lazypodman" \
+    org.opencontainers.image.url="https://github.com/fundokukiri/lazypodman" \
+    org.opencontainers.image.documentation="https://github.com/fundokukiri/lazypodman" \
+    org.opencontainers.image.source="https://github.com/fundokukiri/lazypodman" \
     org.opencontainers.image.title="lazypodman" \
     org.opencontainers.image.description="The lazier way to manage everything podman"
 

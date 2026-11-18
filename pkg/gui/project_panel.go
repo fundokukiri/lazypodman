@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/gui/panels"
+	"github.com/fundokukiri/lazypodman/pkg/gui/presentation"
+	"github.com/fundokukiri/lazypodman/pkg/tasks"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/jesseduffield/gocui"
 	"github.com/jesseduffield/yaml"
-	"github.com/lazypodman/lazypodman/pkg/commands"
-	"github.com/lazypodman/lazypodman/pkg/gui/panels"
-	"github.com/lazypodman/lazypodman/pkg/gui/presentation"
-	"github.com/lazypodman/lazypodman/pkg/tasks"
-	"github.com/lazypodman/lazypodman/pkg/utils"
 )
 
 func (gui *Gui) getProjectPanel() *panels.SideListPanel[*commands.Project] {
@@ -149,9 +149,9 @@ func (gui *Gui) creditsStr() string {
 		[]string{
 			lazypodmanTitle(),
 			"Copyright (c) 2019 Jesse Duffield",
-			"Keybindings: https://github.com/lazypodman/lazypodman/blob/master/docs/keybindings",
-			"Config Options: https://github.com/lazypodman/lazypodman/blob/master/docs/Config.md",
-			"Raise an Issue: https://github.com/lazypodman/lazypodman/issues",
+			"Keybindings: https://github.com/fundokukiri/lazypodman/blob/master/docs/keybindings",
+			"Config Options: https://github.com/fundokukiri/lazypodman/blob/master/docs/Config.md",
+			"Raise an Issue: https://github.com/fundokukiri/lazypodman/issues",
 			utils.ColoredString("Buy Jesse a coffee: https://github.com/sponsors/jesseduffield", color.FgMagenta), // caffeine ain't free
 			"Here's your lazypodman config when merged in with the defaults (you can open your config by pressing 'o'):",
 			utils.ColoredYamlString(configBuf.String()),

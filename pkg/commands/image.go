@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/fatih/color"
-	"github.com/lazypodman/lazypodman/pkg/utils"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 )

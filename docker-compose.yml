@@ -1,7 +1,7 @@
 services:
   lazypodman:
     build:
-      context: https://github.com/lazypodman/lazypodman.git
+      context: https://github.com/fundokukiri/lazypodman.git
       args:
         GOARCH: amd64
         GOARM:

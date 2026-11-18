@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/config"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/jesseduffield/asciigraph"
-	"github.com/lazypodman/lazypodman/pkg/commands"
-	"github.com/lazypodman/lazypodman/pkg/config"
-	"github.com/lazypodman/lazypodman/pkg/utils"
 	"github.com/mcuadros/go-lookup"
 	"github.com/samber/lo"
 )

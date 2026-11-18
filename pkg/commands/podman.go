@@ -17,11 +17,11 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/fundokukiri/lazypodman/pkg/commands/ssh"
+	"github.com/fundokukiri/lazypodman/pkg/config"
+	"github.com/fundokukiri/lazypodman/pkg/i18n"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/imdario/mergo"
-	"github.com/lazypodman/lazypodman/pkg/commands/ssh"
-	"github.com/lazypodman/lazypodman/pkg/config"
-	"github.com/lazypodman/lazypodman/pkg/i18n"
-	"github.com/lazypodman/lazypodman/pkg/utils"
 	"github.com/sasha-s/go-deadlock"
 	"github.com/sirupsen/logrus"
 )

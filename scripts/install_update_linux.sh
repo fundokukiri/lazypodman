@@ -13,9 +13,9 @@ case $ARCH in
 esac
 
 # prepare the download URL
-GITHUB_LATEST_VERSION=$(curl -L -s -H 'Accept: application/json' https://github.com/lazypodman/lazypodman/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
+GITHUB_LATEST_VERSION=$(curl -L -s -H 'Accept: application/json' https://github.com/fundokukiri/lazypodman/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
 GITHUB_FILE="lazypodman_${GITHUB_LATEST_VERSION//v/}_$(uname -s)_${ARCH}.tar.gz"
-GITHUB_URL="https://github.com/lazypodman/lazypodman/releases/download/${GITHUB_LATEST_VERSION}/${GITHUB_FILE}"
+GITHUB_URL="https://github.com/fundokukiri/lazypodman/releases/download/${GITHUB_LATEST_VERSION}/${GITHUB_FILE}"
 
 # install/update the local binary
 curl -L -o lazypodman.tar.gz $GITHUB_URL

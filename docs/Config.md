@@ -96,7 +96,7 @@ stats:
       color: green
 ```
 
-## To see what all of the config options mean, and what other options you can set, see [here](https://godoc.org/github.com/lazypodman/lazypodman/pkg/config)
+## To see what all of the config options mean, and what other options you can set, see [here](https://godoc.org/github.com/fundokukiri/lazypodman/pkg/config)
 
 ## Color Attributes:
 
@@ -132,8 +132,8 @@ customCommands:
 You may use the following go templates (such as `{{ .Container.ID }}` above) in your commands:
 - `{{ .Podman }}`: the podman binary (default: `podman`)
 - `{{ .PodmanCompose }}`: the compose command (default: `podman compose`, falling back to `podman-compose`) 
-- [`{{ .Container }}`](https://pkg.go.dev/github.com/lazypodman/lazypodman@v0.20.0/pkg/commands#Container) and its fields. For example: `{{ .Container.Container.ImageID }}`
-- [`{{ .Service }}`](https://pkg.go.dev/github.com/lazypodman/lazypodman@v0.20.0/pkg/commands#Service) and its fields. For example: `{{ .Service.Name }}`
+- [`{{ .Container }}`](https://pkg.go.dev/github.com/fundokukiri/lazypodman@v0.20.0/pkg/commands#Container) and its fields. For example: `{{ .Container.Container.ImageID }}`
+- [`{{ .Service }}`](https://pkg.go.dev/github.com/fundokukiri/lazypodman@v0.20.0/pkg/commands#Service) and its fields. For example: `{{ .Service.Name }}`
 
 ## Replacements
 

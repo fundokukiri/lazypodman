@@ -1,7 +1,7 @@
 package panels
 
 import (
-	"github.com/lazypodman/lazypodman/pkg/tasks"
+	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/samber/lo"
 )
 

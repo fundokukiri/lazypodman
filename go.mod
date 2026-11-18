@@ -1,4 +1,4 @@
-module github.com/lazypodman/lazypodman
+module github.com/fundokukiri/lazypodman
 
 go 1.22
 

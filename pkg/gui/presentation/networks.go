@@ -1,6 +1,6 @@
 package presentation
 
-import "github.com/lazypodman/lazypodman/pkg/commands"
+import "github.com/fundokukiri/lazypodman/pkg/commands"
 
 func GetNetworkDisplayStrings(network *commands.Network) []string {
 	return []string{network.Network.Driver, network.Name}

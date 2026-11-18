@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lazypodman/lazypodman/pkg/tasks"
+	"github.com/fundokukiri/lazypodman/pkg/tasks"
 )
 
 func (gui *Gui) QueueTask(f func(ctx context.Context)) error {

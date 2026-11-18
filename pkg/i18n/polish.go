@@ -10,7 +10,7 @@ func polishSet() TranslationSet {
 
 		NoViewMachingNewLineFocusedSwitchStatement: "Żaden widok nie odpowiada instrukcji przełączenia newLineFocused",
 
-		ErrorOccurred:                     "Wystąpił błąd! Proszę go zgłosić na https://github.com/lazypodman/lazypodman/issues",
+		ErrorOccurred:                     "Wystąpił błąd! Proszę go zgłosić na https://github.com/fundokukiri/lazypodman/issues",
 		ConnectionFailed:                  "Błąd połączenia z Dockerem. Być może należy go zrestartować.",
 		UnattachableContainerError:        "Kontener nie obsługuje przyczepiania (attach). Musisz albo użyć flag '-it', albo `stdin_open: true, tty: true` w pliku podman-compose.yml.",
 		CannotAttachStoppedContainerError: "Nie można przyczepić się do zatrzymanego kontenera, należy go najpierw uruchomić (co można wykonać wciskając przycisk 'r')",

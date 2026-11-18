@@ -52,7 +52,7 @@ podman system connection list   # shows the endpoint for CONTAINER_HOST
 Dependencies are vendored, so no network access is needed after cloning:
 
 ```sh
-git clone https://github.com/lazypodman/lazypodman.git
+git clone https://github.com/fundokukiri/lazypodman.git
 cd lazypodman
 GOFLAGS=-mod=vendor go build -o lazypodman .
 ./lazypodman

@@ -1,8 +1,8 @@
 package presentation
 
 import (
-	"github.com/lazypodman/lazypodman/pkg/commands"
-	"github.com/lazypodman/lazypodman/pkg/utils"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 )
 
 func GetImageDisplayStrings(image *commands.Image) []string {

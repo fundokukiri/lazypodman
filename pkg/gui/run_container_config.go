@@ -41,10 +41,10 @@ type runFieldGroup struct {
 // runContainerFields is the root menu. Order is also argv order.
 var runContainerFields = []runField{
 	{Key: "name", Flag: "--name", Kind: runTextField},
-	{Key: "command", Kind: runTextField, Default: "image_default"},
-	{Key: "entrypoint", Flag: "--entrypoint", Kind: runTextField, Default: "image_default"},
-	{Key: "workdir", Flag: "--workdir", Kind: runTextField, Default: "image_default"},
-	{Key: "user", Flag: "-u", Kind: runTextField, Default: "image_default"},
+	{Key: "command", Kind: runTextField},
+	{Key: "entrypoint", Flag: "--entrypoint", Kind: runTextField},
+	{Key: "workdir", Flag: "--workdir", Kind: runTextField},
+	{Key: "user", Flag: "-u", Kind: runTextField},
 	{Key: "hostname", Flag: "--hostname", Kind: runTextField, Default: "container_id"},
 	{Key: "ports", Flag: "-p", Kind: runListField},
 	{Key: "volumes", Flag: "-v", Kind: runListField},
@@ -217,7 +217,6 @@ type runContainerState struct {
 	text      map[string]string
 	toggles   map[string]bool
 	lists     map[string][]string
-	dirty     map[string]bool
 }
 
 func newRunContainerState(image string) *runContainerState {
@@ -226,7 +225,6 @@ func newRunContainerState(image string) *runContainerState {
 		text:    map[string]string{},
 		toggles: map[string]bool{},
 		lists:   map[string][]string{},
-		dirty:   map[string]bool{},
 	}
 	state.toggles["detach"] = true
 	state.text["name"] = defaultRunContainerName(image, time.Now())
@@ -325,17 +323,12 @@ func (s *runContainerState) argv(extraArgs string) []string {
 	return args
 }
 
-func (s *runContainerState) markDirty(key string) {
-	s.dirty[key] = true
-}
-
 func (s *runContainerState) addListValue(key, value string) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return
 	}
 	s.lists[key] = append(s.lists[key], value)
-	s.markDirty(key)
 }
 
 func (s *runContainerState) removeListValue(key string, index int) {
@@ -344,7 +337,6 @@ func (s *runContainerState) removeListValue(key string, index int) {
 		return
 	}
 	s.lists[key] = append(values[:index], values[index+1:]...)
-	s.markDirty(key)
 }
 
 func (s *runContainerState) setListValue(key string, index int, value string) {
@@ -353,7 +345,6 @@ func (s *runContainerState) setListValue(key string, index int, value string) {
 		return
 	}
 	s.lists[key][index] = value
-	s.markDirty(key)
 }
 
 func runFieldByKey(key string) runField {

@@ -16,8 +16,9 @@ type CreateMenuOptions struct {
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 	return &panels.SideListPanel[*types.MenuItem]{
 		ListPanel: panels.ListPanel[*types.MenuItem]{
-			List: panels.NewFilteredList[*types.MenuItem](),
-			View: gui.Views.Menu,
+			List:          panels.NewFilteredList[*types.MenuItem](),
+			View:          gui.Views.Menu,
+			WrapSelection: true,
 		},
 		NoItemsMessage: "",
 		Gui:            gui.intoInterface(),

@@ -9,6 +9,9 @@ type ListPanel[T comparable] struct {
 	SelectedIdx int
 	List        *FilteredList[T]
 	View        *gocui.View
+	// WrapSelection makes up/down move from the last item to the first and
+	// back, instead of stopping at the ends. Used by menus.
+	WrapSelection bool
 }
 
 func (self *ListPanel[T]) SetSelectedLineIdx(value int) {
@@ -30,6 +33,15 @@ func (self *ListPanel[T]) clampSelectedLineIdx() {
 
 // moves the cursor up or down by the given amount (up for negative values)
 func (self *ListPanel[T]) moveSelectedLine(delta int) {
+	if self.WrapSelection && self.List.Len() > 0 {
+		next := (self.SelectedIdx + delta) % self.List.Len()
+		if next < 0 {
+			next += self.List.Len()
+		}
+		self.SetSelectedLineIdx(next)
+		return
+	}
+
 	self.SetSelectedLineIdx(self.SelectedIdx + delta)
 }
 

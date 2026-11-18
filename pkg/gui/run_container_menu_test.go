@@ -73,20 +73,16 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 	assert.True(t, strings.HasPrefix(gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "alpine_"))
 	assert.Equal(t, "on", gui.runValueLabel(state, runFieldByKey("detach")))
 	assert.Equal(t, "-", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
-	assert.Equal(t, "image default", gui.runValueLabel(state, runFieldByKey("command")))
-	assert.Equal(t, "unset", gui.runValueLabel(state, runFieldByKey("cpus")))
+	assert.Equal(t, "-", gui.runValueLabel(state, runFieldByKey("command")))
+	assert.Equal(t, "-", gui.runValueLabel(state, runFieldByKey("cpus")))
 
-	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("detach")))
-	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("command")))
-	assert.Equal(t, []string{"Detach", "  ", "on", "  ", "space", "        ", "(default)"}, gui.runColumns("Detach", "on", "space", "(default)"))
+	assert.Equal(t, []string{"Detach", "  ", "on", "  ", "space"}, gui.runColumns("Detach", "on", "space"))
 
 	state.addListValue("ports", "8080:80")
 	assert.Equal(t, "1 items", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
 
 	state.toggles["detach"] = false
-	state.markDirty("detach")
 	assert.Equal(t, "off", gui.runValueLabel(state, runFieldByKey("detach")))
-	assert.Empty(t, gui.runDefaultCell(state, runFieldByKey("detach")))
 }
 
 func TestDockerImageSummaryRepoTagsTypeIsUsed(t *testing.T) {
@@ -101,10 +97,10 @@ func TestRunMenuTableHasGapsBetweenColumns(t *testing.T) {
 	state := newRunContainerState("nginx:alpine")
 
 	rows := [][]string{
-		gui.runColumns("Image", state.image, "enter", ""),
-		gui.runColumns("Name", gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "enter", gui.runDefaultCell(state, runField{Key: "name", Kind: runTextField})),
-		gui.runColumns("Detach", gui.runValueLabel(state, runFieldByKey("detach")), "space", gui.runDefaultCell(state, runFieldByKey("detach"))),
-		gui.runColumns("Ports", gui.runValueLabel(state, runFieldByKey("ports")), "enter/a", gui.runDefaultCell(state, runFieldByKey("ports"))),
+		gui.runColumns("Image", state.image, "enter"),
+		gui.runColumns("Name", gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "enter"),
+		gui.runColumns("Detach", gui.runValueLabel(state, runFieldByKey("detach")), "space"),
+		gui.runColumns("Ports", gui.runValueLabel(state, runFieldByKey("ports")), "enter/a"),
 	}
 
 	table, err := utils.RenderTable(rows)
@@ -113,6 +109,6 @@ func TestRunMenuTableHasGapsBetweenColumns(t *testing.T) {
 	}
 
 	t.Log("\n" + table)
-	assert.Regexp(t, `enter/a {9,}\(default\)`, table)
-	assert.NotContains(t, table, "enter(default)")
+	assert.NotContains(t, table, "(default)")
+	assert.Contains(t, table, "Ports")
 }

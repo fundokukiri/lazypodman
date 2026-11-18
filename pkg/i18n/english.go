@@ -191,6 +191,8 @@ type TranslationSet struct {
 	ToggleMark             string
 	ContainerShellTitle    string
 	ShellTitle             string
+	ShellHeader            string
+	ShellHeaderPod         string
 	AllLogs                string
 	RecentLogs             string
 	JumpToLatest           string
@@ -417,6 +419,8 @@ func englishSet() TranslationSet {
 		ToggleMark:                 "mark/unmark container",
 		ContainerShellTitle:        "container shell",
 		ShellTitle:                 "shell",
+		ShellHeader:                "container: %s · image: %s · status: %s · id: %s",
+		ShellHeaderPod:             " · pod: %s",
 		AllLogs:                    "load all logs",
 		RecentLogs:                 "load recent logs",
 		JumpToLatest:               "jump to latest logs",

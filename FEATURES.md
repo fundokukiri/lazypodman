@@ -78,7 +78,7 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Env / Config / Top | Biến môi trường, cấu hình đầy đủ, tiến trình trong container | Các tab **Env**, **Config**, **Top** |
 | Vòng đời container | start / stop / restart / pause / remove (có xác nhận) | `s` `r` `p` `d` trong Containers; `S` start trong Services |
 | Attach / Exec shell | Vào shell hoặc gắn vào TTY của container | `a` (attach), `ctrl+x` (mở/đóng shell terminal trong tab) |
-| Shell tab (terminal thật) | Terminal đầy đủ (vim/htop/less) ngay trong TUI | Panel Containers → `x` → **exec shell** (hoặc `ctrl+x`); `ctrl+x` lần nữa để đóng |
+| Shell tab (terminal thật) | Terminal đầy đủ (vim/htop/less) ngay trong TUI, có dòng thông tin container ở trên | Panel Containers → `x` → **exec shell** (hoặc `ctrl+x`); `ctrl+x` lần nữa để đóng |
 | Mở port trên browser | Mở port publish đầu tiên (nếu là http) | `w` |
 | Ẩn/hiện container đã dừng | Gọn danh sách | `e` |
 | Services (compose) | Gom container theo compose project/service, chạy up/down | Panel **Services**: `u` up service, `U` up project, `D` down project, `R` restart menu |

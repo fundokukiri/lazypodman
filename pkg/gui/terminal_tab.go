@@ -2,11 +2,13 @@ package gui
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/i18n"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/jesseduffield/gocui"
 )
@@ -219,7 +221,8 @@ func (gui *Gui) terminalSize() (int, int) {
 		return 80, 24
 	}
 
-	return cols, rows
+	// One row is reserved for the container info line.
+	return cols, rows - 1
 }
 
 // layoutTerminalView keeps the terminal view exactly over the main panel's
@@ -239,7 +242,9 @@ func (gui *Gui) layoutTerminalView(g *gocui.Gui) error {
 
 	mainView := gui.Views.Main
 	x0, y0, x1, y1 := mainView.Dimensions()
-	if _, err := g.SetView("terminal", x0, y0, x1, y1, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+
+	// Start one row below the main view's top so its tab titles stay visible.
+	if _, err := g.SetView("terminal", x0, y0+1, x1, y1, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
 		return err
 	}
 
@@ -250,6 +255,9 @@ func (gui *Gui) layoutTerminalView(g *gocui.Gui) error {
 	if cols < 2 || rows < 2 {
 		return nil
 	}
+
+	// The header occupies the first row.
+	rows--
 
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
@@ -282,6 +290,29 @@ func (gui *Gui) renderContainerTerminal(container *commands.Container) tasks.Tas
 	}
 }
 
+// terminalHeader is the info line shown under the tabs while the shell is open.
+func terminalHeader(container *commands.Container, tr *i18n.TranslationSet) string {
+	image := container.Container.Image
+	status := container.Container.Status
+
+	if container.DetailsLoaded() {
+		image = container.Details.Config.Image
+		status = container.Details.State.Status
+	}
+
+	id := container.ID
+	if len(id) > 12 {
+		id = id[:12]
+	}
+
+	header := fmt.Sprintf(tr.ShellHeader, container.Name, image, status, id)
+	if container.PodName != "" {
+		header += fmt.Sprintf(tr.ShellHeaderPod, container.PodName)
+	}
+
+	return header
+}
+
 func (gui *Gui) drawTerminal(container *commands.Container) {
 	state := gui.currentTerminal()
 	if state == nil || state.containerID != container.ID {
@@ -292,7 +323,19 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 	rows, cursorX, cursorY, cursorVisible := state.terminal.Snapshot()
 	state.mutex.Unlock()
 
-	content := strings.Join(trimTerminalRows(rows), "\n")
+	trimmed := trimTerminalRows(rows)
+
+	_, maxRows := gui.Views.Terminal.Size()
+
+	// The first row is the container header; the terminal gets the rest.
+	if maxRows > 1 && len(trimmed) > maxRows-1 {
+		trimmed = trimmed[:maxRows-1]
+	}
+
+	content := terminalHeader(container, gui.Tr)
+	if len(trimmed) > 0 {
+		content += "\n" + strings.Join(trimmed, "\n")
+	}
 
 	gui.g.Update(func(*gocui.Gui) error {
 		if gui.Views.Terminal == nil || !gui.Views.Terminal.Visible {
@@ -302,9 +345,8 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		_ = gui.setViewContent(gui.Views.Terminal, content)
 		gui.g.Cursor = cursorVisible && gui.g.CurrentView() == gui.Views.Terminal
 
-		_, maxY := gui.Views.Terminal.Size()
-		if cursorY >= 0 && cursorY < maxY {
-			_ = gui.Views.Terminal.SetCursor(cursorX, cursorY)
+		if cursorY >= 0 && cursorY+1 < maxRows {
+			_ = gui.Views.Terminal.SetCursor(cursorX, cursorY+1)
 		}
 
 		return nil

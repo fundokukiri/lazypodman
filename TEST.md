@@ -183,6 +183,7 @@ podman run -d --name hc-none docker.io/library/busybox sleep 600
 
 - [ ] J1. Panel Containers, chọn container đang chạy → `x` mở menu options như cũ, trong đó có mục **exec shell** (`ctrl+x`); chưa có tab shell nào trước đó.
 - [ ] J2. Chọn **exec shell** → tab **shell** xuất hiện ngay **sau tab Logs** và được chọn tự động; con trỏ nằm trong vùng terminal.
+  Dòng đầu tiên dưới tab hiện thông tin container: `container: <tên> · image: … · status: … · id: …` (thêm `· pod: …` nếu có).
 - [ ] J3. Gõ `ls -la` → output đúng, màu không có nhưng layout đúng; `top`/`htop` (nếu có) vẽ được toàn màn hình và thoát bằng `q` trong app.
 - [ ] J4. `vim /tmp/x` (nếu image có vim) mở đúng, gõ/xoá/di chuyển bằng mũi tên và `esc` hoạt động trong app.
 - [ ] J5. `ctrl+x` trong shell → shell đóng, tab mất, quay về danh sách container; `ctrl+x` ở panel Containers mở lại được (một phím mở/đóng).

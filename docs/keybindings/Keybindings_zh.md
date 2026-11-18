@@ -114,6 +114,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## 主要
 
 <pre>
+  <kbd>L</kbd>: load all logs
   <kbd>esc</kbd>: 返回
 </pre>
 

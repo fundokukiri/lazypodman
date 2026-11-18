@@ -232,6 +232,10 @@ func (gui *Gui) renderPanelOptions() error {
 		return gui.renderConfirmationOptions()
 	case "terminal":
 		return gui.renderOptionsMap(gui.terminalOptionsMap())
+	case "main":
+		if gui.logsTabActive() {
+			return gui.renderOptionsMap(gui.logsOptionsMap())
+		}
 	}
 	return gui.renderGlobalOptions()
 }

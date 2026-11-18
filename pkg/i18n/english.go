@@ -191,6 +191,8 @@ type TranslationSet struct {
 	ToggleMark             string
 	ContainerShellTitle    string
 	ShellTitle             string
+	AllLogs                string
+	RecentLogs             string
 	ShellCloseHint         string
 	ShellExited            string
 	CloseShell             string
@@ -413,6 +415,8 @@ func englishSet() TranslationSet {
 		ToggleMark:                 "mark/unmark container",
 		ContainerShellTitle:        "container shell",
 		ShellTitle:                 "shell",
+		AllLogs:                    "load all logs",
+		RecentLogs:                 "load recent logs",
 		ShellCloseHint:             "shell open: ctrl+x closes it",
 		ShellExited:                "shell exited",
 		CloseShell:                 "close shell",

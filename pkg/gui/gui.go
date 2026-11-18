@@ -55,6 +55,11 @@ type Gui struct {
 	// terminal is the single interactive shell tab, if one is open.
 	terminal      *terminalState
 	terminalMutex sync.Mutex
+
+	// fullLogs remembers, per container, that the user asked for the whole log
+	// history instead of the default tail.
+	fullLogs      map[string]bool
+	fullLogsMutex sync.Mutex
 }
 
 type Panels struct {

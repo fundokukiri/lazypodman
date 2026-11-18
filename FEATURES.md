@@ -66,7 +66,7 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Tính năng | Công dụng | Cách dùng |
 | --- | --- | --- |
 | Xem container | Danh sách container kèm trạng thái, image, CPU/RAM, health, pod | Panel **Containers** (phím `4`, hoặc `3` khi pods tắt) |
-| Logs container | Xem log trực tiếp, có tuỳ chọn tail | Chọn container → tab **Logs** (hoặc `m`) |
+| Logs container | Xem log trực tiếp, mặc định 200 dòng cuối | Chọn container → tab **Logs** (hoặc `m`) |
 | Stats container | CPU, RAM, network, I/O theo thời gian | Tab **Stats** |
 | Health tab | Trạng thái health, số lần fail, lịch sử probe | Tab **Health** (sau **Stats**) |
 | Events tab | Xem `podman events` trực tiếp (stream) | Tab **Events** trong panel Containers |
@@ -253,7 +253,8 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
 - Health tab hiện những gì inspect trả về (Podman giới hạn số probe), tối đa 20 dòng.
 - Log tab stream trực tiếp như cũ nhưng chỉ giữ 10.000 dòng gần nhất trong view
   (cắt khi vượt 20.000) để RAM không tăng mãi; đặt `logs.tail` (ví dụ `200`) để
-  giảm cả lượng log tải lúc mở tab.
+  giảm cả lượng log tải lúc mở tab. Trong tab Logs, `L` tải toàn bộ lịch sử
+  của container đang chọn, `L` lần nữa quay lại 200 dòng.
 - Exit code healthcheck ngoài `0` chưa được kiểm chứng trên máy thật.
 - Kube: không truyền `--replace` / `--build`; output play/down nằm ở panel chính
   (đổi tab/panel để quay lại nội dung bình thường). Play/down cần thư mục

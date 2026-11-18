@@ -14,7 +14,95 @@ import (
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/fundokukiri/lazypodman/pkg/utils"
+	"github.com/jesseduffield/gocui"
 )
+
+// containerLogTail returns "" (all history) when the user pressed L for this
+// container, otherwise the configured tail (200 by default).
+func (gui *Gui) containerLogTail(container *commands.Container) string {
+	gui.fullLogsMutex.Lock()
+	defer gui.fullLogsMutex.Unlock()
+
+	if gui.fullLogs[container.ID] {
+		return ""
+	}
+
+	return gui.Config.UserConfig.Logs.Tail
+}
+
+func (gui *Gui) logsFullFor(container *commands.Container) bool {
+	gui.fullLogsMutex.Lock()
+	defer gui.fullLogsMutex.Unlock()
+
+	return gui.fullLogs[container.ID]
+}
+
+// toggleFullLogs switches one container between the default tail and all logs
+// and restarts the log task so the new range is fetched.
+func (gui *Gui) toggleFullLogs(container *commands.Container) {
+	gui.fullLogsMutex.Lock()
+	if gui.fullLogs == nil {
+		gui.fullLogs = map[string]bool{}
+	}
+	gui.fullLogs[container.ID] = !gui.fullLogs[container.ID]
+	gui.fullLogsMutex.Unlock()
+
+	// Force the log task to restart with the new tail.
+	if gui.State.Panels != nil && gui.State.Panels.Main != nil {
+		gui.State.Panels.Main.ObjectKey = ""
+	}
+}
+
+// logsTabActive is true when the Containers panel shows its Logs tab, which is
+// the only place the full-history toggle applies.
+func (gui *Gui) logsTabActive() bool {
+	if gui.Panels.Containers == nil || gui.Panels.Containers.ContextState == nil {
+		return false
+	}
+
+	if gui.currentSideViewName() != "containers" {
+		return false
+	}
+
+	return gui.Panels.Containers.ContextState.GetCurrentMainTab().Key == "logs"
+}
+
+func (gui *Gui) handleToggleFullLogs(g *gocui.Gui, v *gocui.View) error {
+	if !gui.logsTabActive() {
+		return nil
+	}
+
+	container, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	gui.toggleFullLogs(container)
+
+	if gui.logsFullFor(container) {
+		gui.flashStatus(gui.Tr.AllLogs)
+	} else {
+		gui.flashStatus(gui.Tr.RecentLogs)
+	}
+
+	return gui.Panels.Containers.HandleSelect()
+}
+
+// logsOptionsMap is the bottom-line help for the Logs tab.
+func (gui *Gui) logsOptionsMap() map[string]string {
+	options := map[string]string{
+		"PgUp/PgDn": gui.Tr.Scroll,
+		"L":         gui.Tr.AllLogs,
+	}
+
+	if gui.Panels.Containers != nil {
+		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.logsFullFor(container) {
+			options["L"] = gui.Tr.RecentLogs
+		}
+	}
+
+	return options
+}
 
 func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
@@ -112,7 +200,7 @@ func (gui *Gui) writeContainerLogs(ctr *commands.Container, ctx context.Context,
 		ShowStderr: true,
 		Timestamps: gui.Config.UserConfig.Logs.Timestamps,
 		Since:      gui.Config.UserConfig.Logs.Since,
-		Tail:       gui.Config.UserConfig.Logs.Tail,
+		Tail:       gui.containerLogTail(ctr),
 		Follow:     true,
 	})
 	if err != nil {

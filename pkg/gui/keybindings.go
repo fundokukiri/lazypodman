@@ -474,6 +474,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "main",
+			Key:         'L',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleFullLogs,
+			Description: gui.Tr.AllLogs,
+		},
+		{
+			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleExitMain,

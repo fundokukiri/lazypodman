@@ -236,6 +236,13 @@ func (gui *Gui) renderPanelOptions() error {
 		if gui.logsTabActive() {
 			return gui.renderOptionsMap(gui.logsOptionsMap())
 		}
+	case "containers":
+		if gui.logsTabActive() {
+			options := gui.globalOptionsMap()
+			options["ctrl+l"] = gui.logsToggleDescription()
+
+			return gui.renderOptionsMap(options)
+		}
 	}
 	return gui.renderGlobalOptions()
 }

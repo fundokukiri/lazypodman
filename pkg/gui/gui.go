@@ -173,14 +173,18 @@ func NewGui(log *logrus.Entry, podmanCommand *commands.PodmanCommand, oSCommand 
 	return gui, nil
 }
 
-func (gui *Gui) renderGlobalOptions() error {
-	return gui.renderOptionsMap(map[string]string{
+func (gui *Gui) globalOptionsMap() map[string]string {
+	return map[string]string{
 		"PgUp/PgDn": gui.Tr.Scroll,
 		"← → ↑ ↓":   gui.Tr.Navigate,
 		"q":         gui.Tr.Quit,
 		"b":         gui.Tr.ViewBulkCommands,
 		"x":         gui.Tr.Menu,
-	})
+	}
+}
+
+func (gui *Gui) renderGlobalOptions() error {
+	return gui.renderOptionsMap(gui.globalOptionsMap())
 }
 
 func (gui *Gui) goEvery(interval time.Duration, function func() error) {

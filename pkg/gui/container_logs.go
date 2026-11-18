@@ -85,7 +85,21 @@ func (gui *Gui) handleToggleFullLogs(g *gocui.Gui, v *gocui.View) error {
 		gui.flashStatus(gui.Tr.RecentLogs)
 	}
 
+	// Reload just this tab. The forced key makes HandleSelect queue a fresh log
+	// task, and that task waits for the old stream to stop before it starts.
 	return gui.Panels.Containers.HandleSelect()
+}
+
+// logsToggleDescription is "load all logs", or "load recent logs" once the full
+// history is already loaded.
+func (gui *Gui) logsToggleDescription() string {
+	if gui.Panels.Containers != nil {
+		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.logsFullFor(container) {
+			return gui.Tr.RecentLogs
+		}
+	}
+
+	return gui.Tr.AllLogs
 }
 
 // logsOptionsMap is the bottom-line help for the Logs tab.
@@ -95,11 +109,7 @@ func (gui *Gui) logsOptionsMap() map[string]string {
 		"ctrl+l":    gui.Tr.AllLogs,
 	}
 
-	if gui.Panels.Containers != nil {
-		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.logsFullFor(container) {
-			options["ctrl+l"] = gui.Tr.RecentLogs
-		}
-	}
+	options["ctrl+l"] = gui.logsToggleDescription()
 
 	return options
 }

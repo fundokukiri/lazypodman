@@ -47,9 +47,10 @@ systemctl --user status podman.socket 2>/dev/null || podman system service --tim
   - Stats: tổng của pod; Containers: đúng 2 container; Config: JSON inspect.
   - Chuyển sang tab khác rồi `pgrep -a podman` → không còn process log treo.
   - Mặc định chỉ tải **200 dòng cuối**; dòng dưới cùng hiện `ctrl+l: load all logs`.
-  - Nhấn `ctrl+l` → tải toàn bộ log của container đó, dòng dưới cùng đổi thành
-    `ctrl+l: load recent logs`; nhấn `ctrl+l` lần nữa quay lại 200 dòng. Container khác
-    vẫn giữ mặc định 200.
+  - Nhấn `ctrl+l` → reload tab, tải toàn bộ log của container đó; dòng dưới cùng
+    (cả khi focus ở panel Containers) đổi thành `ctrl+l: load recent logs`.
+  - Nhấn `ctrl+l` lần nữa → reload tab, quay lại 200 dòng. Container khác vẫn giữ
+    mặc định 200. Trong lúc reload, log cũ không được ghi chồng lên log mới.
 
 - [ ] **A4. Hành động**: `s` stop (có xác nhận), `S` start, `r` restart, `p` pause/unpause, `d` remove + force remove, `b` prune khi có 1 pod đã dừng.
 

@@ -80,6 +80,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Imajlar
 
 <pre>
+  <kbd>r</kbd>: run container
   <kbd>c</kbd>: önceden tanımlanmış özel komutu çalıştır
   <kbd>d</kbd>: imajı kaldır
   <kbd>b</kbd>: view bulk commands

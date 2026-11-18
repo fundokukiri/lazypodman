@@ -16,7 +16,8 @@ projects, logs and stats in one window, every common action one keypress away.
 - ASCII graphs of container CPU/memory, or of any stat path you configure
 - Attach to a container, open an in-app PTY shell tab, view its processes
   (`top`), config and env
-- Start/stop/restart/pause/remove/rebuild containers and services
+- Start/stop/restart/pause/remove/rebuild containers and services, or run a new
+  container from an image with a fully editable menu
 - Inspect image layers, prune containers, images, volumes and networks
 - Custom commands and bulk commands, configured per panel
 - Pods, kube generate/play/down, a Health tab with healthcheck runs, a live
@@ -301,6 +302,21 @@ commands (prune).
   inside the shell.
 - Full-screen apps use their own screen buffer; paging keys belong to the app
   there, so scrollback is available for normal shell output.
+
+### Run a new container
+
+- Select an image and press `r` (also the first item in the `x` menu) to open the
+  run menu. The image is prefilled; everything else is optional, so pressing
+  **Run** without changes runs that image detached with Podman's defaults.
+- `enter` edits a value, `space` toggles a switch. Ports, volumes, env, labels and
+  the other repeatable flags open a list where `enter` edits or deletes a value
+  and **add** creates one.
+- **Advanced** groups the less common flags: network/DNS, storage, resources,
+  security, healthcheck, runtime/image and environment/labels. Anything not in
+  the menu can be typed into **Extra args**.
+- Before anything runs, the full `podman run` command is shown in a confirmation
+  panel. Arguments are passed as an argv slice (never through a shell), and a
+  failure shows Podman's own output. Success refreshes containers and services.
 
 ### Events, multi-select, palette and Quadlet
 

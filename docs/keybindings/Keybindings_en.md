@@ -80,6 +80,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Images
 
 <pre>
+  <kbd>r</kbd>: run container
   <kbd>c</kbd>: run predefined custom command
   <kbd>d</kbd>: remove image
   <kbd>b</kbd>: view bulk commands

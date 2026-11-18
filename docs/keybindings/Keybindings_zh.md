@@ -80,6 +80,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## 镜像
 
 <pre>
+  <kbd>r</kbd>: run container
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>d</kbd>: 移除镜像
   <kbd>b</kbd>: 查看批量命令

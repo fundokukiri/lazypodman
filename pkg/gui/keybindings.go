@@ -405,6 +405,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "images",
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleImagesRunContainer,
+			Description: gui.Tr.RunContainer,
+		},
+		{
+			ViewName:    "images",
 			Key:         'c',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleImagesCustomCommand,

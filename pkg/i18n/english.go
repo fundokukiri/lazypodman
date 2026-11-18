@@ -104,6 +104,25 @@ type TranslationSet struct {
 	ViewRestartOptions          string
 	ExecShell                   string
 	RunCustomCommand            string
+	RunContainer                string
+	RunContainerTitle           string
+	RunContainerAdvanced        string
+	RunContainerBack            string
+	RunContainerAdd             string
+	RunContainerEdit            string
+	RunContainerDelete          string
+	RunContainerEmpty           string
+	RunContainerItems           string
+	RunContainerRun             string
+	RunContainerExtraArgs       string
+	RunContainerConfirmTitle    string
+	RunContainerConfirm         string
+	RunContainerRunningStatus   string
+	RunContainerOn              string
+	RunContainerOff             string
+	RunContainerImage           string
+	RunContainerDefault         string
+	RunContainerLabels          map[string]string
 	ViewBulkCommands            string
 	FilterList                  string
 	OpenInBrowser               string
@@ -300,6 +319,24 @@ func englishSet() TranslationSet {
 		ViewRestartOptions:          "view restart options",
 		ExecShell:                   "exec shell",
 		RunCustomCommand:            "run predefined custom command",
+		RunContainer:                "run container",
+		RunContainerTitle:           "Run container",
+		RunContainerAdvanced:        "Advanced",
+		RunContainerBack:            "back",
+		RunContainerAdd:             "add",
+		RunContainerEdit:            "edit",
+		RunContainerDelete:          "delete",
+		RunContainerEmpty:           "none",
+		RunContainerItems:           "items",
+		RunContainerRun:             "Run",
+		RunContainerExtraArgs:       "Extra args",
+		RunContainerConfirmTitle:    "Confirm",
+		RunContainerConfirm:         "Run this container?",
+		RunContainerRunningStatus:   "Starting container",
+		RunContainerOn:              "on",
+		RunContainerOff:             "off",
+		RunContainerImage:           "Image",
+		RunContainerDefault:         "default",
 		ViewBulkCommands:            "view bulk commands",
 		FilterList:                  "filter list",
 		OpenInBrowser:               "open in browser (first port is http)",
@@ -452,5 +489,62 @@ func englishSet() TranslationSet {
 		KubeDownConfirm:      "Stop and remove the pods defined in:\n%s",
 		KubePlayHeader:       "# playing %s",
 		KubeDownHeader:       "# down %s",
+
+		RunContainerLabels: map[string]string{
+			"image": "Image",
+			"name":  "Name", "command": "Command", "entrypoint": "Entrypoint",
+			"workdir": "Working dir", "user": "User", "hostname": "Hostname",
+			"ports": "Ports", "volumes": "Volumes", "env": "Env", "labels": "Labels",
+			"network": "Network", "restart": "Restart", "detach": "Detach",
+			"rm": "Auto-remove", "interactive": "Interactive", "tty": "TTY",
+			"network_group": "Network & DNS", "storage_group": "Storage",
+			"resources_group": "Resources", "security_group": "Security",
+			"health_group": "Healthcheck", "runtime_group": "Runtime & image",
+			"environment_group": "Environment & labels",
+			"publish_all":       "Publish all ports", "expose": "Expose", "network_alias": "Network alias",
+			"ip": "Static IPv4", "ip6": "Static IPv6", "mac": "MAC address", "dns": "DNS",
+			"dns_search": "DNS search", "dns_option": "DNS option", "add_host": "Add host",
+			"hosts_file": "Hosts file", "ipc": "IPC namespace", "pid": "PID namespace",
+			"uts": "UTS namespace", "cgroupns": "Cgroup namespace", "pod": "Pod",
+			"userns": "User namespace", "uidmap": "UID map", "gidmap": "GID map",
+			"subuidname": "Subuid name", "subgidname": "Subgid name",
+			"mount": "Mount", "tmpfs": "Tmpfs", "volumes_from": "Volumes from",
+			"read_only": "Read-only rootfs", "image_volume": "Image volume",
+			"chrootdirs": "Chroot dirs", "cpus": "CPUs", "cpuset_cpus": "CPU set",
+			"cpu_shares": "CPU shares", "cpu_period": "CPU period", "cpu_quota": "CPU quota",
+			"memory": "Memory", "memory_reservation": "Memory reservation",
+			"memory_swap": "Memory swap", "memory_swappiness": "Memory swappiness",
+			"shm_size": "SHM size", "pids_limit": "PIDs limit", "ulimit": "Ulimit",
+			"blkio_weight": "Block IO weight", "device_read_bps": "Device read BPS",
+			"device_write_bps": "Device write BPS", "device_read_iops": "Device read IOPS",
+			"device_write_iops": "Device write IOPS", "oom_score_adj": "OOM score adj",
+			"oom_kill_disable": "Disable OOM killer", "privileged": "Privileged",
+			"cap_add": "Cap add", "cap_drop": "Cap drop", "security_opt": "Security opt",
+			"seccomp_policy": "Seccomp policy", "device": "Device",
+			"device_cgroup_rule": "Device cgroup rule", "group_add": "Group add",
+			"gpus": "GPUs", "no_new_privileges": "No new privileges",
+			"health_cmd": "Health command", "health_interval": "Health interval",
+			"health_timeout": "Health timeout", "health_retries": "Health retries",
+			"health_start_period": "Health start period", "health_start_interval": "Health start interval",
+			"health_startup_cmd": "Startup health command", "health_startup_interval": "Startup health interval",
+			"health_startup_retries": "Startup health retries", "health_startup_success": "Startup health successes",
+			"health_on_failure": "Health on failure", "health_log_destination": "Health log destination",
+			"health_max_log_count": "Health log max count", "health_max_log_size": "Health log max size",
+			"no_healthcheck": "Disable healthcheck", "init": "Init", "systemd": "Systemd",
+			"sdnotify": "Sdnotify", "stop_signal": "Stop signal", "stop_timeout": "Stop timeout",
+			"timeout": "Run timeout", "log_driver": "Log driver", "log_opt": "Log option",
+			"pull": "Pull policy", "retry": "Pull retries", "retry_delay": "Pull retry delay",
+			"platform": "Platform", "arch": "Architecture", "os": "OS", "variant": "Variant",
+			"cidfile": "CID file", "pidfile": "PID file", "conmon_pidfile": "Conmon PID file",
+			"replace": "Replace same name", "requires": "Requires", "tz": "Timezone",
+			"umask": "Umask", "detach_keys": "Detach keys", "attach": "Attach",
+			"sig_proxy": "Signal proxy", "http_proxy": "HTTP proxy", "tls_verify": "TLS verify",
+			"authfile": "Auth file", "creds": "Credentials", "cert_dir": "Cert dir",
+			"env_file": "Env file", "env_host": "Host env", "env_merge": "Env merge",
+			"unsetenv": "Unset env", "unsetenv_all": "Unset all env",
+			"label_file": "Label file", "annotation": "Annotation",
+			"preserve_fds": "Preserve FDs", "preserve_fd": "Preserve FD",
+			"personality": "Personality",
+		},
 	}
 }

@@ -141,9 +141,16 @@ func (gui *Gui) closeContainerTerminal() error {
 		if err := gui.returnFocus(); err != nil {
 			return err
 		}
-
-		gui.Panels.Containers.ContextState.SetMainTabIndex(0)
 	}
+
+	// Always land back on Logs. Without this the tab index still points at the
+	// removed shell tab (or at whatever tooltip title was last rendered), so the
+	// label and the visible content disagreed.
+	gui.Panels.Containers.ContextState.SetMainTabIndex(0)
+
+	// Force a re-render so the tab list drops the shell tab even when Logs was
+	// already the current context.
+	gui.State.Panels.Main.ObjectKey = ""
 
 	return gui.Panels.Containers.HandleSelect()
 }

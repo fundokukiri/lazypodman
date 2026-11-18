@@ -635,14 +635,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				ViewName:    panel.GetView().Name(),
 				Key:         '[',
 				Modifier:    gocui.ModNone,
-				Handler:     wrappedHandler(panel.HandlePrevMainTab),
+				Handler:     func(*gocui.Gui, *gocui.View) error { return gui.switchMainTab(panel.GetView().Name(), false) },
 				Description: gui.Tr.PreviousContext,
 			},
 			&Binding{
 				ViewName:    panel.GetView().Name(),
 				Key:         ']',
 				Modifier:    gocui.ModNone,
-				Handler:     wrappedHandler(panel.HandleNextMainTab),
+				Handler:     func(*gocui.Gui, *gocui.View) error { return gui.switchMainTab(panel.GetView().Name(), true) },
 				Description: gui.Tr.NextContext,
 			},
 		)

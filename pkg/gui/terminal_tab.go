@@ -329,6 +329,36 @@ func trimTerminalRows(rows []string) []string {
 	return trimmed
 }
 
+// switchMainTab changes the main tab and, when the shell tab becomes visible,
+// focuses the terminal so the user can type immediately instead of pressing
+// enter first.
+func (gui *Gui) switchMainTab(viewName string, next bool) error {
+	for _, panel := range gui.allSidePanels() {
+		if panel.GetView().Name() != viewName {
+			continue
+		}
+
+		var err error
+		if next {
+			err = panel.HandleNextMainTab()
+		} else {
+			err = panel.HandlePrevMainTab()
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if viewName == "containers" && gui.shellTabActive() && gui.currentTerminal() != nil {
+			return gui.focusTerminalView()
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
 // leaveTerminalFocus keeps the shell running but gives the keyboard back to the
 // containers panel, so [ ] and the rest of the UI work again.
 func (gui *Gui) leaveTerminalFocus() error {

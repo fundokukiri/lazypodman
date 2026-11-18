@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Events tab** on the containers panel streaming `podman events` verbatim; the
+  stream dies with the tab and shows `cli off: <reason>` instead of spawning when
+  the CLI is unavailable.
+- **Multi-select** with `space` on the containers panel: while containers are
+  marked, `s`/`r`/`p`/`d` act on all of them and confirm with the count.
+- **Command palette** (`ctrl+p`) listing panel jumps, the kube menu, a healthcheck
+  run, `podman auto-update` and quit, using the same handlers as the keys.
+- **Quadlet export** (`Q` on the containers panel) writing a readable
+  `.container` unit to `gui.quadletDir` (default
+  `<user config dir>/containers/systemd`) with mode `0600` after a preview and a
+  confirmation naming the full path.
+- **`podman auto-update`** entry in the containers bulk menu, confirmed first and
+  streamed into the main panel.
 - **Kube menu** (`g` on the pods panel): generate a Kubernetes YAML file from a
   pod, or play/down a manifest from `gui.kubeDir` (default
   `<user config dir>/lazypodman/kube`). Generated files are written with mode

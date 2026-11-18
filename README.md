@@ -17,6 +17,9 @@ projects, logs and stats in one window, every common action one keypress away.
 - Start/stop/restart/pause/remove/rebuild containers and services
 - Inspect image layers, prune containers, images, volumes and networks
 - Custom commands and bulk commands, configured per panel
+- Pods, kube generate/play/down, a Health tab with healthcheck runs, a live
+  `podman events` tab, multi-select, a command palette, Quadlet export and
+  `podman auto-update`
 - Mouse support, filterable lists, 8 UI languages
 
 ---
@@ -224,7 +227,7 @@ numbers (`1`…`6`).
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
 `r` restart · `a` attach · `m` logs · `t` run healthcheck · `E` exec shell ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
-browser.
+browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
 The **Health** tab shows the health status, the failing streak and the recorded
 probes (newest first) from the container inspect data, so it costs no extra
@@ -261,6 +264,33 @@ The kube menu keeps manifests in `gui.kubeDir` (default
 
 **Images, Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
 commands (prune).
+
+### Events, multi-select, palette and Quadlet
+
+- The **Events** tab (Containers panel, last tab) streams `podman events`
+  verbatim. The stream is tied to the tab: switching away kills the child.
+  Without a usable Podman CLI the tab says `cli off: <reason>` and spawns
+  nothing.
+- `space` marks a container. While anything is marked, `s` (stop), `r`
+  (restart), `p` (pause/unpause) and `d` (remove) act on every marked container
+  and the confirmation names the count. A successful action clears the marks;
+  `space` on a marked row unmarks it. Marks are keyed by container ID, so they
+  survive a list refresh.
+- `ctrl+p` opens the **command palette**: jump to any panel, the kube menu, a
+  healthcheck run, `podman auto-update`, or quit. It calls the same handlers as
+  the keys, so it cannot drift from them.
+- `Q` exports the selected container as a Quadlet `.container` unit. The preview
+  is shown first; the file goes to `gui.quadletDir` (default
+  `<user config dir>/containers/systemd`, where Podman looks for user units) as
+  `0600` after a confirmation naming the full path. The unit contains
+  `Image=`, `ContainerName=`, `Environment=` (plaintext!), `Exec=`,
+  `PublishPort=`, `Volume=`, `Network=` and a `[Service]`/`[Install]` section.
+  It is a readable starting point, not a complete translation of every inspect
+  field; the generator does not run `systemctl` or enable anything.
+- `podman auto-update` is available in the Containers panel bulk menu (`b`). It
+  confirms first, then streams the output into the main panel and refreshes the
+  container list. It updates only containers that carry the auto-update label,
+  regardless of the current selection.
 
 The full generated list for every language lives in
 [docs/keybindings](/docs/keybindings) and can be regenerated with

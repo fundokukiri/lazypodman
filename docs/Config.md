@@ -228,3 +228,32 @@ replacements:
     '123456789012.dkr.ecr.us-east-1.amazonaws.com': '<prod>'
     '923456789999.dkr.ecr.us-east-1.amazonaws.com': '<dev>'
 ```
+
+## Quadlet
+
+`Q` on the containers panel exports the selected container as a Quadlet
+`.container` unit. The unit is built from container inspect data, shown as a
+preview first, and written as `0600` only after a confirmation naming the full
+path.
+
+```yaml
+gui:
+  quadletDir: ""   # default: <user config dir>/containers/systemd
+```
+
+`~` is expanded. The default is the directory Podman reads user units from, so
+`systemctl --user daemon-reload` then `systemctl --user start <name>` can pick the
+file up. lazypodman itself never calls `systemctl`.
+
+The generated file contains `Image=`, `ContainerName=`, `Environment=` (values are
+plaintext, the prompt warns about it), `Exec=`, `PublishPort=`, `Volume=`,
+`Network=` plus `[Service]` and `[Install]` sections. It is a readable starting
+point, not a full translation of every inspect field.
+
+## Auto-update
+
+The Containers bulk menu (`b`) has an `Auto-update containers` entry that runs
+`podman auto-update` after a confirmation and streams the output into the main
+panel. It acts on every container that carries the auto-update label, not on the
+current selection or marks. There is no config key; remove the entry with
+`bulkCommands.containers` overrides if you do not want it.

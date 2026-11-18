@@ -69,6 +69,11 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Logs container | Xem log trực tiếp, có tuỳ chọn tail | Chọn container → tab **Logs** (hoặc `m`) |
 | Stats container | CPU, RAM, network, I/O theo thời gian | Tab **Stats** |
 | Health tab | Trạng thái health, số lần fail, lịch sử probe | Tab **Health** (sau **Stats**) |
+| Events tab | Xem `podman events` trực tiếp (stream) | Tab **Events** trong panel Containers |
+| Chọn nhiều (multi-select) | Đánh dấu nhiều container rồi stop/restart/pause/remove một lượt | `space` để đánh dấu, rồi `s` `r` `p` `d` trong Containers |
+| Command palette | Danh sách hành động để nhảy nhanh, không cần nhớ phím | `ctrl+p` |
+| Quadlet export | Xuất container ra file `.container` cho Quadlet | Panel Containers → `Q` (preview rồi xác nhận) |
+| Auto-update | Chạy `podman auto-update`, xem output trực tiếp | Panel Containers → `b` → **Auto-update containers** |
 | Chạy healthcheck | Chạy `podman healthcheck run` một lần | Panel Containers → `t` |
 | Env / Config / Top | Biến môi trường, cấu hình đầy đủ, tiến trình trong container | Các tab **Env**, **Config**, **Top** |
 | Vòng đời container | start / stop / restart / pause / remove (có xác nhận) | `s` `r` `p` `d` trong Containers; `S` start trong Services |
@@ -250,12 +255,18 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
   (đổi tab/panel để quay lại nội dung bình thường). Play/down cần thư mục
   `gui.kubeDir` tồn tại, còn generate thì tự tạo.
 - Kube chỉ có trong panel Pods, nên máy chỉ có socket (không có CLI) không dùng được.
+- Events tab và auto-update cần CLI `podman`; không có CLI thì tab Events ghi
+  `cli off:` và không spawn gì, còn auto-update chỉ hiện thông báo.
+- Quadlet export ghi file `.container` là điểm bắt đầu dễ đọc, không dịch toàn bộ
+  mọi field của inspect; env trong unit là plaintext; app không chạy `systemctl`.
+- Multi-select đánh dấu theo ID container; refresh danh sách không làm mất dấu,
+  nhưng container bị xoá khỏi danh sách thì mất khỏi lựa chọn.
 
 
 ## 13. Chưa có (đừng tìm)
 
-- Command palette, chọn nhiều mục (multi-select), tab Events.
-- Quadlet / auto-update, push/pull image, secrets, podman machine.
+- Push/pull image, secrets, podman machine, `podman generate systemd` (chỉ có Quadlet
+  export dạng file, không gọi `systemctl`).
 
 ## 14. Mức kiểm chứng của tài liệu này
 

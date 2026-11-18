@@ -423,11 +423,14 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		}
 
 		_ = gui.setViewContent(gui.Views.Terminal, content)
-		gui.g.Cursor = cursorVisible && gui.g.CurrentView() == gui.Views.Terminal
 
 		state.mutex.Lock()
 		offset := state.scrollOffset
 		state.mutex.Unlock()
+
+		// Hide the caret while paging: it belongs to the live screen, not to the
+		// history window, so leaving it visible makes it float over old output.
+		gui.g.Cursor = offset == 0 && cursorVisible && gui.g.CurrentView() == gui.Views.Terminal
 
 		if offset == 0 && cursorY >= 0 && cursorY+1 < maxRows {
 			_ = gui.Views.Terminal.SetCursor(cursorX, cursorY+1)

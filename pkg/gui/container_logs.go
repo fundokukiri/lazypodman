@@ -16,6 +16,7 @@ import (
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/fundokukiri/lazypodman/pkg/utils"
+	"github.com/jesseduffield/gocui"
 )
 
 func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.TaskFunc {
@@ -47,9 +48,10 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 		streamDone <- gui.writeContainerLogs(container, ctx, logs)
 	}()
 
-	ticker := time.NewTicker(time.Millisecond * 50)
+	ticker := time.NewTicker(time.Millisecond * 100)
 	defer ticker.Stop()
 
+	rendered := -1
 	waitForRestart := false
 
 	for {
@@ -57,7 +59,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 		case <-ctx.Done():
 			return
 		case err := <-streamDone:
-			gui.flushLogs(logs)
+			gui.flushLogs(logs, &rendered)
 
 			if err != nil {
 				gui.Log.Error(err)
@@ -68,7 +70,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 			// restart so the log stream is re-read.
 			waitForRestart = true
 		case <-ticker.C:
-			gui.flushLogs(logs)
+			gui.flushLogs(logs, &rendered)
 
 			if !waitForRestart {
 				continue
@@ -93,17 +95,14 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 const maxLogLines = 5000
 
 // logAccumulator implements io.Writer and keeps the last maxLogLines complete
-// lines plus any partial line. It also remembers what the view has already shown,
-// so a flush appends new lines instead of re-rendering the whole buffer (which
-// stalled the UI on long logs).
+// lines plus any partial line. version changes whenever the content changes, so
+// the renderer can skip identical frames.
 type logAccumulator struct {
-	mutex    sync.Mutex
-	lines    []string
-	partial  string
-	total    int
-	consumed int
-	started  bool
-	max      int
+	mutex   sync.Mutex
+	lines   []string
+	partial string
+	version int
+	max     int
 }
 
 func newLogAccumulator(max int) *logAccumulator {
@@ -122,40 +121,13 @@ func (a *logAccumulator) Write(p []byte) (int, error) {
 		a.lines = append([]string(nil), a.lines[len(a.lines)-a.max:]...)
 	}
 
-	a.total += len(parts) - 1
+	a.version++
 
 	return len(p), nil
 }
 
-// take returns the lines the view has not shown yet. The first call returns the
-// whole buffer (initial render); later calls return only the new lines.
-func (a *logAccumulator) take() (initial bool, lines []string) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
-	if !a.started {
-		a.started = true
-		a.consumed = a.total
-
-		return true, append([]string(nil), a.lines...)
-	}
-
-	fresh := a.total - a.consumed
-	if fresh <= 0 {
-		return false, nil
-	}
-
-	if fresh > len(a.lines) {
-		fresh = len(a.lines)
-	}
-
-	a.consumed = a.total
-
-	return false, append([]string(nil), a.lines[len(a.lines)-fresh:]...)
-}
-
-// snapshot is kept for tests: it returns everything currently buffered.
-func (a *logAccumulator) snapshot() string {
+// snapshot returns the text to render and its version.
+func (a *logAccumulator) snapshot() (string, int) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
@@ -164,33 +136,26 @@ func (a *logAccumulator) snapshot() string {
 		lines = append(append([]string(nil), lines...), a.partial)
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n"), a.version
 }
 
-func (gui *Gui) flushLogs(logs *logAccumulator) {
-	initial, lines := logs.take()
-	if len(lines) == 0 {
+func (gui *Gui) flushLogs(logs *logAccumulator, rendered *int) {
+	content, version := logs.snapshot()
+	if version == *rendered {
 		return
 	}
 
-	view := gui.Views.Main
-	if view == nil {
-		return
-	}
+	*rendered = version
 
-	if initial {
-		// One atomic replace: autoscroll then pins the frame to the bottom, so
-		// the log never paints from the top first. Written directly (no
-		// g.Update) because the task manager waits for this goroutine when the
-		// tab changes, and a queued update could deadlock that wait.
-		_ = gui.setViewContent(view, strings.Join(lines, "\n"))
+	// Autoscroll on the main view pins the origin to the last line when the
+	// frame is drawn, so the whole buffer appears at once at the bottom.
+	gui.g.Update(func(*gocui.Gui) error {
+		if gui.Views.Main == nil {
+			return nil
+		}
 
-		return
-	}
-
-	for _, line := range lines {
-		fmt.Fprintln(view, line)
-	}
+		return gui.setViewContent(gui.Views.Main, content)
+	})
 }
 
 func (gui *Gui) renderLogsToStdout(container *commands.Container) {

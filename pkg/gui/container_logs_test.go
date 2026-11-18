@@ -15,7 +15,7 @@ func TestLogAccumulatorJoinsWritesAndPartialLines(t *testing.T) {
 	_, err = logs.Write([]byte("o\nthree\n"))
 	assert.NoError(t, err)
 
-	content := logs.snapshot()
+	content, _ := logs.snapshot()
 	assert.Equal(t, "one\ntwo\nthree", content)
 }
 
@@ -25,40 +25,21 @@ func TestLogAccumulatorKeepsLastLinesOnly(t *testing.T) {
 	_, err := logs.Write([]byte(strings.Repeat("line\n", 10)))
 	assert.NoError(t, err)
 
-	content := logs.snapshot()
+	content, _ := logs.snapshot()
 	assert.Equal(t, "line\nline\nline", content)
 }
 
-func TestLogAccumulatorTakeReturnsOnlyNewLines(t *testing.T) {
+func TestLogAccumulatorVersionChangesOnlyWithContent(t *testing.T) {
 	logs := newLogAccumulator(10)
 
-	_, _ = logs.Write([]byte("one\n"))
+	_, _ = logs.Write([]byte("hello\n"))
+	_, first := logs.snapshot()
 
-	initial, lines := logs.take()
-	assert.True(t, initial)
-	assert.Equal(t, []string{"one"}, lines)
+	content, second := logs.snapshot()
+	assert.Equal(t, first, second, "reading twice must not change the version")
+	assert.Equal(t, "hello", content)
 
-	_, lines = logs.take()
-	assert.Empty(t, lines, "nothing new since the last take")
-
-	_, _ = logs.Write([]byte("two\nthree\n"))
-
-	initial, lines = logs.take()
-	assert.False(t, initial)
-	assert.Equal(t, []string{"two", "three"}, lines)
-}
-
-func TestLogAccumulatorTakeAfterDrop(t *testing.T) {
-	logs := newLogAccumulator(2)
-
-	_, _ = logs.Write([]byte(strings.Repeat("line\n", 5)))
-
-	initial, lines := logs.take()
-	assert.True(t, initial)
-	assert.Equal(t, []string{"line", "line"}, lines, "keeps only the cap")
-
-	_, _ = logs.Write([]byte("next\n"))
-
-	_, lines = logs.take()
-	assert.Equal(t, []string{"next"}, lines)
+	_, _ = logs.Write([]byte("world\n"))
+	_, third := logs.snapshot()
+	assert.NotEqual(t, first, third)
 }

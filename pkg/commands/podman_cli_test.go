@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -477,4 +478,84 @@ func TestParsePodmanInfo(t *testing.T) {
 		_, _, ok := parsePodmanInfo(in)
 		assert.False(t, ok, in)
 	}
+}
+
+func TestHealthcheckRunReturnsExitCode(t *testing.T) {
+	binary, argvFile, stdoutFile, stderrFile := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte("probe ok\n"), 0o600))
+	requireNoError(t, os.WriteFile(stderrFile, []byte("probe stderr\n"), 0o600))
+
+	client := &cliPodmanClient{binary: binary}
+
+	output, code, err := client.HealthcheckRun(context.Background(), "web")
+	requireNoError(t, err)
+	assert.Equal(t, 0, code)
+	assert.Contains(t, output, "probe ok")
+	assert.Contains(t, output, "probe stderr")
+	assert.Equal(t, "[healthcheck]\n[run]\n[--]\n[web]\n---\n", readRecordedArgv(t, argvFile))
+
+	for _, want := range []int{1, 2, 125} {
+		t.Setenv("FAKE_EXIT", strconv.Itoa(want))
+
+		_, code, err := client.HealthcheckRun(context.Background(), "web")
+		requireNoError(t, err)
+		assert.Equal(t, want, code, "an exit status is a result, not an error")
+	}
+}
+
+func TestHealthcheckRunSpawnFailure(t *testing.T) {
+	client := &cliPodmanClient{binary: filepath.Join(t.TempDir(), "missing-podman")}
+
+	_, _, err := client.HealthcheckRun(context.Background(), "web")
+	assert.Error(t, err)
+}
+
+func TestHealthcheckRunRejectsFlagLikeRef(t *testing.T) {
+	client := &cliPodmanClient{binary: "podman"}
+
+	_, _, err := client.HealthcheckRun(context.Background(), "--all")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid pod reference")
+}
+
+func TestProbeHealthcheck(t *testing.T) {
+	t.Run("available", func(t *testing.T) {
+		binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+		requireNoError(t, os.WriteFile(stdoutFile, []byte("--follow\n"), 0o600))
+
+		capability := (&cliPodmanClient{binary: binary}).ProbeHealthcheck(context.Background())
+
+		assert.Equal(t, CapabilityAvailable, capability.State)
+		assert.Equal(t, "[healthcheck]\n[run]\n[--help]\n---\n", readRecordedArgv(t, argvFile))
+	})
+
+	t.Run("subcommand missing is permanent", func(t *testing.T) {
+		binary, _, _, _ := writeFakePodmanScript(t)
+		t.Setenv("FAKE_EXIT", "2")
+
+		capability := (&cliPodmanClient{binary: binary}).ProbeHealthcheck(context.Background())
+
+		assert.Equal(t, CapabilityUnavailable, capability.State)
+		assert.Equal(t, "no healthcheck subcommand", capability.Reason)
+		assert.False(t, capability.Transient, "a missing subcommand is never re-probed")
+	})
+
+	t.Run("timeout is transient", func(t *testing.T) {
+		oldBudget := healthcheckProbeBudget
+		healthcheckProbeBudget = 50 * time.Millisecond
+		t.Cleanup(func() { healthcheckProbeBudget = oldBudget })
+
+		if runtime.GOOS == "windows" {
+			t.Skip("fake podman script requires a POSIX shell")
+		}
+
+		dir := t.TempDir()
+		binary := filepath.Join(dir, "podman")
+		requireNoError(t, os.WriteFile(binary, []byte("#!/bin/sh\nsleep 5\n"), 0o755))
+
+		capability := (&cliPodmanClient{binary: binary}).ProbeHealthcheck(context.Background())
+
+		assert.Equal(t, CapabilityUnavailable, capability.State)
+		assert.True(t, capability.Transient, "a timeout may be retried")
+	})
 }

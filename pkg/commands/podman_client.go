@@ -22,6 +22,13 @@ type PodmanClient interface {
 	PodAction(ctx context.Context, verb, ref string, extra ...string) error
 	PodPrune(ctx context.Context) error
 	PodLogs(ctx context.Context, pod *Pod, containers []*Container, tail int) (io.ReadCloser, error)
+
+	// HealthcheckRun runs one probe of a container healthcheck. The returned exit
+	// code is a result, not an error.
+	HealthcheckRun(ctx context.Context, ref string) (string, int, error)
+
+	// ProbeHealthcheck reports whether the CLI has a healthcheck subcommand.
+	ProbeHealthcheck(ctx context.Context) Capability
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

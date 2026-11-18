@@ -594,3 +594,82 @@ func podLogArgvs(pod *Pod, containers []*Container, tail int, merged bool) (argv
 
 	return argvs, omitted
 }
+
+// healthcheckBudget bounds one manual probe run. A hanging probe must not pin the
+// waiting status forever.
+const healthcheckBudget = 10 * time.Second
+
+// healthcheckProbeBudget bounds the capability probe. It is a variable so tests
+// can shrink it.
+var healthcheckProbeBudget = 5 * time.Second
+
+// ProbeHealthcheck asks the CLI whether it has a healthcheck subcommand. It never
+// returns an error: the answer is the capability. A timeout is transient (retry
+// later), a missing subcommand is not.
+func (c *cliPodmanClient) ProbeHealthcheck(ctx context.Context) Capability {
+	ctx, cancel := context.WithTimeout(ctx, healthcheckProbeBudget)
+	defer cancel()
+
+	_, err := c.run(ctx, "healthcheck", "run", "--help")
+	if err == nil {
+		return Capability{State: CapabilityAvailable}
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		return Capability{
+			State:     CapabilityUnavailable,
+			Reason:    "probe timed out",
+			Detail:    err.Error(),
+			Transient: true,
+		}
+	}
+
+	return Capability{
+		State:  CapabilityUnavailable,
+		Reason: "no healthcheck subcommand",
+		Detail: err.Error(),
+	}
+}
+
+// HealthcheckRun runs exactly one probe of the container's healthcheck.
+//
+// A real exit status is returned as a code with a nil error: exit 1 means the
+// container is unhealthy, which is a result, not a failure. Only a process that
+// could not run (or was killed) returns an error. Exit codes beyond the documented
+// 0/1/2 are UNVERIFIED; callers treat anything else as an error.
+func (c *cliPodmanClient) HealthcheckRun(ctx context.Context, ref string) (string, int, error) {
+	if err := validatePodRef(ref); err != nil {
+		return "", 0, err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, healthcheckBudget)
+	defer cancel()
+
+	command := exec.CommandContext(ctx, c.binary, "healthcheck", "run", "--", ref)
+
+	var stdout, stderr bytes.Buffer
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+	command.Cancel = func() error { return command.Process.Kill() }
+	command.WaitDelay = 2 * time.Second
+
+	err := command.Run()
+	output := stdout.String() + stderr.String()
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		code := exitErr.ExitCode()
+		if code < 0 {
+			// Killed by a signal (including our own timeout): no usable result.
+			return output, 0, err
+		}
+
+		return output, code, nil
+	}
+
+	if err != nil {
+		return output, 0, err
+	}
+
+	return output, 0, nil
+}

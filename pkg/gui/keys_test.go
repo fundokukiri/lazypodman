@@ -32,6 +32,14 @@ func (fakeEnabledPodClient) PodAction(context.Context, string, string, ...string
 	return nil
 }
 func (fakeEnabledPodClient) PodPrune(context.Context) error { return nil }
+func (fakeEnabledPodClient) HealthcheckRun(context.Context, string) (string, int, error) {
+	return "", 0, nil
+}
+
+func (fakeEnabledPodClient) ProbeHealthcheck(context.Context) commands.Capability {
+	return commands.Capability{State: commands.CapabilityAvailable}
+}
+
 func (fakeEnabledPodClient) PodLogs(context.Context, *commands.Pod, []*commands.Container, int) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader("")), nil
 }

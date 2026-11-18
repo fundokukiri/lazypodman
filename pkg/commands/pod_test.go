@@ -123,6 +123,13 @@ type fakePodClient struct {
 
 	listCalls int
 	psCalls   int
+
+	healthCalls     int
+	probeCalls      int
+	healthOutput    string
+	healthExit      int
+	healthErr       error
+	probeCapability Capability
 }
 
 func (f *fakePodClient) Enabled() bool   { return f.enabled }
@@ -246,4 +253,16 @@ func TestAggregatePodStats(t *testing.T) {
 	empty := AggregatePodStats(nil)
 	assert.Zero(t, empty.CPU)
 	assert.Zero(t, empty.MemUsage)
+}
+
+func (f *fakePodClient) HealthcheckRun(_ context.Context, _ string) (string, int, error) {
+	f.healthCalls++
+
+	return f.healthOutput, f.healthExit, f.healthErr
+}
+
+func (f *fakePodClient) ProbeHealthcheck(_ context.Context) Capability {
+	f.probeCalls++
+
+	return f.probeCapability
 }

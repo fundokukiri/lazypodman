@@ -204,3 +204,13 @@ podman run -d --name hc-none docker.io/library/busybox sleep 600
 Khi xong, các chỗ đang ghi "chưa kiểm chứng" trong
 `docs/superpowers/specs/2026-11-18-healthcheck-design.md` và
 `docs/superpowers/plans/2026-11-18-*.md` sẽ được cập nhật theo bảng này.
+
+## Tài liệu liên quan
+
+- Design + plan từng phase: `docs/superpowers/specs/`, `docs/superpowers/plans/`
+  - Pods: `2026-11-18-pods-design.md`, `2026-11-18-pods.md`
+  - Healthcheck: `2026-11-18-healthcheck-design.md`, `2026-11-18-healthcheck.md`
+  - Kube: `2026-11-18-kube-design.md`, `2026-11-18-kube.md`
+  - UX (Events / multi-select / palette): `2026-11-18-ux-design.md`, `2026-11-18-ux.md`
+  - Quadlet + auto-update: `2026-11-18-quadlet-design.md`, `2026-11-18-quadlet.md`
+- Bảng "Verification status" cuối mỗi design là nơi cần cập nhật sau khi bạn chạy xong.

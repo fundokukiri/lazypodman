@@ -471,6 +471,12 @@ GOFLAGS=-mod=vendor go run ./scripts/cheatsheet generate
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md).
 
+Design records for the Podman-native features live in
+[docs/superpowers/specs](docs/superpowers/specs) (pods, healthcheck, kube, UX,
+Quadlet), with the matching plans in [docs/superpowers/plans](docs/superpowers/plans).
+Every behaviour that depends on a real Podman is still waiting for a human run of
+[TEST.md](TEST.md).
+
 ---
 
 ## License

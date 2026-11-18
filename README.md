@@ -109,6 +109,48 @@ podman compose run --rm lazypodman   # or: podman-compose run --rm lazypodman
 echo "alias lzp='lazypodman'" >> ~/.zshrc   # or ~/.bashrc
 ```
 
+### Uninstall
+
+Nothing runs in the background and no systemd unit is created, so removing
+lazypodman means deleting the binary and (optionally) its config.
+
+1. Find where the binary was installed:
+
+```sh
+which lazypodman        # e.g. /usr/local/bin/lazypodman or ~/go/bin/lazypodman
+```
+
+2. Delete that file, using whichever path matches how you installed it:
+
+```sh
+sudo rm /usr/local/bin/lazypodman   # system-wide install
+rm ~/go/bin/lazypodman              # go install
+rm ~/.local/bin/lazypodman          # ~/.local/bin install
+```
+
+3. Delete the configuration directory (this also drops the merged config and any
+   state written by lazypodman):
+
+```sh
+rm -rf ~/.config/lazypodman                              # Linux
+rm -rf ~/Library/Application\ Support/lazypodman         # macOS
+rmdir /s /q "%AppData%\lazypodman"                       # Windows
+```
+
+If you used a custom `CONFIG_DIR`, delete that directory instead.
+
+4. Remove the `lzp` alias or the `PATH` line you added to `~/.bashrc`,
+   `~/.zshrc` or `~/.config/fish/config.fish`, then reload the shell. If you
+   built the container image, remove it too:
+
+```sh
+podman rmi lazypodman
+rm -rf lazypodman      # the git clone, if you no longer need the sources
+```
+
+Your containers, images, volumes and networks are untouched: uninstalling
+lazypodman does not modify the Podman store.
+
 ---
 
 ## Finding the Podman service

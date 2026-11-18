@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Container logs no longer replay from the top and scroll down on every reload:
+  the follow stream is buffered and the view is replaced once per frame at the
+  bottom (last 5000 lines kept in memory).
+
 - `space` now actually marks a container (and selects a menu item): gocui
   delivers the spacebar as `KeySpace` with an empty rune, so the previous rune
   `' '` bindings never fired.

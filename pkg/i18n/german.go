@@ -11,12 +11,11 @@ func germanSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                     "Es ist ein Fehler aufgetreten! Bitte erstelle ein Issue hier: https://github.com/fundokukiri/lazypodman/issues",
-		ConnectionFailed:                  "Verbindung zum Docker Client fehlgeschlagen. Du musst ggf. den Docker Client neustarten.",
+		ConnectionFailed:                  "Verbindung zum podman Client fehlgeschlagen. Du musst ggf. den podman Client neustarten.",
 		UnattachableContainerError:        "Der Container bietet keine Unterstützung für das Anbinden. Du musst den Dienst entweder mit der '-it' Flagge benutzen oder `stdin_open: true, tty: true` in der podman-compose.yml Datei setzen.",
 		CannotAttachStoppedContainerError: "Du kannst keinen angehaltenen Container anbinden. Du musst ihn erst starten (was du tun kannst, indem du 'r' drückst), (ja, ich bin zu faul um das zu automatisieren) (aber ist schon cool, dass ich so eine Konversation durch eine Fehlermeldung mit dir führen kann)",
 		CannotAccessPodmanSocketError:     "Kann nicht auf den Socket zugreifen: $XDG_RUNTIME_DIR/podman/podman.sock\nFühre lazypodman als root aus oder lese https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 
-		Donate:  "Spenden",
 		Confirm: "Bestätigen",
 
 		Return:             "zurück",

@@ -17,14 +17,13 @@ func portugueseSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                     "Um erro ocorreu! Por favor, crie uma issue em https://github.com/fundokukiri/lazypodman/issues",
-		ConnectionFailed:                  "Falha na conexão com o cliente Docker. Você pode precisar reiniciar o seu cliente Docker",
+		ConnectionFailed:                  "Falha na conexão com o cliente podman. Você pode precisar reiniciar o seu cliente podman",
 		UnattachableContainerError:        "O contêiner não suporta anexação. Você deve executar o serviço com a flag '-it' ou usar `stdin_open: true, tty: true` no arquivo podman-compose.yml",
-		WaitingForContainerInfo:           "Não é possível prosseguir até que o Docker forneça mais informações sobre o contêiner. Por favor, tente novamente em alguns momentos.",
+		WaitingForContainerInfo:           "Não é possível prosseguir até que o podman forneça mais informações sobre o contêiner. Por favor, tente novamente em alguns momentos.",
 		CannotAttachStoppedContainerError: "Você não pode anexar a um contêiner parado, você precisa iniciá-lo primeiro (o que você pode fazer com a tecla 'r') (sim, sou preguiçoso demais para fazer isso automaticamente para você) (aliás, bem legal que eu posso me comunicar diretamente com você na forma de uma mensagem de erro)",
 		CannotAccessPodmanSocketError:     "Não é possível acessar o sôquete do podman em: $XDG_RUNTIME_DIR/podman/podman.sock\nExecute o lazypodman como root ou leia https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 		CannotKillChildError:              "Três segundos foram esperarados para que os processos filhos parassem. Pode haver um processo órfão que continua em execução em seu sistema.",
 
-		Donate:  "Doar",
 		Confirm: "Confirmar",
 
 		Return:                      "retornar",

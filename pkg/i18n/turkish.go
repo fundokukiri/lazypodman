@@ -11,12 +11,11 @@ func turkishSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "NewLineFocused anahtar deyimi ile eşleşen görünüm yok",
 
 		ErrorOccurred:                     "Bir hata oluştu! Lütfen https://github.com/fundokukiri/lazypodman/issues adresinden bir hataya ilişkin konu oluşturun",
-		ConnectionFailed:                  "Docker bağlantısı başarısız oldu. Docker' ı yeniden başlatmanız gerekebilir",
+		ConnectionFailed:                  "podman bağlantısı başarısız oldu. podman' ı yeniden başlatmanız gerekebilir",
 		UnattachableContainerError:        "Konteyner attaching modunda çalışmayı desteklemiyor. Hizmeti '-it' opsiyonu ile çalıştırmanız veya podman-compose.yml dosyasında `stdin_open: true, tty: true` kullanmanız gerekir.",
 		CannotAttachStoppedContainerError: "Durdurulan konteynera bağlanamazsınız, ilk önce başlatmanız gerekir (aslında başlatmayı r tuşu ile yapabilirsiniz) (evet, senin için bunu otomatik olarak yapabilirim fakat çok tembelim) (hata mesajı ile seninle birebir iletişim kurmam çok daha güzel)",
-		CannotAccessPodmanSocketError:     "Docker' a şu adresten erişilemiyor : $XDG_RUNTIME_DIR/podman/podman.sock\n lazypodman' ı root(kök kullanıcı) olarak çalıştır veya şu adresteki adımları takip et : https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
+		CannotAccessPodmanSocketError:     "podman' a şu adresten erişilemiyor : $XDG_RUNTIME_DIR/podman/podman.sock\n lazypodman' ı root(kök kullanıcı) olarak çalıştır veya şu adresteki adımları takip et : https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 
-		Donate:  "Bağış",
 		Confirm: "Onayla",
 
 		Return:             "dönüş",

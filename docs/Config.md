@@ -8,7 +8,7 @@ Changes to the user config will only take place after closing and re-opening laz
 
 ### Locations:
 
-- OSX: `~/Library/Application Support/lazypodman/config.yml` (máy cũ có thể là `~/Library/Application Support/jesseduffield/lazypodman/config.yml`)
+- OSX: `~/Library/Application Support/lazypodman/config.yml`
 - Linux: `~/.config/lazypodman/config.yml`
 - Windows: `C:\Users\<User>\AppData\Roaming\lazypodman\config.yml`
 

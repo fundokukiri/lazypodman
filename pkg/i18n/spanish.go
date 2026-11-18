@@ -15,13 +15,12 @@ func spanishSet() TranslationSet {
 		RunningBulkCommandStatus:   "ejecutando comando masivo",
 
 		ErrorOccurred:                 "¡Hubo un error! Por favor crea un issue en https://github.com/fundokukiri/lazypodman/issues",
-		ConnectionFailed:              "Falló la conexión con el docker client. Quizá necesitas reiniciar tu docker client",
+		ConnectionFailed:              "Falló la conexión con el client podman. Quizá necesitas reiniciar tu client podman",
 		UnattachableContainerError:    "Container does not support attaching. You must either run the service with the '-it' flag or use `stdin_open: true, tty: true` in the podman-compose.yml file",
-		WaitingForContainerInfo:       "No podemos proceder hasta que docker nos de más información sobre el contenedor. Inténtalo otra vez en unos segundos.",
+		WaitingForContainerInfo:       "No podemos proceder hasta que podman nos dé más información sobre el contenedor. Inténtalo otra vez en unos segundos.",
 		CannotAccessPodmanSocketError: "No es posible acceder al socket de podman en: $XDG_RUNTIME_DIR/podman/podman.sock\nEjecuta lazypodman como root o lee https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 		CannotKillChildError:          "Esperamos tres segundos a que el proceso hijo se detenga. Debe de haber un proceso huérfano que continua activo en tu sistema.",
 
-		Donate:  "Donar",
 		Confirm: "Confirmar",
 
 		Return:                      "regresar",

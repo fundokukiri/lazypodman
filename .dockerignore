@@ -1,7 +1,5 @@
-.circleci
 .github
 docs
-test
 .gitignore
 .goreleaser.yml
 *.md

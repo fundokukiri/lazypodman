@@ -5,7 +5,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/gui/panels"
 	"github.com/fundokukiri/lazypodman/pkg/gui/presentation"
@@ -149,10 +148,9 @@ func (gui *Gui) creditsStr() string {
 		[]string{
 			lazypodmanTitle(),
 			"Copyright (c) 2019 Jesse Duffield",
-			"Keybindings: https://github.com/fundokukiri/lazypodman/blob/master/docs/keybindings",
-			"Config Options: https://github.com/fundokukiri/lazypodman/blob/master/docs/Config.md",
+			"Keybindings: https://github.com/fundokukiri/lazypodman/blob/main/docs/keybindings",
+			"Config Options: https://github.com/fundokukiri/lazypodman/blob/main/docs/Config.md",
 			"Raise an Issue: https://github.com/fundokukiri/lazypodman/issues",
-			utils.ColoredString("Buy Jesse a coffee: https://github.com/sponsors/jesseduffield", color.FgMagenta), // caffeine ain't free
 			"Here's your lazypodman config when merged in with the defaults (you can open your config by pressing 'o'):",
 			utils.ColoredYamlString(configBuf.String()),
 		}, "\n\n")

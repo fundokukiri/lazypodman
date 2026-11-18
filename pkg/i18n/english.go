@@ -27,7 +27,6 @@ type TranslationSet struct {
 	CannotAccessPodmanSocketError              string
 	CannotKillChildError                       string
 
-	Donate                      string
 	Cancel                      string
 	CustomCommandTitle          string
 	BulkCommandTitle            string
@@ -162,7 +161,6 @@ func englishSet() TranslationSet {
 		CannotAccessPodmanSocketError:     "Can't reach the podman service socket. Lazypodman looked at $XDG_RUNTIME_DIR/podman/podman.sock, then /run/podman/podman.sock.\nStart the service with `systemctl --user start podman.socket` (rootless) or `systemctl start podman.socket` (rootful), or set CONTAINER_HOST to your podman endpoint.",
 		CannotKillChildError:              "Waited three seconds for child process to stop. There may be an orphan process that continues to run on your system.",
 
-		Donate:  "Donate",
 		Confirm: "Confirm",
 
 		Return:                      "return",

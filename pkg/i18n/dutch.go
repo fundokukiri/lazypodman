@@ -11,12 +11,11 @@ func dutchSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                     "Er is iets fout gegaan! Zou je hier een issue aan willen maken: https://github.com/fundokukiri/lazypodman/issues",
-		ConnectionFailed:                  "connectie naar de docker client mislukt. Het zou kunnen dat je de docker client moet herstarten",
+		ConnectionFailed:                  "connectie naar de client podman mislukt. Het zou kunnen dat je de client podman moet herstarten",
 		UnattachableContainerError:        "Container heeft geen ondersteuning voor vastmaken. Je zou de service met het '-it' argument kunnen draaien of stop dit in je `stdin_open: true, tty: true` podman-compose.yml",
 		CannotAttachStoppedContainerError: "Je kan niet een vastgemaakte container stoppen, je moet het eerst starten (dit kan je doen met de 'r' toets) (ja ik ben te leu om dat voor je te doen automatisch)",
-		CannotAccessPodmanSocketError:     "Kan de docker socket niet bereiken: $XDG_RUNTIME_DIR/podman/podman.sock\nDraai lazypodman als root of lees https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
+		CannotAccessPodmanSocketError:     "Kan de podman socket niet bereiken: $XDG_RUNTIME_DIR/podman/podman.sock\nDraai lazypodman als root of lees https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 
-		Donate:  "Doneer",
 		Confirm: "Bevestigen",
 
 		Return:             "terug",

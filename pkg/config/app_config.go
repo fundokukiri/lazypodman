@@ -540,12 +540,7 @@ func configDirForVendor(vendor string, projectName string) string {
 }
 
 func configDir(projectName string) string {
-	legacyConfigDirectory := configDirForVendor("jesseduffield", projectName)
-	if _, err := os.Stat(legacyConfigDirectory); !os.IsNotExist(err) {
-		return legacyConfigDirectory
-	}
-	configDirectory := configDirForVendor("", projectName)
-	return configDirectory
+	return configDirForVendor("", projectName)
 }
 
 func findOrCreateConfigDir(projectName string) (string, error) {

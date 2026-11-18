@@ -189,7 +189,7 @@ The full generated list for every language lives in
 | OS | Config file |
 | --- | --- |
 | Linux | `~/.config/lazypodman/config.yml` |
-| macOS | `~/Library/Application Support/lazypodman/config.yml` (older installs: `.../jesseduffield/...`) |
+| macOS | `~/Library/Application Support/lazypodman/config.yml` |
 | Windows | `%AppData%\\lazypodman\\config.yml` |
 
 - Override the directory with `CONFIG_DIR`.

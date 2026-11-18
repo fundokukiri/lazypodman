@@ -17,14 +17,13 @@ func chineseSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "没有匹配 newLineFocused switch 语句的视图",
 
 		ErrorOccurred:                     "发生错误！请在 https://github.com/fundokukiri/lazypodman/issues 上创建一个问题",
-		ConnectionFailed:                  "无法连接到 Docker 客户端。您可能需要重新启动 Docker 客户端",
+		ConnectionFailed:                  "无法连接到 podman 客户端。您可能需要重新启动 podman 客户端",
 		UnattachableContainerError:        "容器不支持 attaching。您必须使用“-it”标志运行服务，或者在podman-compose.yml文件中使用`stdin_open: true，tty: true`",
-		WaitingForContainerInfo:           "在 Docker 给我们更多关于容器的信息之前，无法继续。请几分钟后重试。",
+		WaitingForContainerInfo:           "在 podman 给我们更多关于容器的信息之前，无法继续。请几分钟后重试。",
 		CannotAttachStoppedContainerError: "您不能 attach 到已停止的容器，您需要先启动它（您可以用 'r' 键来执行此操作）（是的，我懒得为您自动执行此操作）（很酷的是，我可以通过错误消息与您进行一对一的通讯）",
-		CannotAccessPodmanSocketError:     "无法访问 Docker 套接字：$XDG_RUNTIME_DIR/podman/podman.sock\n请以 root 用户身份运行 lazypodman 或阅读https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
+		CannotAccessPodmanSocketError:     "无法访问 podman 套接字：$XDG_RUNTIME_DIR/podman/podman.sock\n请以 root 用户身份运行 lazypodman 或阅读https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 		CannotKillChildError:              "等待三秒钟以停止子进程。可能有一个孤儿进程在您的系统上继续运行。",
 
-		Donate:  "捐赠",
 		Confirm: "确认",
 
 		Return:            "返回",

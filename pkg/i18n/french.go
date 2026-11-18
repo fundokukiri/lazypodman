@@ -14,15 +14,14 @@ func frenchSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "Aucune vue correspondant au switch newLineFocused",
 
 		ErrorOccurred:              "Une erreur s'est produite ! Veuillez créer un rapport d'erreur sur https://github.com/fundokukiri/lazypodman/issues",
-		ConnectionFailed:           "Erreur lors de la connexion au client Docker. Essayez de redémarrer votre client Docker",
+		ConnectionFailed:           "Erreur lors de la connexion au client podman. Essayez de redémarrer votre client podman",
 		UnattachableContainerError: "Le conteneur ne peut pas être attaché. Vous devez exécuter le service avec le drapeau 'it' ou bien utiliser `stdin_open: true, tty: true` dans votre fichier podman-compose.yml",
-		WaitingForContainerInfo:    "Le processus ne peut pas continuer avant que Docker ne fournisse plus d'informations. Veuillez réessayer dans quelques instants.",
+		WaitingForContainerInfo:    "Le processus ne peut pas continuer avant que podman ne fournisse plus d'informations. Veuillez réessayer dans quelques instants.",
 
 		CannotAttachStoppedContainerError: "Vous ne pouvez pas vous attacher à un conteneur arrêté, vous devez le démarrer en amont (ce que vous pouvez faire avec la touche 'r') (oui, je suis trop paresseux pour le faire automatiquement pour vous) (plutôt cool que je puisse communiquer en tête-à-tête avec vous au travers d'un message d'erreur, cependant)",
-		CannotAccessPodmanSocketError:     "Impossible d'accéder au socket Docker à : $XDG_RUNTIME_DIR/podman/podman.sock\nLancez lazypodman en tant que root ou alors lisez https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
+		CannotAccessPodmanSocketError:     "Impossible d'accéder au socket podman à : $XDG_RUNTIME_DIR/podman/podman.sock\nLancez lazypodman en tant que root ou alors lisez https://docs.podman.io/en/latest/markdown/podman-system-service.1.html",
 		CannotKillChildError:              "Trois secondes se sont écoulées depuis la demande d'arrêt des processus enfants. Il se peut qu'un processus orphelin continue à tourner sur votre système.",
 
-		Donate:  "Donner",
 		Confirm: "Confirmer",
 
 		Return:                      "retour",

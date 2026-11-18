@@ -517,16 +517,22 @@ a real rootless Podman.
 
 ---
 
+## Credits
+
+Lazypodman is a fork of [lazydocker](https://github.com/jesseduffield/lazydocker),
+created by Jesse Duffield and contributors. The original project is MIT licensed
+and its copyright notice is preserved in [CREDITS.md](CREDITS.md).
+
+---
+
 ## License
 
-Lazypodman is a fork of [lazydocker](https://github.com/jesseduffield/lazydocker)
-by Jesse Duffield and contributors, and is distributed under the same **MIT
-License**. The original copyright notice is kept in [LICENSE](LICENSE):
+Lazypodman itself is distributed under the **MIT License**:
 
 ```
 MIT License
 
-Copyright (c) 2018 Jesse Duffield
+Copyright (c) 2026 Fundoku
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -546,3 +552,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+See [LICENSE](LICENSE) for the canonical file and [CREDITS.md](CREDITS.md) for
+upstream attribution.

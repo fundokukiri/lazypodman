@@ -191,7 +191,7 @@ podman run -d --name hc-none docker.io/library/busybox sleep 600
 - [ ] J8. Container bị stop → shell tự đóng, tab biến mất, không treo app.
 - [ ] J9. Chọn container khác khi đang mở shell → tab shell biến mất (shell cũ vẫn giữ); quay lại container cũ → tab xuất hiện lại, gõ tiếp được.
 - [ ] J10. `ctrl+x` mở/đóng terminal (toggle); `x` vẫn mở options menu như cũ; `a` vẫn attach native.
-- [ ] J11. Trong shell, nhấn `ctrl+o` → con trỏ rời terminal, shell vẫn chạy;
+- [ ] J11. Trong shell, nhấn `esc` → con trỏ rời terminal, shell vẫn chạy;
   `[`/`]` chuyển tab Logs/shell/Stats bình thường. Quay lại shell: chọn tab shell
   rồi `enter` (hoặc `→` vào vùng chính rồi `enter`).
 

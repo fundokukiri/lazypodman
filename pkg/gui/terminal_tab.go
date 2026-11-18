@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
-	"github.com/fundokukiri/lazypodman/pkg/gui/types"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/jesseduffield/gocui"
 )
@@ -44,29 +43,6 @@ func (gui *Gui) terminalTabFor(container *commands.Container) bool {
 	state := gui.currentTerminal()
 
 	return state != nil && container != nil && state.containerID == container.ID
-}
-
-// handleContainersExecShellMenu is bound to x: it offers the shell action instead
-// of starting it, so the tab only appears when the user asks for it.
-func (gui *Gui) handleContainersExecShellMenu(g *gocui.Gui, v *gocui.View) error {
-	container, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	if gui.terminalTabFor(container) {
-		return gui.startContainerTerminal(container)
-	}
-
-	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.ContainerShellTitle,
-		Items: []*types.MenuItem{
-			{
-				LabelColumns: []string{gui.Tr.ExecShell},
-				OnPress:      func() error { return gui.startContainerTerminal(container) },
-			},
-		},
-	})
 }
 
 func (gui *Gui) startContainerTerminal(container *commands.Container) error {

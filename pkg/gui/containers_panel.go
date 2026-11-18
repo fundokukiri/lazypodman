@@ -529,25 +529,13 @@ func (gui *Gui) handleContainerViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (gui *Gui) handleContainersExecShell(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleContainersTerminal(g *gocui.Gui, v *gocui.View) error {
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
 		return nil
 	}
 
-	return gui.containerExecShell(ctr)
-}
-
-func (gui *Gui) containerExecShell(container *commands.Container) error {
-	commandObject := gui.PodmanCommand.NewCommandObject(commands.CommandObject{
-		Container: container,
-	})
-
-	// TODO: use SDK
-	resolvedCommand := utils.ApplyTemplate("{{ .Podman }} exec -it {{ .Container.ID }} /bin/sh -c 'eval $(grep ^$(id -un): /etc/passwd | cut -d : -f 7-)'", commandObject)
-	// attach and return the subprocess error
-	cmd := gui.OSCommand.ExecutableFromString(resolvedCommand)
-	return gui.runSubprocess(cmd)
+	return gui.startContainerTerminal(ctr)
 }
 
 func (gui *Gui) handleContainersCustomCommand(g *gocui.Gui, v *gocui.View) error {

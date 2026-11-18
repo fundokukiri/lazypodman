@@ -151,3 +151,32 @@ func TestSpaceBindingsUseKeySpace(t *testing.T) {
 		t.Errorf("expected the menu and containers space bindings, found %d", found)
 	}
 }
+
+// E opens the in-app terminal and stays visible in the x options menu; x itself
+// must keep opening that menu (the global binding), not a panel-specific one.
+func TestExecShellOpensTerminalTab(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	found := false
+	for _, binding := range gui.staticKeybindings() {
+		if binding.ViewName == "containers" && binding.GetKey() == "E" {
+			found = true
+
+			if binding.Description != gui.Tr.ExecShell {
+				t.Errorf("E description = %q, want exec shell", binding.Description)
+			}
+
+			if binding.Handler == nil {
+				t.Error("E has no handler")
+			}
+		}
+
+		if binding.ViewName == "containers" && binding.GetKey() == "x" {
+			t.Error("containers must not shadow the global x options menu")
+		}
+	}
+
+	if !found {
+		t.Fatal("E binding for the containers panel is missing")
+	}
+}

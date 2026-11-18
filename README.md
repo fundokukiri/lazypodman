@@ -225,8 +225,8 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach · `m` logs · `t` run healthcheck · `E` exec shell ·
-`x` shell tab (choose **exec shell**) · `ctrl+x` close it ·
+`r` restart · `a` attach · `m` logs · `t` run healthcheck · `E` exec shell (in-app terminal) ·
+`ctrl+x` close the shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
@@ -268,12 +268,13 @@ commands (prune).
 
 ### Events, multi-select, palette and Quadlet
 
-- `x` opens a small menu with **exec shell**. Choosing it starts a real PTY
-  (`podman exec -it … /bin/sh`) in a new **shell** tab right after **Logs** and
-  switches to it. The terminal is a VT10x screen buffer, so `vim`, `htop` and
+- `x` opens the usual options menu; its **exec shell** entry (`E`) starts a real
+  PTY (`podman exec -it … /bin/sh`) in a new **shell** tab right after **Logs**
+  and switches to it. The terminal is a VT10x screen buffer, so `vim`, `htop` and
   `less` work; colours are parsed but drawn as plain text for now. `ctrl+x`
   closes the shell and removes the tab; exiting the shell inside the container
-  does the same. `E` still attaches a real terminal outside the UI.
+  does the same. Before this the tab does not exist, so nothing is spawned at
+  startup.
 - The **Events** tab (Containers panel, last tab) streams `podman events`
   verbatim. The stream is tied to the tab: switching away kills the child.
   Without a usable Podman CLI the tab says `cli off: <reason>` and spawns

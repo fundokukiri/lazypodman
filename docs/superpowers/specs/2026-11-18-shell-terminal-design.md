@@ -12,8 +12,8 @@ rolled back because it could not do that.
 
 ## How it works
 
-- `x` in the Containers panel opens a menu with **exec shell**. The tab does not
-  exist before this, so nothing is spawned at startup.
+- `exec shell` is the existing `E` binding, also listed in the `x` options menu.
+  The tab does not exist before it is used, so nothing is spawned at startup.
 - Choosing it starts `podman exec -it -- <id> /bin/sh -c '<login shell>'` on a
   PTY (`creack/pty`), sized to the main panel, and switches the main panel to the
   new **shell** tab, inserted right after **Logs**.
@@ -34,6 +34,5 @@ rolled back because it could not do that.
   text. Mouse reporting is not forwarded.
 - `ctrl+x` is reserved for closing the shell, so it cannot be used inside the
   container.
-- `x` in the Containers panel now opens the shell menu instead of the global
-  options menu; options stay reachable with `?`.
-- `E` still suspends the TUI and attaches a native terminal.
+- `E` in the Containers panel now opens the in-app terminal instead of
+  suspending the TUI; the native attach stays on `a`.

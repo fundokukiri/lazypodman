@@ -540,7 +540,7 @@ func (gui *Gui) handleServicesExecShell(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.NoContainers)
 	}
 
-	return gui.containerExecShell(container)
+	return gui.startContainerTerminal(container)
 }
 
 func (gui *Gui) handleServicesOpenInBrowserCommand(g *gocui.Gui, v *gocui.View) error {

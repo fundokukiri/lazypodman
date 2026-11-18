@@ -31,15 +31,22 @@ type logTrimWriter struct {
 	view      logTrimTarget
 	lines     int
 	shouldPin func() bool
+	stale     func() bool
 }
 
-func newLogTrimWriter(view logTrimTarget, shouldPin func() bool) *logTrimWriter {
-	return &logTrimWriter{view: view, shouldPin: shouldPin}
+func newLogTrimWriter(view logTrimTarget, shouldPin func() bool, stale func() bool) *logTrimWriter {
+	return &logTrimWriter{view: view, shouldPin: shouldPin, stale: stale}
 }
 
 func (w *logTrimWriter) Write(p []byte) (int, error) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
+
+	// A cancelled log task must not write into the main view after another tab
+	// has rendered its own content there.
+	if w.stale != nil && w.stale() {
+		return len(p), nil
+	}
 
 	n, err := w.view.Write(p)
 

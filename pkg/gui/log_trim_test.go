@@ -44,7 +44,7 @@ func (f *fakeLogTarget) BufferLines() []string {
 
 func TestLogTrimWriterStreamsAndTrims(t *testing.T) {
 	target := &fakeLogTarget{}
-	writer := newLogTrimWriter(target, nil)
+	writer := newLogTrimWriter(target, nil, nil)
 
 	_, err := writer.Write([]byte("one\n"))
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestLogTrimWriterStreamsAndTrims(t *testing.T) {
 
 func TestLogTrimWriterPinsTheNewestLines(t *testing.T) {
 	target := &fakeLogTarget{height: 10}
-	writer := newLogTrimWriter(target, nil)
+	writer := newLogTrimWriter(target, nil, nil)
 
 	_, err := writer.Write([]byte("one\ntwo\nthree\n"))
 	assert.NoError(t, err)
@@ -85,9 +85,25 @@ func TestLogTrimWriterPinsTheNewestLines(t *testing.T) {
 	assert.Equal(t, 53-10, target.originY, "origin follows the newest line")
 }
 
+func TestLogTrimWriterDropsWritesOnceStale(t *testing.T) {
+	target := &fakeLogTarget{}
+	stale := false
+	writer := newLogTrimWriter(target, nil, func() bool { return stale })
+
+	_, err := writer.Write([]byte("before\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "before\n", target.content)
+
+	stale = true
+
+	_, err = writer.Write([]byte("after\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "before\n", target.content, "a cancelled task must not touch the view")
+}
+
 func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	target := &fakeLogTarget{}
-	writer := newLogTrimWriter(target, nil)
+	writer := newLogTrimWriter(target, nil, nil)
 
 	_, err := writer.Write([]byte(strings.Repeat("line\n", 100)))
 	assert.NoError(t, err)

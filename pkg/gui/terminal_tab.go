@@ -141,9 +141,12 @@ func (gui *Gui) closeContainerTerminal() error {
 		if err := gui.returnFocus(); err != nil {
 			return err
 		}
-
-		gui.Panels.Containers.ContextState.SetMainTabIndex(0)
 	}
+
+	// Always land back on Logs and force a re-render so the tab strip drops the
+	// shell tab even when Logs was already the current context.
+	gui.Panels.Containers.ContextState.SetMainTabIndex(0)
+	gui.State.Panels.Main.ObjectKey = ""
 
 	return gui.Panels.Containers.HandleSelect()
 }

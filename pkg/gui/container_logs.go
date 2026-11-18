@@ -162,7 +162,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
-	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll })); err != nil {
+	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })); err != nil {
 		gui.Log.Error(err)
 	}
 
@@ -243,6 +243,20 @@ func (gui *Gui) writeContainerLogs(ctr *commands.Container, ctx context.Context,
 		return err
 	}
 	defer readCloser.Close()
+
+	// Closing the read side is what actually stops the follow stream; cancelling
+	// the request context alone can leave StdCopy blocked and writing into the
+	// view after the user has switched tabs.
+	streamClosed := make(chan struct{})
+	defer close(streamClosed)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			_ = readCloser.Close()
+		case <-streamClosed:
+		}
+	}()
 
 	if !ctr.DetailsLoaded() {
 		// loop until the details load or context is cancelled, using timer

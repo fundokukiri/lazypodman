@@ -170,13 +170,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			ViewName: "menu",
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
-			Handler:  wrappedHandler(gui.handleMenuClose),
+			Handler:  wrappedHandler(gui.handleMenuCancel),
 		},
 		{
 			ViewName: "menu",
 			Key:      'q',
 			Modifier: gocui.ModNone,
-			Handler:  wrappedHandler(gui.handleMenuClose),
+			Handler:  wrappedHandler(gui.handleMenuCancel),
 		},
 		{
 			ViewName: "menu",

@@ -65,6 +65,11 @@ type Gui struct {
 	// history instead of the default tail.
 	fullLogs      map[string]bool
 	fullLogsMutex sync.Mutex
+
+	// menuCancel, when set, is what esc or the Cancel item should do to leave
+	// the current menu. Submenus use it to return to the menu that opened them
+	// instead of closing all the way back to the panel.
+	menuCancel func() error
 }
 
 type Panels struct {

@@ -183,7 +183,9 @@ func (gui *Gui) showRunContainerAdvanced(state *runContainerState) error {
 		},
 	})
 
-	return gui.Menu(CreateMenuOptions{Title: gui.trString(gui.Tr.RunContainerAdvanced, "Advanced"), Items: items})
+	return gui.Menu(CreateMenuOptions{Title: gui.trString(gui.Tr.RunContainerAdvanced, "Advanced"), Items: items, OnCancel: func() error {
+		return gui.showRunContainerMenu(state)
+	}})
 }
 
 func (gui *Gui) showRunContainerGroup(state *runContainerState, group runFieldGroup) error {
@@ -206,7 +208,9 @@ func (gui *Gui) showRunContainerGroup(state *runContainerState, group runFieldGr
 		})
 	}
 
-	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(group.Key), Items: items})
+	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(group.Key), Items: items, OnCancel: func() error {
+		return gui.showRunContainerAdvanced(state)
+	}})
 }
 
 func (gui *Gui) activateRunContainerField(state *runContainerState, field runField, back func() error) error {
@@ -247,7 +251,7 @@ func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField,
 		})
 	}
 
-	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items})
+	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items, OnCancel: back})
 }
 
 func (gui *Gui) showRunContainerList(state *runContainerState, field runField, back func() error) error {
@@ -274,7 +278,7 @@ func (gui *Gui) showRunContainerList(state *runContainerState, field runField, b
 		})
 	}
 
-	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items})
+	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items, OnCancel: back})
 }
 
 func (gui *Gui) showRunContainerListValue(state *runContainerState, field runField, index int, value string, back func() error) error {
@@ -300,7 +304,9 @@ func (gui *Gui) showRunContainerListValue(state *runContainerState, field runFie
 		},
 	}
 
-	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items})
+	return gui.Menu(CreateMenuOptions{Title: gui.runLabel(field.Key), Items: items, OnCancel: func() error {
+		return gui.showRunContainerList(state, field, back)
+	}})
 }
 
 func (gui *Gui) editRunContainerValue(key, initial string, apply func(string), back func() error) error {

@@ -11,6 +11,9 @@ type CreateMenuOptions struct {
 	Title      string
 	Items      []*types.MenuItem
 	HideCancel bool
+	// OnCancel runs after the menu closes when the user presses esc/q or the
+	// Cancel item. Submenus pass a function that reopens their parent menu.
+	OnCancel func() error
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -62,9 +65,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 		// this is mutative but I'm okay with that for now
 		opts.Items = append(opts.Items, &types.MenuItem{
 			LabelColumns: []string{gui.Tr.Cancel},
-			OnPress: func() error {
-				return nil
-			},
+			OnPress:      opts.OnCancel,
 		})
 	}
 
@@ -90,6 +91,8 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 		}
 	}
 
+	gui.menuCancel = opts.OnCancel
+
 	gui.Panels.Menu.SetItems(opts.Items)
 	gui.Panels.Menu.SetSelectedLineIdx(0)
 
@@ -112,6 +115,21 @@ func (gui *Gui) renderMenuOptions() error {
 		"enter": gui.Tr.Execute,
 	}
 	return gui.renderOptionsMap(optionsMap)
+}
+
+// handleMenuCancel leaves the current menu, returning to the menu that opened
+// it when one did. Esc, q and the Cancel item all go through here.
+func (gui *Gui) handleMenuCancel() error {
+	cancel := gui.menuCancel
+	gui.menuCancel = nil
+
+	if err := gui.handleMenuClose(); err != nil {
+		return err
+	}
+	if cancel != nil {
+		return cancel()
+	}
+	return nil
 }
 
 func (gui *Gui) handleMenuClose() error {

@@ -3,3 +3,6 @@ TODO.md
 Lazypodman.code-workspace
 .vscode
 .idea
+coverage.txt
+profile.out
+.claude/

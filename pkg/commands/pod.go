@@ -3,8 +3,10 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,10 +26,6 @@ type Pod struct {
 	// same way as the containers panel. Filled by joinPods, never by JSON, and
 	// empty for pods created with --infra=false.
 	Ports string `json:"-"`
-
-	// RunningContainers counts the pod's containers that are running. Filled by
-	// joinPods.
-	RunningContainers int `json:"-"`
 
 	OSCommand     *OSCommand           `json:"-"`
 	PodmanBinary  string               `json:"-"`
@@ -92,4 +90,71 @@ func parseContainerPodMap(out []byte) (map[string]string, error) {
 	}
 
 	return podByContainer, nil
+}
+
+// joinPods pairs a fresh pod list with the container->pod map and fills the
+// ports a pod owns. Snapshots of the socket backend and the CLI can disagree
+// (a container created or removed in between), so a key present on only one side
+// is tolerated: no panic, no invented pod name.
+func joinPods(pods []*Pod, podByContainer map[string]string, infra map[string]container.Summary) *PodState {
+	state := &PodState{
+		Pods:           pods,
+		PodByContainer: make(map[string]string, len(podByContainer)),
+	}
+
+	for id, name := range podByContainer {
+		if id == "" || name == "" {
+			continue
+		}
+
+		state.PodByContainer[id] = name
+	}
+
+	for _, pod := range pods {
+		pod.Ports = ""
+
+		// Pods created with --infra=false have no infra container and therefore
+		// no ports of their own.
+		if pod.InfraID == "" {
+			continue
+		}
+
+		if summary, ok := infra[pod.InfraID]; ok {
+			pod.Ports = formatPorts(summary.Ports)
+		}
+	}
+
+	return state
+}
+
+// formatPorts renders container ports the same way as the containers panel:
+// public->private/proto, private/proto when unpublished, sorted and de-duplicated.
+func formatPorts(ports []container.Port) string {
+	seen := make(map[string]struct{}, len(ports))
+	rendered := make([]string, 0, len(ports))
+
+	for _, port := range ports {
+		var entry string
+		if port.PublicPort == 0 {
+			entry = fmt.Sprintf("%d/%s", port.PrivatePort, port.Type)
+		} else {
+			ip := ""
+			if port.IP != "" && port.IP != "0.0.0.0" && port.IP != "::" {
+				ip = port.IP + ":"
+			}
+
+			entry = fmt.Sprintf("%s%d->%d/%s", ip, port.PublicPort, port.PrivatePort, port.Type)
+		}
+
+		if _, ok := seen[entry]; ok {
+			continue
+		}
+
+		seen[entry] = struct{}{}
+		rendered = append(rendered, entry)
+	}
+
+	sort.Strings(rendered)
+
+	return strings.Join(rendered, ", ")
 }

@@ -76,6 +76,16 @@ type ThemeConfig struct {
 
 // GuiConfig is for configuring visual things like colors and whether we show or
 // hide things
+// PodsConfig controls whether the Podman-native features (the pods panel) are
+// used. Availability additionally requires the podman CLI to talk to the same
+// store as the service API lazypodman uses.
+type PodsConfig struct {
+	// Enabled is one of "auto" (default: run every check), "always" (keep the
+	// panel even when the store comparison fails; escape hatch for slow rootless
+	// starts) or "never".
+	Enabled string `yaml:"enabled,omitempty"`
+}
+
 type GuiConfig struct {
 	// ScrollHeight determines how many characters you scroll at a time when
 	// scrolling the main panel
@@ -119,6 +129,10 @@ type GuiConfig struct {
 	// By default, containers are now sorted by status. This setting allows users to
 	// use legacy behaviour instead.
 	LegacySortContainers bool `yaml:"legacySortContainers,omitempty"`
+
+	// Pods configures the Podman-native features (the pods panel). Availability is
+	// auto-detected; this only decides how hard we try.
+	Pods PodsConfig `yaml:"pods,omitempty"`
 
 	// If 0.333, then the side panels will be 1/3 of the screen's width
 	SidePanelWidth float64 `yaml:"sidePanelWidth"`
@@ -377,6 +391,7 @@ func GetDefaultConfig() UserConfig {
 			ReturnImmediately:          false,
 			WrapMainPanel:              true,
 			LegacySortContainers:       false,
+			Pods:                       PodsConfig{Enabled: "auto"},
 			SidePanelWidth:             0.3333,
 			ShowBottomLine:             true,
 			ExpandFocusedSidePanel:     false,

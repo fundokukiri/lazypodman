@@ -1,10 +1,15 @@
 package commands
 
 import (
+	"context"
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,4 +110,112 @@ func readFixtureString(t *testing.T, name string) string {
 	t.Helper()
 
 	return string(readPodFixture(t, name))
+}
+
+// fakePodClient lets the pod-state tests run without a podman binary: each field
+// is the canned answer for one call, and the counters show batching.
+type fakePodClient struct {
+	enabled    bool
+	podList    []*Pod
+	podListErr error
+	psMap      map[string]string
+	psErr      error
+
+	listCalls int
+	psCalls   int
+}
+
+func (f *fakePodClient) Enabled() bool   { return f.enabled }
+func (f *fakePodClient) Reason() string  { return "fake" }
+func (f *fakePodClient) Version() string { return "5.0.0" }
+func (f *fakePodClient) PodInspect(_ context.Context, _ string) ([]byte, error) {
+	return nil, nil
+}
+func (f *fakePodClient) PodAction(_ context.Context, _, _ string, _ ...string) error { return nil }
+func (f *fakePodClient) PodPrune(_ context.Context) error                            { return nil }
+func (f *fakePodClient) PodLogs(_ context.Context, _ *Pod, _ []*Container, _ int) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader("")), nil
+}
+
+func (f *fakePodClient) PodList(_ context.Context) ([]*Pod, error) {
+	f.listCalls++
+
+	return f.podList, f.podListErr
+}
+
+func (f *fakePodClient) ContainerPodMap(_ context.Context) (map[string]string, error) {
+	f.psCalls++
+
+	return f.psMap, f.psErr
+}
+
+func TestJoinPods(t *testing.T) {
+	infraID := "infra1"
+	pods := []*Pod{
+		{Name: "web", InfraID: infraID},
+		{Name: "noinfra", InfraID: ""},
+		{Name: "gone", InfraID: "missing-infra"},
+	}
+	infra := map[string]container.Summary{
+		infraID: {Ports: []container.Port{
+			{PublicPort: 8080, PrivatePort: 80, Type: "tcp", IP: "0.0.0.0"},
+			{PublicPort: 8080, PrivatePort: 80, Type: "tcp", IP: "0.0.0.0"}, // duplicate, must collapse
+			{PrivatePort: 443, Type: "tcp"},
+		}},
+	}
+	podByContainer := map[string]string{"ctr-web": "web", "ctr-orphan": "gone", "": "ignored", "ctr-nopod": ""}
+
+	state := joinPods(pods, podByContainer, infra)
+
+	assert.Equal(t, "443/tcp, 8080->80/tcp", pods[0].Ports)
+	assert.Empty(t, pods[1].Ports, "pod without infra has no ports")
+	assert.Empty(t, pods[2].Ports, "missing infra summary is tolerated")
+	assert.Equal(t, map[string]string{"ctr-web": "web", "ctr-orphan": "gone"}, state.PodByContainer)
+}
+
+func TestFormatPorts(t *testing.T) {
+	assert.Empty(t, formatPorts(nil))
+	assert.Equal(t, "127.0.0.1:9000->9000/udp", formatPorts([]container.Port{
+		{PublicPort: 9000, PrivatePort: 9000, Type: "udp", IP: "127.0.0.1"},
+	}))
+}
+
+func TestRefreshPodStateBatchesAndCaches(t *testing.T) {
+	infraID := "infra1"
+	client := &fakePodClient{
+		enabled: true,
+		podList: []*Pod{{Name: "web", InfraID: infraID}},
+		psMap:   map[string]string{"ctr-web": "web"},
+	}
+	podmanCommand := &PodmanCommand{
+		Log:             NewDummyLog(),
+		infraContainers: map[string]container.Summary{infraID: {Ports: []container.Port{{PublicPort: 80, PrivatePort: 80, Type: "tcp"}}}},
+	}
+	podmanCommand.podClient = client
+
+	ctx := context.Background()
+	state, err := podmanCommand.RefreshPodState(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, client.listCalls)
+	assert.Equal(t, 1, client.psCalls)
+	assert.Equal(t, "80->80/tcp", state.Pods[0].Ports)
+	assert.Equal(t, map[string]string{"ctr-web": "web"}, state.PodByContainer)
+
+	// A failing refresh returns the last snapshot instead of an empty panel.
+	client.podListErr = errors.New("podman pod ls: exit status 125")
+	state, err = podmanCommand.RefreshPodState(ctx)
+	assert.Error(t, err)
+	assert.NotNil(t, state)
+	assert.Equal(t, "web", state.Pods[0].Name)
+}
+
+func TestRefreshPodStateDisabledIsNoop(t *testing.T) {
+	client := &fakePodClient{enabled: false}
+	podmanCommand := &PodmanCommand{Log: NewDummyLog()}
+	podmanCommand.podClient = client
+
+	state, err := podmanCommand.RefreshPodState(context.Background())
+	assert.NoError(t, err)
+	assert.Nil(t, state)
+	assert.Zero(t, client.listCalls)
 }

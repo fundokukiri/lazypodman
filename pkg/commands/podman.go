@@ -47,6 +47,14 @@ type PodmanCommand struct {
 	ContainerMutex   deadlock.Mutex
 	ServiceMutex     deadlock.Mutex
 
+	// podClient backs the Podman-native features (pods). It is never nil: a
+	// disabled client answers Enabled() == false and keeps the socket backend
+	// untouched. podState is the last good snapshot, reused when a refresh fails.
+	podClient       PodmanClient
+	podState        *PodState
+	PodStateMutex   deadlock.Mutex
+	infraContainers map[string]container.Summary
+
 	Closers []io.Closer
 }
 
@@ -145,6 +153,7 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 	}
 
 	podmanCommand.setPodmanComposeCommand(config)
+	podmanCommand.initPodClient(podmanHost)
 
 	err = osCommand.RunCommand(
 		utils.ApplyTemplate(
@@ -166,6 +175,28 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 	}
 
 	return podmanCommand, nil
+}
+
+// initPodClient runs the Podman-native enablement check once, at startup and
+// before any view exists, and logs the reason when it stays off. A disabled
+// client is expected (macOS/Windows podman machine, socket-only containers,
+// missing binary), never an error.
+func (c *PodmanCommand) initPodClient(podmanHost string) {
+	c.podClient = newCLIPodmanClient(
+		context.Background(),
+		c.Config.PodmanBinary(),
+		podmanHost,
+		ParsePodsMode(c.Config.UserConfig.Gui.Pods.Enabled),
+	)
+
+	if !c.podClient.Enabled() {
+		c.Log.Debugf("pods disabled: %s", c.podClient.Reason())
+	}
+}
+
+// Pods returns the Podman-native client. It never returns nil.
+func (c *PodmanCommand) Pods() PodmanClient {
+	return c.podClient
 }
 
 // IsProjectScoped reports whether lazypodman should be scoped to a single
@@ -389,6 +420,11 @@ func (c *PodmanCommand) GetContainers(existingContainers []*Container) ([]*Conta
 		return nil, err
 	}
 
+	// Infra containers are hidden from the panel but still own the pod's
+	// published ports, so keep a copy of the summaries for the pods panel.
+	infraContainers := make(map[string]container.Summary)
+	c.infraContainers = infraContainers
+
 	ownContainers := make([]*Container, 0, len(containers))
 
 	for _, ctr := range containers {
@@ -397,6 +433,8 @@ func (c *PodmanCommand) GetContainers(existingContainers []*Container) ([]*Conta
 		// Podman runs one hidden "infra" (pause) container per pod. They are
 		// noise in a container list, so hide them just like `podman ps` does.
 		if isPodmanInfraContainer(ctr) {
+			infraContainers[ctr.ID] = ctr
+
 			continue
 		}
 		var newContainer *Container
@@ -539,4 +577,54 @@ func (c *PodmanCommand) ComposeConfigForProject(project *Project) string {
 		output = err.Error()
 	}
 	return output
+}
+
+// RefreshPodState fetches the pods and the container->pod mapping in one cycle.
+// No other code path shells out for this data, so a refresh costs two podman
+// processes; the result is cached and reused for the containers panel too.
+func (c *PodmanCommand) RefreshPodState(ctx context.Context) (*PodState, error) {
+	client := c.Pods()
+	if client == nil || !client.Enabled() {
+		return nil, nil
+	}
+
+	pods, err := client.PodList(ctx)
+	if err != nil {
+		return c.cachedPodState(), err
+	}
+
+	podByContainer, err := client.ContainerPodMap(ctx)
+	if err != nil {
+		return c.cachedPodState(), err
+	}
+
+	c.PodStateMutex.Lock()
+	defer c.PodStateMutex.Unlock()
+
+	state := joinPods(pods, podByContainer, c.infraContainersSnapshot())
+	c.podState = state
+
+	return state, nil
+}
+
+func (c *PodmanCommand) cachedPodState() *PodState {
+	c.PodStateMutex.Lock()
+	defer c.PodStateMutex.Unlock()
+
+	return c.podState
+}
+
+// infraContainersSnapshot copies the infra container summaries recorded during
+// the last container refresh. They are filtered out of the containers panel but
+// still own the pod's published ports.
+func (c *PodmanCommand) infraContainersSnapshot() map[string]container.Summary {
+	c.ContainerMutex.Lock()
+	defer c.ContainerMutex.Unlock()
+
+	infra := make(map[string]container.Summary, len(c.infraContainers))
+	for id, summary := range c.infraContainers {
+		infra[id] = summary
+	}
+
+	return infra
 }

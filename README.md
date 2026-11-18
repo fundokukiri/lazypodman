@@ -11,9 +11,11 @@ projects, logs and stats in one window, every common action one keypress away.
 
 - View the state of your Podman containers and compose services at a glance
 - View **pods** with their containers, merged logs, container count and ports
-- View and follow logs for a container, a service or a pod
+- View and follow logs for a container, a service or a pod, with a bounded live
+  view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, or of any stat path you configure
-- Attach to a container, exec a shell, view its processes (`top`), config and env
+- Attach to a container, open an in-app PTY shell tab, view its processes
+  (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services
 - Inspect image layers, prune containers, images, volumes and networks
 - Custom commands and bulk commands, configured per panel
@@ -266,17 +268,42 @@ The kube menu keeps manifests in `gui.kubeDir` (default
 **Images, Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
 commands (prune).
 
+### Logs
+
+- Opening logs shows the **last 20 lines** by default (`logs.tail: 20`). Change
+  it in the config (for example `tail: '200'`, or `''` for everything).
+- Output streams live. The view is capped at 10 000 lines (trimmed at 20 000),
+  so a very chatty container cannot grow memory without bound.
+- `ctrl+l` reloads the current logs with the **full history**, and `ctrl+l` again
+  goes back to the default tail. The choice is remembered per container.
+- `G` jumps to the newest line and resumes following. Scrolling up pauses
+  following; the scrollbar on the right shows where you are.
+- `m` opens logs for the selected container or service; the Logs tab is also the
+  place you land after closing the in-app shell.
+
+### In-app shell
+
+- Select a container (or service) and press `x` → **exec shell**, or press
+  `ctrl+x` directly. A real PTY (`podman exec -it … /bin/sh`) opens in a **shell**
+  tab right after **Logs**, and the app switches to it.
+- The terminal is a VT10x screen, so `vim`, `htop` and `less` work. The line above
+  it shows the container name (yellow), image (magenta), status (green/red),
+  short ID (grey) and pod when there is one.
+- `ctrl+x` closes the shell, wipes the view and reloads the logs; exiting the
+  shell inside the container closes the tab too. The tab only exists while a
+  shell is open, so nothing is spawned at startup.
+- `PgUp`/`PgDn` or the mouse wheel page through up to **2000 lines** of
+  scrollback (including bursts such as `cat` of a long file). A thumb appears in
+  the last column; it hides while you read old output and the caret comes back at
+  the bottom, or as soon as you type/`Enter`.
+- `ctrl+o` leaves the terminal focused but keeps the shell running, so `[`/`]`,
+  the palette and the rest of the UI work again. `esc` is forwarded to the app
+  inside the shell.
+- Full-screen apps use their own screen buffer; paging keys belong to the app
+  there, so scrollback is available for normal shell output.
+
 ### Events, multi-select, palette and Quadlet
 
-- `x` opens the usual options menu; its **exec shell** entry (`ctrl+x`) starts a
-  real PTY (`podman exec -it … /bin/sh`) in a new **shell** tab right after
-  **Logs** and switches to it. The terminal is a VT10x screen buffer, so `vim`,
-  `htop` and `less` work; colours are parsed but drawn as plain text for now.
-  `ctrl+x` again closes the shell and removes the tab; exiting the shell inside
-  the container does the same. `PgUp`/`PgDn` page through up to 5000 lines of
-  shell scrollback. `ctrl+o` leaves the terminal focused but keeps the shell
-  running, so `[`/`]` and the rest of the UI work again. Before this the tab does
-  not exist, so nothing is spawned at startup.
 - The **Events** tab (Containers panel, last tab) streams `podman events`
   verbatim. The stream is tied to the tab: switching away kills the child.
   Without a usable Podman CLI the tab says `cli off: <reason>` and spawns
@@ -308,8 +335,8 @@ The full generated list for every language lives in
 
 ### Typical workflows
 
-1. **Debug a failing service**: select it, `m` for logs, `]` for the Stats tab,
-   `ctrl+x` to open a shell.
+1. **Debug a failing service**: select it, `m` for logs, `ctrl+l` if you need the
+   full history, `]` for the Stats tab, `ctrl+x` to open a shell.
 2. **Redeploy after a code change**: select the service, `R`, pick
    recreate/rebuild (driven by `commandTemplates.recreateService` /
    `rebuildService`).
@@ -357,7 +384,7 @@ gui:
 logs:
   timestamps: false
   since: '60m'                # '' = all logs
-  tail: ''                    # e.g. 200 = last 200 lines
+  tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
 
 commandTemplates:
   podman: podman               # CLI used for attach/exec (e.g. podman-remote)

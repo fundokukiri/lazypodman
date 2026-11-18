@@ -118,26 +118,43 @@ TIME      EXIT  OUTPUT
 
 - Key choice: **`t`** ("test"). Verified free: `h`/`l` are previous/next panel on
   every side panel, `k`/`j` are list up/down, `H`/`K`/`J`/`L` are global main
-  scrolling, `x`/`X`/`q`/`?` are global. `t` is unbound globally and on
-  containers. Kube's future `k` is taken by list-up, so batch 2 will pick another
-  key and say which.
+  scrolling, `x`/`X`/`q`/`?` are global. `t` is unbound globally, in popups
+  (`menu`, `confirmation`, `filter`, `limit`) and on containers. Kube's future
+  `k` is taken by list-up, so batch 2 will pick another key and say which.
 - Preconditions checked **before** any process:
   - not running (`Container.Container.State != "running"` or
     `Details.State.Running == false`) → message `Container is not running`.
   - no healthcheck → message `This container has no healthcheck`.
-  - CLI/HealthRun unavailable → `health run off: <reason>`.
+  - capability known-unavailable → `health run off: <reason>`.
 - Run through a new `PodmanClient.HealthcheckRun(ctx, ref)` returning
-  `(output string, exitCode int, err error)`. `exec.CommandContext`, no UI
-  goroutine, `gui.WithWaitingStatus(Tr.RunningHealthcheckStatus)` while it runs.
-- Result classification (the point of the requirement):
-  - exit 0 → popup titled **healthy**, body = probe output.
-  - exit 1 or 2 → popup titled **unhealthy**, body = probe output. This is a
-    *result*, shown exactly like healthy, not an error.
-  - process could not run / other exit code → error panel with podman's stderr
-    verbatim.
-- Destructive-action rule does not apply: `t` changes no state, so no
-  confirmation prompt (same as restart/pause today). It refreshes container
-  details afterwards so the list colour updates too.
+  `(output string, exitCode int, err error)`. `exec.CommandContext`, never on the
+  UI goroutine; `gui.WithWaitingStatus(Tr.RunningHealthcheckStatus)` while the
+  first probe and the run are in flight.
+- Result classification — **exit codes are UNVERIFIED** beyond `0 = healthy`:
+
+  | Exit | Meaning | Shown as |
+  | --- | --- | --- |
+  | 0 | healthy (certain) | result: healthy |
+  | 1 | unhealthy (**UNVERIFIED**, from Podman docs) | result: unhealthy |
+  | 2 | reserved/unhealthy (**UNVERIFIED**) | result: unhealthy |
+
+  Any other code, or a spawn failure, or no exit code at all → **error panel
+  with podman's stderr verbatim**. The table is marked as unverified in the code
+  comment too, and the human checklist records the real codes.
+- Result channel: this repo has no generic transient-message channel — the
+  `information` view is rebuilt every frame from `getInformationContent()`, and
+  `statusManager` only renders `waiting` statuses. So batch 1 adds one small
+  non-blocking `flashStatus(message)` (10 s, AppStatus line, waiting status wins
+  while running). **No popup** for healthy/unhealthy: the flash shows
+  `healthcheck: healthy` / `healthcheck: unhealthy` with a one-line excerpt, and
+  the Health tab refreshes immediately (details re-fetched) so the new probe
+  result is visible without waiting for the 1 s tick.
+- Destructive-action rule does not apply: `t` changes no container state, so no
+  confirmation (same as restart/pause today).
+- **Documented side effect**: a manual run is recorded by Podman. It appends to
+  the health log, can change the failing streak and the reported status, and can
+  trigger `--health-on-failure` behaviour if the user configured it. This goes in
+  the key's help description, `docs/Config.md` and the README panel-keys row.
 
 ## Config
 
@@ -164,27 +181,30 @@ only.
 ## Tests
 
 - `parseHealthLog` / renderer: synthetic entries covering exit 0/1/2/other,
-  multiline output, empty output, 250-char output, unknown timestamps, zero
-  entries, 20-entry cap.
-- Capability derivation: CLI down → Pods/HealthRun/Kube off with the CLI reason;
-  `pods.enabled: never` → Pods off, HealthRun still fine; lazy probe success and
-  failure (missing subcommand).
-- `t` handler: fake client returning `(out, 0)`, `(out, 1)`, `(out, 125)`, and an
-  `exec.ErrNotFound`-style error, asserting popup vs error panel classification,
+  multiline output, empty output, 250-char output, zero timestamps, zero entries,
+  and a log longer than the 20-entry cap.
+- Capability derivation: CLI down → Pods/HealthRun/Kube unavailable with the CLI
+  reason; `pods.enabled: never` → Pods off, HealthRun still unknown/available;
+  lazy probe success, permanent failure (no re-probe), transient failure
+  (re-probe permitted).
+- `t` handler: fake client returning `(out, 0)`, `(out, 1)`, `(out, 2)`,
+  `(out, 125)`, and a spawn error, asserting flash vs error-panel classification,
   plus the "not running" and "no healthcheck" short-circuits (no call made).
-- Key table test: `t` appears exactly once for `containers` and nowhere else.
+- Key table test: `t` appears exactly once for `containers` and nowhere else in
+  the binding table (including global and popup views).
 - All new tests use synthetic data; nothing here is captured from a real Podman.
 
 ## Manual checklist additions (batch 1)
 
 Appended to the Phase 1 checklist, same three-level reporting:
 
-1. `podman run -d --name hc-ok --health-cmd 'exit 0' --health-interval 2s docker.io/library/busybox sleep 600` → tab shows probes with exit 0, status healthy; `t` → healthy popup.
-2. `podman run -d --name hc-bad --health-cmd 'exit 1' --health-interval 2s …` → tab shows exit 1 rows in red; `t` → **unhealthy popup, not an error**; list colour follows.
-3. Container without a healthcheck → tab says there is none; `t` shows the same message and spawns no process.
+1. `podman run -d --name hc-ok --health-cmd 'exit 0' --health-interval 2s docker.io/library/busybox sleep 600` → tab shows probes with exit 0, status healthy; `t` → `healthcheck: healthy` in the status line, tab refreshes.
+2. `podman run -d --name hc-bad --health-cmd 'exit 1' --health-interval 2s …` → tab shows exit 1 rows in red; `t` → **`healthcheck: unhealthy` result, not an error panel**; list colour follows.
+3. Container without a healthcheck: `podman run -d --name hc-none docker.io/library/busybox sleep 600` → tab says there is none; `t` shows the same message and spawns no process.
 4. Stopped container with health history → tab still lists the last probes; `t` says it is not running.
 5. `pgrep -a podman` before/after pressing `t`: one process appears, none remains afterwards.
-6. Socket-only setup (`CONTAINER_HOST=ssh://…`): no `t` effect beyond `cli off: <reason>`; Health tab still renders from inspect.
+6. Socket-only setup (`CONTAINER_HOST=ssh://…`): `t` reports `cli off: <reason>` and spawns nothing; Health tab still renders from inspect.
+7. **Record the real exit codes** of `podman healthcheck run` for: a healthy container (`--health-cmd 'exit 0'`), an unhealthy one (`'exit 1'`), a container without a healthcheck, and a stopped container (`podman healthcheck run <stopped>`). Paste them into the design's exit-code table and mark it verified or corrected.
 
 ## Verification levels
 

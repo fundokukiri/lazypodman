@@ -1,10 +1,7 @@
 package gui
 
 import (
-	"fmt"
 	"strings"
-	"time"
-	"unicode"
 
 	"github.com/mgutz/str"
 )
@@ -227,36 +224,8 @@ func newRunContainerState(image string) *runContainerState {
 		lists:   map[string][]string{},
 	}
 	state.toggles["detach"] = true
-	state.text["name"] = defaultRunContainerName(image, time.Now())
 
 	return state
-}
-
-// defaultRunContainerName builds a readable, unique-enough name from the image.
-func defaultRunContainerName(image string, now time.Time) string {
-	base := image
-	if index := strings.LastIndex(base, "/"); index >= 0 {
-		base = base[index+1:]
-	}
-	if index := strings.Index(base, ":"); index >= 0 {
-		base = base[:index]
-	}
-
-	base = strings.Map(func(r rune) rune {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '-' || r == '.' {
-			return r
-		}
-		return '-'
-	}, base)
-	base = strings.Trim(base, "-._")
-	if base == "" {
-		base = "container"
-	}
-	if len(base) > 40 {
-		base = base[:40]
-	}
-
-	return fmt.Sprintf("%s_%s", base, now.Format("20060102_150405"))
 }
 
 // argv builds the exact argument list after "run". It never uses a shell.

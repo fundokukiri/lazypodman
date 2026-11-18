@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/image"
@@ -70,7 +69,7 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 	gui := &Gui{Tr: translations()}
 	state := newRunContainerState("alpine")
 
-	assert.True(t, strings.HasPrefix(gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "alpine_"))
+	assert.Equal(t, "auto", gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}))
 	assert.Equal(t, "on", gui.runValueLabel(state, runFieldByKey("detach")))
 	assert.Equal(t, "-", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
 	assert.Equal(t, "-", gui.runValueLabel(state, runFieldByKey("command")))

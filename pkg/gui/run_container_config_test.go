@@ -1,9 +1,7 @@
 package gui
 
 import (
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -13,17 +11,9 @@ func TestRunContainerDefaults(t *testing.T) {
 	args := state.argv("")
 
 	assert.Equal(t, "run", args[0])
-	assert.Equal(t, "--name", args[1])
-	assert.True(t, strings.HasPrefix(state.text["name"], "nginx_"))
+	assert.NotContains(t, args, "--name")
 	assert.Contains(t, args, "-d")
 	assert.Equal(t, "nginx:alpine", args[len(args)-1])
-}
-
-func TestRunContainerDefaultNameIsSafeAndReadable(t *testing.T) {
-	now := time.Date(2026, 11, 18, 14, 32, 5, 0, time.UTC)
-
-	assert.Equal(t, "api_20261118_143205", defaultRunContainerName("registry.example.com/team/api:v1", now))
-	assert.Equal(t, "container_20261118_143205", defaultRunContainerName("///", now))
 }
 
 func TestRunContainerBuildsEveryKindOfField(t *testing.T) {

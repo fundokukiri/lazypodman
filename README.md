@@ -306,10 +306,10 @@ commands (prune).
 ### Run a new container
 
 - Select an image and press `r` (also the first item in the `x` menu) to open the
-  run menu. The image is prefilled with a readable default name
-  (`<image>_<timestamp>`) and untouched rows show the value Podman will use,
-  such as `on`, `off`, `no` or `missing`; empty values show `-`. Pressing
-  **Run** without changes runs that image detached with those values.
+  run menu. Untouched rows show the value Podman will use, such as `on`,
+  `off`, `no` or `missing`; empty values show `-`. **Name** stays `auto`, so
+  Podman picks a name unless you type one. Pressing **Run** without changes
+  runs that image detached with those values.
 - `enter` edits a value, `space` toggles a switch. Ports, volumes, env, labels and
   the other repeatable flags open a list where `enter` edits or deletes a value
   and **add** creates one. Menu navigation wraps: down on the last row goes to

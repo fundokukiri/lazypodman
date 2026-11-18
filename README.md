@@ -49,7 +49,7 @@ podman system connection list   # shows the endpoint for CONTAINER_HOST
 
 ### Build from source
 
-Dependencies are vendored, so no network access is needed after cloning:
+Dependencies are vendored, so building needs no network access after cloning:
 
 ```sh
 git clone https://github.com/fundokukiri/lazypodman.git
@@ -58,11 +58,30 @@ GOFLAGS=-mod=vendor go build -o lazypodman .
 ./lazypodman
 ```
 
-Install into `$GOBIN`/`$GOPATH/bin`:
+That binary only exists inside the repo directory. To run `lazypodman` from
+anywhere, install it somewhere on your `PATH`:
 
 ```sh
-GOFLAGS=-mod=vendor go install -mod=vendor
+# a) into the Go bin directory (usually ~/go/bin, no sudo needed)
+GOFLAGS=-mod=vendor go install .
+export PATH="$PATH:$(go env GOPATH)/bin"     # add this line to ~/.bashrc or ~/.zshrc
+
+# b) into ~/.local/bin (must already be on your PATH)
+GOFLAGS=-mod=vendor go build -o ~/.local/bin/lazypodman .
+
+# c) system-wide
+GOFLAGS=-mod=vendor go build -o lazypodman .
+sudo install -Dm755 lazypodman /usr/local/bin/lazypodman
 ```
+
+Then check that it resolves from any directory:
+
+```sh
+cd ~ && which lazypodman && lazypodman --version
+```
+
+If `PATH` changes do not stick, run `source ~/.bashrc` (or open a new terminal).
+After pulling new commits, repeat the same build/install command to update it.
 
 ### Container image
 
@@ -86,6 +105,7 @@ podman compose run --rm lazypodman   # or: podman-compose run --rm lazypodman
 ### Alias
 
 ```sh
+# after installing the binary on your PATH
 echo "alias lzp='lazypodman'" >> ~/.zshrc   # or ~/.bashrc
 ```
 

@@ -27,13 +27,14 @@ type logTrimTarget interface {
 // but caps the view's line count. A follow stream otherwise keeps every line in
 // memory until the app is closed, which is what made RAM explode on long logs.
 type logTrimWriter struct {
-	mutex sync.Mutex
-	view  logTrimTarget
-	lines int
+	mutex     sync.Mutex
+	view      logTrimTarget
+	lines     int
+	shouldPin func() bool
 }
 
-func newLogTrimWriter(view logTrimTarget) *logTrimWriter {
-	return &logTrimWriter{view: view}
+func newLogTrimWriter(view logTrimTarget, shouldPin func() bool) *logTrimWriter {
+	return &logTrimWriter{view: view, shouldPin: shouldPin}
 }
 
 func (w *logTrimWriter) Write(p []byte) (int, error) {
@@ -56,6 +57,10 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 // on draw, but pinning the origin here keeps the follow view at the bottom even
 // when a draw is skipped, which otherwise leaves realtime logs stuck.
 func (w *logTrimWriter) pinToBottomLocked() {
+	if w.shouldPin != nil && !w.shouldPin() {
+		return
+	}
+
 	_, height := w.view.Size()
 	if height <= 0 {
 		return

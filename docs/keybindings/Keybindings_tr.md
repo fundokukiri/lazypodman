@@ -116,6 +116,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>G</kbd>: jump to latest logs
   <kbd>esc</kbd>: dönüş
 </pre>
 

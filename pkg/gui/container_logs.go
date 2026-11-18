@@ -102,10 +102,35 @@ func (gui *Gui) logsToggleDescription() string {
 	return gui.Tr.AllLogs
 }
 
+// handleLogsJumpToLatest re-enables follow mode and scrolls to the newest line.
+func (gui *Gui) handleLogsJumpToLatest(g *gocui.Gui, v *gocui.View) error {
+	if !gui.logsTabActive() {
+		return nil
+	}
+
+	mainView := gui.Views.Main
+	mainView.Autoscroll = true
+
+	_, height := mainView.Size()
+	origin := mainView.ViewLinesHeight() - height
+	if origin < 0 {
+		origin = 0
+	}
+
+	if err := mainView.SetOriginY(origin); err != nil {
+		return err
+	}
+
+	gui.g.Update(func(*gocui.Gui) error { return nil })
+
+	return nil
+}
+
 // logsOptionsMap is the bottom-line help for the Logs tab.
 func (gui *Gui) logsOptionsMap() map[string]string {
 	options := map[string]string{
 		"PgUp/PgDn": gui.Tr.Scroll,
+		"G":         gui.Tr.JumpToLatest,
 		"ctrl+l":    gui.Tr.AllLogs,
 	}
 
@@ -137,7 +162,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
-	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView)); err != nil {
+	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll })); err != nil {
 		gui.Log.Error(err)
 	}
 

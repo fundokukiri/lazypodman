@@ -240,6 +240,7 @@ func (gui *Gui) renderPanelOptions() error {
 		if gui.logsTabActive() {
 			options := gui.globalOptionsMap()
 			options["ctrl+l"] = gui.logsToggleDescription()
+			options["G"] = gui.Tr.JumpToLatest
 
 			return gui.renderOptionsMap(options)
 		}

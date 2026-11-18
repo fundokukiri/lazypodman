@@ -51,6 +51,9 @@ systemctl --user status podman.socket 2>/dev/null || podman system service --tim
     (cả khi focus ở panel Containers) đổi thành `ctrl+l: load recent logs`.
   - Nhấn `ctrl+l` lần nữa → reload tab, quay lại 200 dòng. Container khác vẫn giữ
     mặc định 200. Trong lúc reload, log cũ không được ghi chồng lên log mới.
+  - Cuộn `PgUp` lên xa → log mới không kéo view xuống (giữ vị trí đang đọc);
+    nhấn `G` (khi focus panel Containers hoặc trong vùng log) → về dòng mới nhất
+    và bật lại follow.
 
 - [ ] **A4. Hành động**: `s` stop (có xác nhận), `S` start, `r` restart, `p` pause/unpause, `d` remove + force remove, `b` prune khi có 1 pod đã dừng.
 

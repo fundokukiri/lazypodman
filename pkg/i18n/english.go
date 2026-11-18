@@ -193,6 +193,7 @@ type TranslationSet struct {
 	ShellTitle             string
 	AllLogs                string
 	RecentLogs             string
+	JumpToLatest           string
 	ShellCloseHint         string
 	ShellExited            string
 	CloseShell             string
@@ -417,6 +418,7 @@ func englishSet() TranslationSet {
 		ShellTitle:                 "shell",
 		AllLogs:                    "load all logs",
 		RecentLogs:                 "load recent logs",
+		JumpToLatest:               "jump to latest logs",
 		ShellCloseHint:             "shell open: ctrl+x closes it",
 		ShellExited:                "shell exited",
 		CloseShell:                 "close shell",

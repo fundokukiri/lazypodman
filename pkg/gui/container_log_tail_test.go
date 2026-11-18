@@ -46,6 +46,7 @@ func TestLogsOptionsOfferFullHistoryToggle(t *testing.T) {
 
 	options := gui.logsOptionsMap()
 	assert.Equal(t, gui.Tr.AllLogs, options["ctrl+l"])
+	assert.Equal(t, gui.Tr.JumpToLatest, options["G"])
 	assert.Contains(t, options, "PgUp/PgDn")
 }
 

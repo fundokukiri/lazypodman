@@ -480,6 +480,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Description: gui.Tr.AllLogs,
 		},
 		{
+			ViewName:    "main",
+			Key:         'G',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleLogsJumpToLatest,
+			Description: gui.Tr.JumpToLatest,
+		},
+		{
 			ViewName:    "containers",
 			Key:         gocui.KeyCtrlL,
 			Modifier:    gocui.ModNone,

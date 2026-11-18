@@ -44,7 +44,7 @@ func (f *fakeLogTarget) BufferLines() []string {
 
 func TestLogTrimWriterStreamsAndTrims(t *testing.T) {
 	target := &fakeLogTarget{}
-	writer := newLogTrimWriter(target)
+	writer := newLogTrimWriter(target, nil)
 
 	_, err := writer.Write([]byte("one\n"))
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestLogTrimWriterStreamsAndTrims(t *testing.T) {
 
 func TestLogTrimWriterPinsTheNewestLines(t *testing.T) {
 	target := &fakeLogTarget{height: 10}
-	writer := newLogTrimWriter(target)
+	writer := newLogTrimWriter(target, nil)
 
 	_, err := writer.Write([]byte("one\ntwo\nthree\n"))
 	assert.NoError(t, err)
@@ -87,7 +87,7 @@ func TestLogTrimWriterPinsTheNewestLines(t *testing.T) {
 
 func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	target := &fakeLogTarget{}
-	writer := newLogTrimWriter(target)
+	writer := newLogTrimWriter(target, nil)
 
 	_, err := writer.Write([]byte(strings.Repeat("line\n", 100)))
 	assert.NoError(t, err)

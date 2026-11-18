@@ -6,8 +6,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -16,7 +14,6 @@ import (
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/fundokukiri/lazypodman/pkg/utils"
-	"github.com/jesseduffield/gocui"
 )
 
 func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.TaskFunc {
@@ -38,124 +35,32 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 		notifyStopped <- struct{}{}
 	}()
 
-	// Buffer the stream and replace the view content in one go. Writing lines
-	// straight into the view made every reload paint from the top and then jump
-	// to the bottom, which looked like the log scrolling down by itself.
-	logs := newLogAccumulator(maxLogLines)
-	streamDone := make(chan error, 1)
+	mainView := gui.Views.Main
 
-	go func() {
-		streamDone <- gui.writeContainerLogs(container, ctx, logs)
-	}()
+	if err := gui.writeContainerLogs(container, ctx, mainView); err != nil {
+		gui.Log.Error(err)
+	}
 
+	// if we are here because the task has been stopped, we should return
+	// if we are here then the container must have exited, meaning we should wait until it's back again before
 	ticker := time.NewTicker(time.Millisecond * 100)
 	defer ticker.Stop()
-
-	rendered := -1
-	waitForRestart := false
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case err := <-streamDone:
-			gui.flushLogs(logs, &rendered)
-
-			if err != nil {
-				gui.Log.Error(err)
-				return
-			}
-
-			// The container exited: wait until it is back, then let the task
-			// restart so the log stream is re-read.
-			waitForRestart = true
 		case <-ticker.C:
-			gui.flushLogs(logs, &rendered)
-
-			if !waitForRestart {
-				continue
-			}
-
 			result, err := container.Inspect()
 			if err != nil {
 				// if we get an error, then the container has probably been removed so we'll get out of here
 				gui.Log.Error(err)
 				return
 			}
-
 			if result.State.Running {
 				return
 			}
 		}
 	}
-}
-
-// maxLogLines bounds the in-memory log buffer. Without a cap a long-running
-// follow stream would grow until the app is closed.
-const maxLogLines = 5000
-
-// logAccumulator implements io.Writer and keeps the last maxLogLines complete
-// lines plus any partial line. version changes whenever the content changes, so
-// the renderer can skip identical frames.
-type logAccumulator struct {
-	mutex   sync.Mutex
-	lines   []string
-	partial string
-	version int
-	max     int
-}
-
-func newLogAccumulator(max int) *logAccumulator {
-	return &logAccumulator{max: max}
-}
-
-func (a *logAccumulator) Write(p []byte) (int, error) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
-	parts := strings.Split(a.partial+string(p), "\n")
-	a.partial = parts[len(parts)-1]
-	a.lines = append(a.lines, parts[:len(parts)-1]...)
-
-	if a.max > 0 && len(a.lines) > a.max {
-		a.lines = append([]string(nil), a.lines[len(a.lines)-a.max:]...)
-	}
-
-	a.version++
-
-	return len(p), nil
-}
-
-// snapshot returns the text to render and its version.
-func (a *logAccumulator) snapshot() (string, int) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
-	lines := a.lines
-	if a.partial != "" {
-		lines = append(append([]string(nil), lines...), a.partial)
-	}
-
-	return strings.Join(lines, "\n"), a.version
-}
-
-func (gui *Gui) flushLogs(logs *logAccumulator, rendered *int) {
-	content, version := logs.snapshot()
-	if version == *rendered {
-		return
-	}
-
-	*rendered = version
-
-	// Autoscroll on the main view pins the origin to the last line when the
-	// frame is drawn, so the whole buffer appears at once at the bottom.
-	gui.g.Update(func(*gocui.Gui) error {
-		if gui.Views.Main == nil {
-			return nil
-		}
-
-		return gui.setViewContent(gui.Views.Main, content)
-	})
 }
 
 func (gui *Gui) renderLogsToStdout(container *commands.Container) {

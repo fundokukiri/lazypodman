@@ -3,7 +3,10 @@ package commands
 import (
 	"context"
 	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -195,4 +198,125 @@ func TestVersionAtLeast(t *testing.T) {
 	assert.True(t, versionAtLeast("4.1.0"))
 	assert.False(t, versionAtLeast("2.2.1"))
 	assert.False(t, versionAtLeast("garbage"))
+}
+
+// writeFakePodmanScript creates an executable `podman` that records each argv
+// element on its own line and replays STDOUT_FILE/STDERR_FILE. It is skipped on
+// Windows because it is a POSIX shell script.
+func writeFakePodmanScript(t *testing.T) (binary string, argvFile string, stdoutFile string, stderrFile string) {
+	t.Helper()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("fake podman script requires a POSIX shell")
+	}
+
+	dir := t.TempDir()
+	binary = filepath.Join(dir, "podman")
+	argvFile = filepath.Join(dir, "argv.log")
+	stdoutFile = filepath.Join(dir, "stdout.log")
+	stderrFile = filepath.Join(dir, "stderr.log")
+
+	script := `#!/bin/sh
+for arg in "$@"; do printf '[%s]\n' "$arg"; done >> "$ARGV_FILE"
+printf -- '---\n' >> "$ARGV_FILE"
+cat "$STDOUT_FILE" 2>/dev/null
+cat "$STDERR_FILE" >&2 2>/dev/null
+exit "${FAKE_EXIT:-0}"
+`
+
+	requireNoError(t, os.WriteFile(binary, []byte(script), 0o755))
+
+	t.Setenv("ARGV_FILE", argvFile)
+	t.Setenv("STDOUT_FILE", stdoutFile)
+	t.Setenv("STDERR_FILE", stderrFile)
+
+	return binary, argvFile, stdoutFile, stderrFile
+}
+
+func readRecordedArgv(t *testing.T, argvFile string) string {
+	t.Helper()
+
+	content, err := os.ReadFile(argvFile)
+	requireNoError(t, err)
+
+	return string(content)
+}
+
+func TestPodArgv(t *testing.T) {
+	argv, err := podArgv("start", "web api")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"pod", "start", "--", "web api"}, argv)
+
+	argv, err = podArgv("rm", "web", "--force")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"pod", "rm", "--force", "--", "web"}, argv)
+
+	for _, ref := range []string{"", "-all", "--force"} {
+		_, err := podArgv("start", ref)
+		assert.Error(t, err, ref)
+		assert.Contains(t, err.Error(), "invalid pod reference")
+	}
+}
+
+func TestCLIActionsRecordArgv(t *testing.T) {
+	binary, argvFile, _, _ := writeFakePodmanScript(t)
+	client := &cliPodmanClient{binary: binary}
+
+	assert.NoError(t, client.PodAction(context.Background(), "start", "web api"))
+	assert.NoError(t, client.PodAction(context.Background(), "rm", "db", "--force"))
+
+	want := "[pod]\n[start]\n[--]\n[web api]\n---\n[pod]\n[rm]\n[--force]\n[--]\n[db]\n---\n"
+	assert.Equal(t, want, readRecordedArgv(t, argvFile))
+}
+
+func TestCLIActionSurfacesStderr(t *testing.T) {
+	binary, _, _, stderrFile := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stderrFile, []byte("Error: no such pod\n"), 0o600))
+	t.Setenv("FAKE_EXIT", "2")
+
+	client := &cliPodmanClient{binary: binary}
+	err := client.PodAction(context.Background(), "stop", "web")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no such pod")
+	assert.Contains(t, err.Error(), "pod stop")
+}
+
+func TestCLIPruneAndInspectRecordArgv(t *testing.T) {
+	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte("[]\n"), 0o600))
+	client := &cliPodmanClient{binary: binary}
+
+	assert.NoError(t, client.PodPrune(context.Background()))
+	_, err := client.PodInspect(context.Background(), "web")
+	assert.NoError(t, err)
+	_, err = client.PodInspect(context.Background(), "-bad")
+	assert.Error(t, err)
+
+	want := "[pod]\n[prune]\n[--force]\n---\n[pod]\n[inspect]\n[--]\n[web]\n---\n"
+	assert.Equal(t, want, readRecordedArgv(t, argvFile))
+}
+
+func TestCLIPodListBackfillsClient(t *testing.T) {
+	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, readPodFixture(t, "v5.2.json"), 0o600))
+	client := &cliPodmanClient{binary: binary}
+
+	pods, err := client.PodList(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, pods, 3)
+	assert.Same(t, client, pods[0].PodClient)
+	assert.Equal(t, binary, pods[0].PodmanBinary)
+	assert.Equal(t, "[pod]\n[ls]\n[--format]\n[json]\n---\n", readRecordedArgv(t, argvFile))
+}
+
+func TestCLIContainerPodMapUsesPsAll(t *testing.T) {
+	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, readPodFixture(t, "ps_v5.json"), 0o600))
+	client := &cliPodmanClient{binary: binary}
+
+	podByContainer, err := client.ContainerPodMap(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, podByContainer, 3)
+	assert.Equal(t, "[ps]\n[-a]\n[--format]\n[json]\n---\n", readRecordedArgv(t, argvFile))
 }

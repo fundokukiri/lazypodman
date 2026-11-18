@@ -1,13 +1,18 @@
 package commands
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -209,4 +214,319 @@ func parseVersionParts(version string) ([3]int, bool) {
 	}
 
 	return parts, true
+}
+
+// cliPodmanClient is the only PodmanClient implementation: it shells out to the
+// podman binary. The socket backend stays untouched; this exists for the data
+// the Docker-compatible API cannot serve (pods).
+type cliPodmanClient struct {
+	binary string
+	check  CLICheck
+}
+
+// newCLIPodmanClient builds the client and runs the one-time enablement check.
+func newCLIPodmanClient(ctx context.Context, binary, socketPath string, mode PodsMode) *cliPodmanClient {
+	client := &cliPodmanClient{binary: binary}
+	client.check = detectCLI(ctx, socketPath, mode, client.run)
+
+	return client
+}
+
+// Enabled reports whether the CLI can back the Podman-native features.
+func (c *cliPodmanClient) Enabled() bool {
+	return c.check.Enabled
+}
+
+// Reason is the short code shown as `pods off: <reason>`, empty when enabled.
+func (c *cliPodmanClient) Reason() string {
+	return c.check.Reason
+}
+
+// Version is the detected podman client version, empty when detection failed.
+func (c *cliPodmanClient) Version() string {
+	return c.check.Version
+}
+
+// run executes podman and returns its stdout. stderr is folded into the error so
+// the UI can show podman's own message instead of a bare exit status.
+func (c *cliPodmanClient) run(ctx context.Context, argv ...string) ([]byte, error) {
+	return runPodmanCommand(ctx, c.binary, argv...)
+}
+
+// runPodmanCommand runs a one-shot podman command. It is not used for streaming:
+// those need a reader plus kill-on-close (see PodLogs).
+func runPodmanCommand(ctx context.Context, binary string, argv ...string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, binary, argv...)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	cmd.Cancel = func() error { return cmd.Process.Kill() }
+	cmd.WaitDelay = 2 * time.Second
+
+	if err := cmd.Run(); err != nil {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = err.Error()
+		}
+
+		return stdout.Bytes(), fmt.Errorf("%s %s: %w: %s", binary, strings.Join(argv, " "), err, message)
+	}
+
+	return stdout.Bytes(), nil
+}
+
+// validatePodRef rejects references empty or starting with a dash, so a name can
+// never be interpreted as a flag by podman.
+func validatePodRef(ref string) error {
+	if ref == "" || strings.HasPrefix(ref, "-") {
+		return fmt.Errorf("invalid pod reference %q", ref)
+	}
+
+	return nil
+}
+
+// podArgv builds the argv for a pod verb. The reference goes after `--` so names
+// with spaces, quotes or other shell-ish characters stay one argument.
+func podArgv(verb, ref string, extra ...string) ([]string, error) {
+	if err := validatePodRef(ref); err != nil {
+		return nil, err
+	}
+
+	argv := append([]string{"pod", verb}, extra...)
+
+	return append(argv, "--", ref), nil
+}
+
+// PodList returns the pods of the podman store.
+func (c *cliPodmanClient) PodList(ctx context.Context) ([]*Pod, error) {
+	out, err := c.run(ctx, "pod", "ls", "--format", "json")
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := parsePods(out)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pod := range pods {
+		pod.PodClient = c
+		pod.PodmanBinary = c.binary
+	}
+
+	return pods, nil
+}
+
+// ContainerPodMap returns full container ID -> pod name. Uses `ps -a` because
+// the Docker-compatible API reports PodName empty; `--external` is deliberately
+// not passed: containers created outside Podman are out of scope.
+func (c *cliPodmanClient) ContainerPodMap(ctx context.Context) (map[string]string, error) {
+	out, err := c.run(ctx, "ps", "-a", "--format", "json")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseContainerPodMap(out)
+}
+
+// PodInspect returns the JSON document of `pod inspect`.
+func (c *cliPodmanClient) PodInspect(ctx context.Context, ref string) ([]byte, error) {
+	if err := validatePodRef(ref); err != nil {
+		return nil, err
+	}
+
+	return c.run(ctx, "pod", "inspect", "--", ref)
+}
+
+// PodAction runs a lifecycle verb (start, stop, restart, pause, unpause, rm).
+func (c *cliPodmanClient) PodAction(ctx context.Context, verb, ref string, extra ...string) error {
+	argv, err := podArgv(verb, ref, extra...)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.run(ctx, argv...)
+
+	return err
+}
+
+// PodPrune removes all stopped pods.
+func (c *cliPodmanClient) PodPrune(ctx context.Context) error {
+	_, err := c.run(ctx, "pod", "prune", "--force")
+
+	return err
+}
+
+// maxPodLogProcesses caps the per-container log fallback: one process per
+// container does not scale to a forty-container pod, and the UI cannot show that
+// much anyway.
+const maxPodLogProcesses = 8
+
+// parsePodLogLine splits a merged log line produced with `--names` into the
+// container name and the message. Names are matched at the start, longest first,
+// followed by a single space, so a message like "webbish: hi" is not attributed
+// to a container called "web".
+func parsePodLogLine(line string, names []string) (string, string) {
+	sorted := make([]string, 0, len(names))
+	for _, name := range names {
+		if name != "" {
+			sorted = append(sorted, name)
+		}
+	}
+
+	sort.Slice(sorted, func(i, j int) bool { return len(sorted[i]) > len(sorted[j]) })
+
+	for _, name := range sorted {
+		if strings.HasPrefix(line, name+" ") {
+			return name, strings.TrimPrefix(line, name+" ")
+		}
+	}
+
+	return "", line
+}
+
+// streamCloser closes the reading end and kills the children once.
+type streamCloser struct {
+	reader io.ReadCloser
+	close  func() error
+	once   sync.Once
+	err    error
+}
+
+func (s *streamCloser) Read(p []byte) (int, error) {
+	return s.reader.Read(p)
+}
+
+func (s *streamCloser) Close() error {
+	s.once.Do(func() { s.err = s.close() })
+
+	return s.err
+}
+
+// PodLogs streams the merged logs of a pod. When podman advertises `--names` the
+// whole pod is one process; otherwise each container gets its own process (and
+// containers started after the follow begins are missed until the tab reloads).
+//
+// Closing the returned reader cancels the context, kills the children and waits
+// for them, so switching tabs leaves no orphaned podman processes.
+func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*Container, tail int) (io.ReadCloser, error) {
+	if pod == nil {
+		return nil, errors.New("no pod selected")
+	}
+
+	if err := validatePodRef(pod.Name); err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	reader, writer := io.Pipe()
+
+	type command struct {
+		argv []string
+	}
+
+	commands := []command{}
+	if c.check.Features["pod-logs-names"] {
+		commands = append(commands, command{argv: []string{
+			"pod", "logs", "--follow", "--names", "--tail", strconv.Itoa(tail), "--", pod.Name,
+		}})
+	} else {
+		selected := containers
+		if len(selected) > maxPodLogProcesses {
+			selected = append(selected[:0:0], selected...)
+
+			running := make([]*Container, 0, len(selected))
+			stopped := make([]*Container, 0, len(selected))
+			for _, ctr := range selected {
+				if ctr.Container.State == "running" {
+					running = append(running, ctr)
+				} else {
+					stopped = append(stopped, ctr)
+				}
+			}
+
+			selected = append(running, stopped...)[:maxPodLogProcesses]
+		}
+
+		if len(selected) > 0 {
+			_, _ = writer.Write([]byte(fmt.Sprintf("# streaming %d of the pod's containers\n", len(selected))))
+		}
+
+		for _, ctr := range selected {
+			if err := validatePodRef(ctr.Name); err != nil {
+				continue
+			}
+
+			commands = append(commands, command{argv: []string{
+				"logs", "--follow", "--names", "--tail", strconv.Itoa(tail), "--", ctr.Name,
+			}})
+		}
+	}
+
+	var wg sync.WaitGroup
+	for _, cmd := range commands {
+		wg.Add(1)
+
+		go func(argv []string) {
+			defer wg.Done()
+
+			command := exec.CommandContext(ctx, c.binary, argv...)
+			command.Cancel = func() error { return command.Process.Kill() }
+			command.WaitDelay = 2 * time.Second
+
+			stdout, err := command.StdoutPipe()
+			if err != nil {
+				_ = writer.CloseWithError(err)
+
+				return
+			}
+
+			if err := command.Start(); err != nil {
+				_ = writer.CloseWithError(err)
+
+				return
+			}
+
+			scanner := bufio.NewScanner(stdout)
+			scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+			for scanner.Scan() {
+				line := append(scanner.Bytes(), '\n')
+				if _, err := writer.Write(line); err != nil {
+					break
+				}
+			}
+
+			_ = command.Wait()
+		}(cmd.argv)
+	}
+
+	go func() {
+		wg.Wait()
+		_ = writer.Close()
+	}()
+
+	return &streamCloser{
+		reader: reader,
+		close: func() error {
+			cancel()
+			wg.Wait()
+
+			return reader.Close()
+		},
+	}, nil
+}
+
+// ParsePodsMode maps the gui.pods.enabled config value to a PodsMode. Anything
+// unrecognised means "auto", so a typo never silently disables the feature.
+func ParsePodsMode(value string) PodsMode {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "always":
+		return PodsAlways
+	case "never":
+		return PodsNever
+	default:
+		return PodsAuto
+	}
 }

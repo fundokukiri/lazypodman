@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/fundokukiri/lazypodman/pkg/app"
+	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/config"
 	"github.com/fundokukiri/lazypodman/pkg/gui"
 	"github.com/fundokukiri/lazypodman/pkg/i18n"
@@ -41,6 +42,13 @@ func generateAtDir(dir string) {
 	for lang := range i18n.GetTranslationSets() {
 		os.Setenv("LC_ALL", lang)
 		mApp, _ := app.NewApp(mConfig)
+		// Keybindings include the pods panel only when the CLI probe says pods
+		// are available. That probe depends on the host, so pin it here: the
+		// cheatsheet must be identical on every machine and in CI.
+		mApp.Gui.PodmanCommand.SetCapabilities(commands.Capabilities{
+			CLI:  commands.Capability{State: commands.CapabilityAvailable},
+			Pods: commands.Capability{State: commands.CapabilityAvailable},
+		})
 		mApp.Gui.SetupFakeGui()
 
 		file, err := os.Create(dir + "/Keybindings_" + lang + ".md")

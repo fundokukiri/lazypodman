@@ -87,7 +87,7 @@ func (c *cliPodmanClient) StreamKube(ctx context.Context, prefix, args []string,
 // StreamPodman runs any podman command and streams its merged output line by line.
 func (c *cliPodmanClient) StreamPodman(ctx context.Context, argv []string, onLine func(string)) error {
 	command := exec.CommandContext(ctx, c.binary, argv...)
-	command.Cancel = func() error { return command.Process.Kill() }
+	configureProcessGroup(command)
 	command.WaitDelay = 2 * time.Second
 
 	reader, writer := io.Pipe()

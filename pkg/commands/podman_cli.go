@@ -311,7 +311,7 @@ func runPodmanCommand(ctx context.Context, binary string, argv ...string) ([]byt
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	cmd.Cancel = func() error { return cmd.Process.Kill() }
+	configureProcessGroup(cmd)
 	cmd.WaitDelay = 2 * time.Second
 
 	if err := cmd.Run(); err != nil {
@@ -494,7 +494,7 @@ func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*C
 			defer wg.Done()
 
 			command := exec.CommandContext(ctx, c.binary, argv...)
-			command.Cancel = func() error { return command.Process.Kill() }
+			configureProcessGroup(command)
 			command.WaitDelay = 2 * time.Second
 
 			stdout, err := command.StdoutPipe()

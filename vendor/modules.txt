@@ -23,25 +23,12 @@ github.com/containerd/errdefs/pkg/errhttp
 github.com/containerd/errdefs/pkg/internal/cause
 # github.com/containerd/log v0.1.0
 ## explicit; go 1.20
-github.com/containerd/log
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
 # github.com/distribution/reference v0.6.0
 ## explicit; go 1.20
 github.com/distribution/reference
-# github.com/docker/cli v27.1.1+incompatible
-## explicit
-github.com/docker/cli/cli/config
-github.com/docker/cli/cli/config/configfile
-github.com/docker/cli/cli/config/credentials
-github.com/docker/cli/cli/config/types
-github.com/docker/cli/cli/connhelper
-github.com/docker/cli/cli/connhelper/commandconn
-github.com/docker/cli/cli/connhelper/ssh
-github.com/docker/cli/cli/context
-github.com/docker/cli/cli/context/docker
-github.com/docker/cli/cli/context/store
 # github.com/docker/docker v28.5.2+incompatible
 ## explicit
 github.com/docker/docker/api
@@ -66,13 +53,7 @@ github.com/docker/docker/api/types/time
 github.com/docker/docker/api/types/versions
 github.com/docker/docker/api/types/volume
 github.com/docker/docker/client
-github.com/docker/docker/errdefs
-github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/stdcopy
-# github.com/docker/docker-credential-helpers v0.8.2
-## explicit; go 1.19
-github.com/docker/docker-credential-helpers/client
-github.com/docker/docker-credential-helpers/credentials
 # github.com/docker/go-connections v0.5.0
 ## explicit; go 1.18
 github.com/docker/go-connections/nat
@@ -87,9 +68,6 @@ github.com/fatih/color
 # github.com/felixge/httpsnoop v1.0.4
 ## explicit; go 1.13
 github.com/felixge/httpsnoop
-# github.com/fvbommel/sortorder v1.1.0
-## explicit; go 1.13
-github.com/fvbommel/sortorder
 # github.com/gdamore/encoding v1.0.1
 ## explicit; go 1.9
 github.com/gdamore/encoding
@@ -200,10 +178,6 @@ github.com/mgutz/str
 github.com/moby/docker-image-spec/specs-go/v1
 # github.com/moby/sys/atomicwriter v0.1.0
 ## explicit; go 1.18
-github.com/moby/sys/atomicwriter
-# github.com/moby/sys/sequential v0.6.0
-## explicit; go 1.17
-github.com/moby/sys/sequential
 # github.com/moby/term v0.5.0
 ## explicit; go 1.18
 # github.com/morikuni/aec v1.0.0

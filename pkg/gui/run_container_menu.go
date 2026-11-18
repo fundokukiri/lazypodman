@@ -66,7 +66,7 @@ func (gui *Gui) runValueLabel(state *runContainerState, field runField) string {
 	case runListField:
 		values := state.lists[field.Key]
 		if len(values) == 0 {
-			return gui.trString(gui.Tr.RunContainerEmpty, "none")
+			return gui.trString(gui.Tr.RunContainerEmpty, "-")
 		}
 		return fmt.Sprintf("%d %s", len(values), gui.trString(gui.Tr.RunContainerItems, "items"))
 	case runToggleField:

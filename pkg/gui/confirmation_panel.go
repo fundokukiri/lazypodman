@@ -7,6 +7,7 @@
 package gui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
@@ -73,17 +74,20 @@ func (gui *Gui) createPromptPanelWithInitial(title, initial string, handleConfir
 	}
 	gui.Views.Confirmation.Editable = true
 
-	if initial != "" {
-		if err := gui.renderString(gui.g, "confirmation", initial); err != nil {
+	// Replace the previous prompt's buffer even when initial is empty: reusing
+	// the view otherwise leaves the last field's text in the next input.
+	gui.g.Update(func(g *gocui.Gui) error {
+		view, err := g.View("confirmation")
+		if err != nil {
+			return nil
+		}
+		if err := view.SetOrigin(0, 0); err != nil {
 			return err
 		}
-		gui.g.Update(func(g *gocui.Gui) error {
-			if view, err := g.View("confirmation"); err == nil {
-				return view.SetCursor(len([]rune(initial)), 0)
-			}
-			return nil
-		})
-	}
+		view.Clear()
+		fmt.Fprint(view, gui.cleanString(initial))
+		return view.SetCursor(len([]rune(initial)), 0)
+	})
 
 	return gui.setKeyBindings(gui.g, handleConfirm, nil)
 }

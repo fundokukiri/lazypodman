@@ -72,7 +72,7 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 
 	assert.True(t, strings.HasPrefix(gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "alpine_"))
 	assert.Equal(t, "on", gui.runValueLabel(state, runFieldByKey("detach")))
-	assert.Equal(t, "none", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
+	assert.Equal(t, "-", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
 	assert.Equal(t, "image default", gui.runValueLabel(state, runFieldByKey("command")))
 	assert.Equal(t, "unset", gui.runValueLabel(state, runFieldByKey("cpus")))
 

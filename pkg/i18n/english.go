@@ -330,7 +330,7 @@ func englishSet() TranslationSet {
 		RunContainerAdd:             "add",
 		RunContainerEdit:            "edit",
 		RunContainerDelete:          "delete",
-		RunContainerEmpty:           "none",
+		RunContainerEmpty:           "-",
 		RunContainerItems:           "items",
 		RunContainerRun:             "Run",
 		RunContainerExtraArgs:       "Extra args",

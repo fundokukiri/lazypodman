@@ -90,6 +90,20 @@ func TestTerminalHeaderOmitsEmptyPod(t *testing.T) {
 	assert.NotContains(t, regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(header, ""), "pod:")
 }
 
+func TestTerminalScrollBindingsIncludeTheMouseWheel(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	keys := map[interface{}]bool{}
+	for _, binding := range gui.terminalKeyBindings() {
+		keys[binding.Key] = true
+	}
+
+	assert.True(t, keys[gocui.MouseWheelUp])
+	assert.True(t, keys[gocui.MouseWheelDown])
+	assert.True(t, keys[gocui.KeyPgup])
+	assert.True(t, keys[gocui.KeyPgdn])
+}
+
 func TestScrolledOffLinesDetectsScrolling(t *testing.T) {
 	oldRows := []string{"a", "b", "c", "d"}
 	newRows := []string{"c", "d", "e", "f"}
@@ -129,9 +143,9 @@ func TestTerminalOptionsShowHowToClose(t *testing.T) {
 	options := gui.terminalOptionsMap()
 
 	assert.Equal(t, map[string]string{
-		"PgUp/PgDn": gui.Tr.Scroll,
-		"ctrl+o":    gui.Tr.LeaveShell,
-		"ctrl+x":    gui.Tr.CloseShell,
+		"wheel/PgUp/PgDn": gui.Tr.Scroll,
+		"ctrl+o":          gui.Tr.LeaveShell,
+		"ctrl+x":          gui.Tr.CloseShell,
 	}, options)
-	assert.Equal(t, "PgUp/PgDn: scroll, ctrl+o: leave shell, keep it running, ctrl+x: close shell", gui.optionsMapToString(options))
+	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+x: close shell, wheel/PgUp/PgDn: scroll", gui.optionsMapToString(options))
 }

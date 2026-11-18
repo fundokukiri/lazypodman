@@ -420,9 +420,9 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 // (q, b, x) are forwarded to the container, so they must not be advertised here.
 func (gui *Gui) terminalOptionsMap() map[string]string {
 	return map[string]string{
-		"PgUp/PgDn": gui.Tr.Scroll,
-		"ctrl+o":    gui.Tr.LeaveShell,
-		"ctrl+x":    gui.Tr.CloseShell,
+		"wheel/PgUp/PgDn": gui.Tr.Scroll,
+		"ctrl+o":          gui.Tr.LeaveShell,
+		"ctrl+x":          gui.Tr.CloseShell,
 	}
 }
 
@@ -488,6 +488,8 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 		&Binding{ViewName: "terminal", Key: gocui.KeyHome, Modifier: gocui.ModNone, Handler: send("\x1b[H")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyEnd, Modifier: gocui.ModNone, Handler: send("\x1b[F")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyDelete, Modifier: gocui.ModNone, Handler: send("\x1b[3~")},
+		&Binding{ViewName: "terminal", Key: gocui.MouseWheelUp, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(3) }},
+		&Binding{ViewName: "terminal", Key: gocui.MouseWheelDown, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(-3) }},
 		&Binding{ViewName: "terminal", Key: gocui.KeyPgup, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyPgdn, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(-10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlO, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.leaveTerminalFocus() }, Description: gui.Tr.LeaveShell},

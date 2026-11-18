@@ -263,7 +263,8 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
 - Kube chỉ có trong panel Pods, nên máy chỉ có socket (không có CLI) không dùng được.
 - Shell tab dùng PTY thật nhưng hiển thị dạng text: màu ANSI chưa được vẽ, không hỗ trợ
   chuột; `ctrl+x` đóng shell (không dùng được trong app bên trong). `PgUp`/`PgDn`
-  cuộn lịch sử shell (tối đa 5000 dòng) nên app bên trong không nhận hai phím này.
+  hoặc lăn chuột cuộn lịch sử shell (tối đa 5000 dòng) nên app bên trong không
+  nhận hai phím này.
 - Events tab và auto-update cần CLI `podman`; không có CLI thì tab Events ghi
   `cli off:` và không spawn gì, còn auto-update chỉ hiện thông báo.
 - Quadlet export ghi file `.container` là điểm bắt đầu dễ đọc, không dịch toàn bộ

@@ -126,6 +126,10 @@ func (gui *Gui) closeContainerTerminal() error {
 	gui.setTerminal(nil)
 	_ = state.terminal.Close()
 
+	// Wipe the main view immediately: the tab that was showing before the shell
+	// (stats, env, ...) must not be visible behind the logs that are about to load.
+	gui.clearMainView()
+
 	gui.g.Update(func(*gocui.Gui) error {
 		gui.Views.Terminal.Visible = false
 		gui.g.Cursor = false

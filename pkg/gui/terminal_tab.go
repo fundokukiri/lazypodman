@@ -243,7 +243,7 @@ func (gui *Gui) layoutTerminalView(g *gocui.Gui) error {
 	mainView := gui.Views.Main
 	x0, y0, x1, y1 := mainView.Dimensions()
 
-	// Start one row below the main view's top so its tab titles stay visible.
+	// Start on the row right under the tab titles so the info line hugs them.
 	if _, err := g.SetView("terminal", x0, y0+1, x1, y1, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
 		return err
 	}
@@ -305,9 +305,26 @@ func terminalHeader(container *commands.Container, tr *i18n.TranslationSet) stri
 		id = id[:12]
 	}
 
-	header := fmt.Sprintf(tr.ShellHeader, container.Name, image, status, id)
+	label := func(text string) string { return "\x1b[36m" + text + "\x1b[0m" }
+
+	statusColor := "\x1b[31m"
+	if strings.HasPrefix(strings.ToLower(status), "up") || strings.HasPrefix(strings.ToLower(status), "running") {
+		statusColor = "\x1b[32m"
+	}
+
+	header := fmt.Sprintf(tr.ShellHeader,
+		"\x1b[33m"+container.Name+"\x1b[0m",
+		"\x1b[35m"+image+"\x1b[0m",
+		statusColor+status+"\x1b[0m",
+		"\x1b[90m"+id+"\x1b[0m",
+	)
+	header = strings.ReplaceAll(header, "container:", label("container:"))
+	header = strings.ReplaceAll(header, "image:", label("image:"))
+	header = strings.ReplaceAll(header, "status:", label("status:"))
+	header = strings.ReplaceAll(header, "id:", label("id:"))
+
 	if container.PodName != "" {
-		header += fmt.Sprintf(tr.ShellHeaderPod, container.PodName)
+		header += fmt.Sprintf(tr.ShellHeaderPod, label("pod:")+" \x1b[35m"+container.PodName+"\x1b[0m")
 	}
 
 	return header

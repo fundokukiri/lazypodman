@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
@@ -67,12 +68,14 @@ func TestTerminalHeaderShowsContainerInfo(t *testing.T) {
 	}
 
 	header := terminalHeader(container, gui.Tr)
+	plain := regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(header, "")
 
-	assert.Contains(t, header, "container: web")
-	assert.Contains(t, header, "image: nginx:alpine")
-	assert.Contains(t, header, "status: Up 5 minutes")
-	assert.Contains(t, header, "id: 0123456789ab")
-	assert.Contains(t, header, "pod: app-pod")
+	assert.Contains(t, plain, "container: web")
+	assert.Contains(t, plain, "image: nginx:alpine")
+	assert.Contains(t, plain, "status: Up 5 minutes")
+	assert.Contains(t, plain, "id: 0123456789ab")
+	assert.Contains(t, plain, "pod: app-pod")
+	assert.Contains(t, header, "\x1b[32m", "running status is green")
 }
 
 func TestTerminalHeaderOmitsEmptyPod(t *testing.T) {
@@ -83,7 +86,8 @@ func TestTerminalHeaderOmitsEmptyPod(t *testing.T) {
 		Container: containerSummary("nginx", "running"),
 	}
 
-	assert.NotContains(t, terminalHeader(container, gui.Tr), "pod:")
+	header := terminalHeader(container, gui.Tr)
+	assert.NotContains(t, regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(header, ""), "pod:")
 }
 
 func TestTerminalTabOnlyForItsContainer(t *testing.T) {

@@ -101,24 +101,7 @@ func (s *runContainerState) buildArgv(extraArgs string) []string {
 	args := []string{"build"}
 
 	appendField := func(field runField) {
-		switch field.Kind {
-		case runToggleField:
-			if s.toggles[field.Key] {
-				args = append(args, field.Flag)
-			}
-		case runListField:
-			for _, value := range s.lists[field.Key] {
-				value = strings.TrimSpace(value)
-				if value != "" {
-					args = append(args, field.Flag, value)
-				}
-			}
-		case runTextField, runChoiceField:
-			value := strings.TrimSpace(s.text[field.Key])
-			if value != "" {
-				args = append(args, field.Flag, value)
-			}
-		}
+		args = appendRunField(args, s, field)
 	}
 
 	for _, field := range buildImageFields {
@@ -143,13 +126,39 @@ func (s *runContainerState) buildArgv(extraArgs string) []string {
 	return args
 }
 
+func appendRunField(args []string, s *runContainerState, field runField) []string {
+	switch field.Kind {
+	case runToggleField:
+		if s.toggles[field.Key] {
+			args = append(args, field.Flag)
+		}
+	case runListField:
+		for _, value := range s.lists[field.Key] {
+			value = strings.TrimSpace(value)
+			if value != "" {
+				args = append(args, field.Flag, value)
+			}
+		}
+	case runTextField, runChoiceField:
+		value := strings.TrimSpace(s.text[field.Key])
+		if value != "" {
+			args = append(args, field.Flag, value)
+		}
+	}
+	return args
+}
+
 func buildFieldByKey(key string) runField {
-	for _, field := range buildImageFields {
+	return buildFieldByKeyIn(buildImageFields, buildImageGroups, key)
+}
+
+func buildFieldByKeyIn(fields []runField, groups []runFieldGroup, key string) runField {
+	for _, field := range fields {
 		if field.Key == key {
 			return field
 		}
 	}
-	for _, group := range buildImageGroups {
+	for _, group := range groups {
 		for _, field := range group.Fields {
 			if field.Key == key {
 				return field

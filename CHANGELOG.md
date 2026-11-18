@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Commit a container to an image**: `C` on the Containers panel opens a
+  menu for the image tag, author, message and `--change` instructions, with
+  Advanced options for config, format, iidfile, volumes, quiet and squash. The
+  `podman commit` argv is previewed and confirmed, the container ref goes after
+  `--`, failures show Podman's output and success reloads the image list.
+
 - **Build an image from a Containerfile**: `B` on the Images panel opens a
   schema-driven build menu (context, Containerfile, tags, Advanced groups for
   build args, network, resources, security, output/cache and auth/secrets). The

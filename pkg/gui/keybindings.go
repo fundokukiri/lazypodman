@@ -235,6 +235,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainersCommitImage,
+			Description: gui.Tr.CommitImage,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'a',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerAttach,

@@ -37,6 +37,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: pausar
   <kbd>s</kbd>: parar
   <kbd>r</kbd>: reiniciar
+  <kbd>C</kbd>: commit to image
   <kbd>a</kbd>: anexar
   <kbd>m</kbd>: ver logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)

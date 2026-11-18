@@ -37,6 +37,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: 暂停
   <kbd>s</kbd>: 停止
   <kbd>r</kbd>: 重新启动
+  <kbd>C</kbd>: commit to image
   <kbd>a</kbd>: attach
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)

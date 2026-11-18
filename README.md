@@ -17,8 +17,8 @@ projects, logs and stats in one window, every common action one keypress away.
 - Attach to a container, open an in-app PTY shell tab, view its processes
   (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
-  container from an image, or build an image from a Containerfile with a fully
-  editable menu
+  container from an image, build an image from a Containerfile, or commit a
+  container to an image with fully editable menus
 - Inspect image layers, prune containers, images, volumes and networks
 - Custom commands and bulk commands, configured per panel
 - Pods, kube generate/play/down, a Health tab with healthcheck runs, a live
@@ -229,8 +229,8 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach · `m` logs · `t` run healthcheck ·
-`ctrl+x` open/close the in-app shell tab ·
+`r` restart · `a` attach · `m` logs · `t` run healthcheck · `C` commit to an
+image · `ctrl+x` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
@@ -322,6 +322,18 @@ bulk commands (prune).
 - Before anything runs, the full `podman run` command is shown in a confirmation
   panel. Arguments are passed as an argv slice (never through a shell), and a
   failure shows Podman's own output. Success refreshes containers and services.
+
+### Commit a container to an image
+
+- Press `C` on a container (also in the `x` menu, and `C` on a marked selection)
+  to open the commit menu. **Image** is prefilled as
+  `<container>_<timestamp>` so the result has a name; **Author**, **Message** and
+  **Instructions** (`--change`) are optional.
+- **Advanced** covers config file, format, image ID file, include volumes, quiet
+  and squash. Anything else goes in **Extra args**. The container is passed
+  after `--`, so a name can never be mistaken for a flag.
+- The exact `podman commit` command is previewed and confirmed. Failures show
+  Podman's output verbatim; success reloads the image list.
 
 ### Build an image
 

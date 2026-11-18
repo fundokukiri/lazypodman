@@ -132,6 +132,12 @@ type TranslationSet struct {
 	BuildImageConfirm           string
 	BuildImageRunningStatus     string
 	BuildImageLabels            map[string]string
+	CommitImage                 string
+	CommitImageTitle            string
+	CommitImageConfirmTitle     string
+	CommitImageConfirm          string
+	CommitImageRunningStatus    string
+	CommitImageLabels           map[string]string
 	ViewBulkCommands            string
 	FilterList                  string
 	OpenInBrowser               string
@@ -502,11 +508,22 @@ func englishSet() TranslationSet {
 		KubePlayHeader:       "# playing %s",
 		KubeDownHeader:       "# down %s",
 
-		BuildImage:              "Build image",
-		BuildImageTitle:         "Build image",
-		BuildImageConfirmTitle:  "Confirm build",
-		BuildImageConfirm:       "Build this image?",
-		BuildImageRunningStatus: "Building image",
+		BuildImage:               "Build image",
+		BuildImageTitle:          "Build image",
+		BuildImageConfirmTitle:   "Confirm build",
+		BuildImageConfirm:        "Build this image?",
+		BuildImageRunningStatus:  "Building image",
+		CommitImage:              "commit to image",
+		CommitImageTitle:         "Commit container",
+		CommitImageConfirmTitle:  "Confirm commit",
+		CommitImageConfirm:       "Commit this container to an image?",
+		CommitImageRunningStatus: "Committing container",
+		CommitImageLabels: map[string]string{
+			"image": "Image", "author": "Author", "message": "Message",
+			"changes": "Instructions", "commit_options_group": "Options",
+			"config": "Config file", "format": "Format", "iidfile": "Image ID file",
+			"include_volumes": "Include volumes", "quiet": "Quiet", "squash": "Squash layers",
+		},
 		BuildImageLabels: map[string]string{
 			"context": "Context", "containerfile": "Containerfile", "tags": "Tags",
 			"build_options_group": "Build options", "build_args_group": "Build args & labels",

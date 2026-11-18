@@ -125,6 +125,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Handler:  gui.handleCreateOptionsMenu,
 		},
 		{
+			ViewName:    "",
+			Key:         gocui.KeyCtrlP,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommandPalette,
+			Description: gui.Tr.PaletteTitle,
+		},
+		{
 			ViewName: "",
 			Key:      'X',
 			Modifier: gocui.ModNone,
@@ -236,6 +243,20 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerHealthcheckRun,
 			Description: gui.Tr.RunHealthcheck,
+		},
+		{
+			ViewName:    "containers",
+			Key:         ' ',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainersToggleMark,
+			Description: gui.Tr.ToggleMark,
+		},
+		{
+			ViewName:    "containers",
+			Key:         'Q',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerQuadletExport,
+			Description: gui.Tr.QuadletExport,
 		},
 		{
 			ViewName:    "containers",

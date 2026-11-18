@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types/events"
@@ -45,6 +46,11 @@ type Gui struct {
 	Mutexes
 
 	Panels Panels
+
+	// MarkedContainerIDs holds the containers selected with the mark key. It is keyed
+	// by container ID so a refresh that rebuilds the list keeps the selection.
+	markedContainerIDs   map[string]bool
+	markedContainersLock sync.Mutex
 }
 
 type Panels struct {

@@ -251,8 +251,6 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
 - Pod stats là tổng của các container, không có CPU/RAM riêng của pod.
 - Nếu `pod logs --names` không có, log gộp giới hạn 8 container mỗi lần.
 - Health tab hiện những gì inspect trả về (Podman giới hạn số probe), tối đa 20 dòng.
-- Log tab giữ tối đa 5000 dòng gần nhất trong view (stream vẫn follow trực tiếp);
-  lứa log đầu tiên được gom ~150 ms để tab mở ra ở đáy, không cuộn từ đầu.
 - Exit code healthcheck ngoài `0` chưa được kiểm chứng trên máy thật.
 - Kube: không truyền `--replace` / `--build`; output play/down nằm ở panel chính
   (đổi tab/panel để quay lại nội dung bình thường). Play/down cần thư mục

@@ -79,13 +79,13 @@ func (gui *Gui) createPromptPanelWithInitialCancel(title, initial string, handle
 	}
 	gui.Views.Confirmation.Editable = true
 
-	// Replace the previous prompt's buffer before handing focus over. Doing
-	// this synchronously matters: an update queued after the focus switch let
-	// the previous field's text show up in the next prompt.
+	// gocui keeps an editable view's text in a TextArea buffer that outlives
+	// the view content. Reset both before handing focus over, otherwise the
+	// previous field's text reappears as soon as the next key is typed.
 	view := gui.Views.Confirmation
-	view.SetContent(gui.cleanString(initial))
-	_ = view.SetOrigin(0, 0)
-	_ = view.SetCursor(len([]rune(initial)), 0)
+	view.TextArea.Clear()
+	view.TextArea.TypeString(gui.cleanString(initial))
+	view.RenderTextArea()
 
 	return gui.setKeyBindings(gui.g, handleConfirm, handleCancel)
 }

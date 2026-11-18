@@ -124,6 +124,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: Pause
   <kbd>b</kbd>: voir les commandes groupées
   <kbd>c</kbd>: exécuter une commande prédéfinie
+  <kbd>g</kbd>: Kube
   <kbd>enter</kbd>: focus panneau principal
   <kbd>[</kbd>: onglet précédent
   <kbd>]</kbd>: onglet suivant

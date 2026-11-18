@@ -175,6 +175,24 @@ type TranslationSet struct {
 	HealthRunOff               string
 	CliOff                     string
 	NoProbeOutput              string
+
+	KubeMenuTitle        string
+	KubeGenerateMenu     string
+	KubePlayMenu         string
+	KubeDownMenu         string
+	KubeGenerateOff      string
+	KubePlayOff          string
+	KubeProbingStatus    string
+	KubeGeneratingStatus string
+	KubePlaintextWarning string
+	KubeSavePrompt       string
+	KubeOverwritePrompt  string
+	KubeSavedStatus      string
+	KubeNoFiles          string
+	KubePlayConfirm      string
+	KubeDownConfirm      string
+	KubePlayHeader       string
+	KubeDownHeader       string
 }
 
 func englishSet() TranslationSet {
@@ -357,5 +375,23 @@ func englishSet() TranslationSet {
 		HealthRunOff:               "health run off:",
 		CliOff:                     "cli off:",
 		NoProbeOutput:              "(no output)",
+
+		KubeMenuTitle:        "Kube",
+		KubeGenerateMenu:     "Generate kube YAML for this pod",
+		KubePlayMenu:         "Play kube YAML…",
+		KubeDownMenu:         "Down kube YAML…",
+		KubeGenerateOff:      "kube generate off:",
+		KubePlayOff:          "kube play off:",
+		KubeProbingStatus:    "Checking kube support",
+		KubeGeneratingStatus: "Generating kube YAML",
+		KubePlaintextWarning: "This file contains environment variables in plaintext; no Secrets are created.",
+		KubeSavePrompt:       "Save to %s?",
+		KubeOverwritePrompt:  "File exists: %s Overwrite it?",
+		KubeSavedStatus:      "Saved %s",
+		KubeNoFiles:          "No kube YAML files in %s",
+		KubePlayConfirm:      "Play the pods defined in:\n%s",
+		KubeDownConfirm:      "Stop and remove the pods defined in:\n%s",
+		KubePlayHeader:       "# playing %s",
+		KubeDownHeader:       "# down %s",
 	}
 }

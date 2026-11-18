@@ -200,3 +200,13 @@ func kubeIsDownArgv(prefix []string, path string) []string {
 func kubePlayArgv(prefix []string, path string) []string {
 	return append(append([]string{}, prefix...), path)
 }
+
+// KubePlayArgs is the argument suffix for `kube play <file>`.
+func KubePlayArgs(path string) []string {
+	return []string{path}
+}
+
+// KubeDownArgs is the argument suffix for `kube play --down <file>`.
+func KubeDownArgs(path string) []string {
+	return []string{"--down", path}
+}

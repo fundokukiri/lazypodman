@@ -124,6 +124,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: Pause
   <kbd>b</kbd>: view bulk commands
   <kbd>c</kbd>: önceden tanımlanmış özel komutu çalıştır
+  <kbd>g</kbd>: Kube
   <kbd>enter</kbd>: ana panele odaklan
   <kbd>[</kbd>: önceki sekme
   <kbd>]</kbd>: sonraki sekme

@@ -635,5 +635,6 @@ func (gui *Gui) podBindings() []*Binding {
 		{ViewName: "pods", Key: 'p', Modifier: gocui.ModNone, Handler: gui.handlePodPause, Description: gui.Tr.PausePod},
 		{ViewName: "pods", Key: 'b', Modifier: gocui.ModNone, Handler: gui.handlePodsBulkCommand, Description: gui.Tr.ViewBulkCommands},
 		{ViewName: "pods", Key: 'c', Modifier: gocui.ModNone, Handler: gui.handlePodsCustomCommand, Description: gui.Tr.RunCustomCommand},
+		{ViewName: "pods", Key: 'g', Modifier: gocui.ModNone, Handler: gui.handlePodsKubeMenu, Description: gui.Tr.KubeMenuTitle},
 	}
 }

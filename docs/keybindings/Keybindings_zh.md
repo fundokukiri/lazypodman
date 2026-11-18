@@ -124,6 +124,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: Pause
   <kbd>b</kbd>: 查看批量命令
   <kbd>c</kbd>: 运行预定义的自定义命令
+  <kbd>g</kbd>: Kube
   <kbd>enter</kbd>: 聚焦主面板
   <kbd>[</kbd>: 上一个选项卡
   <kbd>]</kbd>: 下一个选项卡

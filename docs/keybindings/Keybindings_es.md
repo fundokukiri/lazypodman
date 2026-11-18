@@ -124,6 +124,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: Pause
   <kbd>b</kbd>: ver comandos masivos
   <kbd>c</kbd>: ejecutar comando personalizado
+  <kbd>g</kbd>: Kube
   <kbd>enter</kbd>: enfocar panel principal
   <kbd>[</kbd>: anterior pestaña
   <kbd>]</kbd>: siguiente pestaña

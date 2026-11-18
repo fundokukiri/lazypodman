@@ -215,6 +215,14 @@ func (gui *Gui) capabilityOffMessages() []string {
 		messages = append(messages, gui.Tr.HealthRunOff+" "+caps.HealthRun.Reason)
 	}
 
+	if caps.KubeGenerate.State == commands.CapabilityUnavailable && caps.KubeGenerate.Reason != "" {
+		messages = append(messages, gui.Tr.KubeGenerateOff+" "+caps.KubeGenerate.Reason)
+	}
+
+	if caps.KubePlay.State == commands.CapabilityUnavailable && caps.KubePlay.Reason != "" {
+		messages = append(messages, gui.Tr.KubePlayOff+" "+caps.KubePlay.Reason)
+	}
+
 	return messages
 }
 

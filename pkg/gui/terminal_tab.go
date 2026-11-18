@@ -661,5 +661,9 @@ func (gui *Gui) writeTerminal(data []byte) error {
 	state.mutex.Lock()
 	defer state.mutex.Unlock()
 
+	// Typing means the user wants the live prompt, so snap back to the caret even
+	// when they were reading scrollback.
+	state.scrollOffset = 0
+
 	return state.terminal.Write(data)
 }

@@ -304,6 +304,21 @@ func (gui *Gui) updateContainerDetails() error {
 }
 
 func (gui *Gui) refresh() {
+	// Pod state comes from the CLI, so its two processes run while the socket
+	// refresh happens instead of after it. The result is applied only after the
+	// containers exist, because it annotates them with their pod name.
+	type podFetch struct {
+		state *commands.PodState
+		err   error
+	}
+
+	podsCh := make(chan podFetch, 1)
+
+	go func() {
+		state, err := gui.fetchPodState()
+		podsCh <- podFetch{state: state, err: err}
+	}()
+
 	go func() {
 		// Refresh containers/services first, then projects (which depend on
 		// container labels to discover projects).
@@ -313,8 +328,14 @@ func (gui *Gui) refresh() {
 		if err := gui.refreshProject(); err != nil {
 			gui.Log.Error(err)
 		}
-		if err := gui.refreshPods(); err != nil {
-			gui.Log.Error(err)
+
+		fetched := <-podsCh
+		if fetched.err != nil {
+			gui.Log.Error(fetched.err)
+		} else if fetched.state != nil {
+			if err := gui.applyPodState(fetched.state); err != nil {
+				gui.Log.Error(err)
+			}
 		}
 	}()
 	go func() {

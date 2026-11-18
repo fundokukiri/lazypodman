@@ -44,11 +44,10 @@ var cliCheckBudget = 5 * time.Second
 // UI-safe code (rendered as `pods off: <reason>`); Detail carries the raw output
 // for the debug log.
 type CLICheck struct {
-	Enabled  bool
-	Reason   string
-	Detail   string
-	Version  string
-	Features map[string]bool
+	Enabled bool
+	Reason  string
+	Detail  string
+	Version string
 }
 
 // detectCLI decides whether the podman CLI can back the Podman-native features.
@@ -72,7 +71,7 @@ func detectCLI(
 	mode PodsMode,
 	run func(context.Context, ...string) ([]byte, error),
 ) CLICheck {
-	check := CLICheck{Features: map[string]bool{}}
+	check := CLICheck{}
 
 	if mode == PodsNever {
 		check.Reason = "disabled in config"
@@ -141,12 +140,6 @@ func detectCLI(
 
 			return check
 		}
-	}
-
-	// Capability probe, not fatal: older Podman versions simply lose the
-	// single-process merged log stream.
-	if helpOut, err := run(ctx, "pod", "logs", "--help"); err == nil && strings.Contains(string(helpOut), "--names") {
-		check.Features["pod-logs-names"] = true
 	}
 
 	check.Enabled = true
@@ -272,6 +265,13 @@ func parseVersionParts(version string) ([3]int, bool) {
 type cliPodmanClient struct {
 	binary string
 	check  CLICheck
+
+	// podLogsNames is probed on first use rather than at startup: a rootless
+	// podman pays a full storage init per process and most sessions never open a
+	// pod log tab. Guarded by podLogsNamesMutex, cached for the session.
+	podLogsNamesMutex  sync.Mutex
+	podLogsNamesProbed bool
+	podLogsNames       bool
 }
 
 // newCLIPodmanClient builds the client and runs the one-time enablement check.
@@ -476,7 +476,7 @@ func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*C
 		argv []string
 	}
 
-	argvs, omitted := podLogArgvs(pod, containers, tail, c.check.Features["pod-logs-names"])
+	argvs, omitted := podLogArgvs(pod, containers, tail, c.podLogsNamesAvailable(ctx))
 	if omitted > 0 {
 		_, _ = writer.Write([]byte(fmt.Sprintf("# showing %d containers, %d omitted\n", len(argvs), omitted)))
 	}
@@ -672,4 +672,43 @@ func (c *cliPodmanClient) HealthcheckRun(ctx context.Context, ref string) (strin
 	}
 
 	return output, 0, nil
+}
+
+// podLogsProbeBudget bounds the lazy `pod logs --help` probe.
+var podLogsProbeBudget = 5 * time.Second
+
+// podLogsNamesAvailable reports whether `podman pod logs` accepts `--names`.
+// Probed once per session on the first pod log request, so startup does not pay
+// for a feature most sessions never use.
+func (c *cliPodmanClient) podLogsNamesAvailable(ctx context.Context) bool {
+	c.podLogsNamesMutex.Lock()
+	defer c.podLogsNamesMutex.Unlock()
+
+	if c.podLogsNamesProbed {
+		return c.podLogsNames
+	}
+
+	c.podLogsNamesProbed = true
+
+	if !c.check.Enabled {
+		return false
+	}
+
+	probeCtx, cancel := context.WithTimeout(ctx, podLogsProbeBudget)
+	defer cancel()
+
+	helpOut, err := c.run(probeCtx, "pod", "logs", "--help")
+	if err != nil {
+		// A cancelled probe (tab switched away) proves nothing; retry on the next
+		// request instead of caching a false negative for the session.
+		if ctx.Err() != nil || probeCtx.Err() != nil {
+			c.podLogsNamesProbed = false
+		}
+
+		return false
+	}
+
+	c.podLogsNames = strings.Contains(string(helpOut), "--names")
+
+	return c.podLogsNames
 }

@@ -101,12 +101,25 @@ func (gui *Gui) containersForPod(pod *commands.Pod) []*commands.Container {
 
 // refreshPods reloads the pods and the container->pod map. It is called from the
 // same refresh cycle as the containers, never from the UI goroutine.
-func (gui *Gui) refreshPods() error {
+// fetchPodState runs the CLI work for pods. It is separate from applyPodState so
+// the startup refresh can start it before the container list exists.
+func (gui *Gui) fetchPodState() (*commands.PodState, error) {
 	if !gui.PodsEnabled() || gui.Views.Pods == nil {
-		return nil
+		return nil, nil
 	}
 
-	state, err := gui.PodmanCommand.RefreshPodState(context.Background())
+	return gui.PodmanCommand.RefreshPodState(context.Background())
+}
+
+func (gui *Gui) applyPodState(state *commands.PodState) error {
+	gui.Panels.Pods.SetItems(state.Pods)
+	gui.annotateContainersWithPods(state)
+
+	return gui.Panels.Pods.RerenderList()
+}
+
+func (gui *Gui) refreshPods() error {
+	state, err := gui.fetchPodState()
 	if err != nil {
 		return err
 	}
@@ -115,10 +128,7 @@ func (gui *Gui) refreshPods() error {
 		return nil
 	}
 
-	gui.Panels.Pods.SetItems(state.Pods)
-	gui.annotateContainersWithPods(state)
-
-	return gui.Panels.Pods.RerenderList()
+	return gui.applyPodState(state)
 }
 
 func (gui *Gui) renderPodLogs(pod *commands.Pod) tasks.TaskFunc {

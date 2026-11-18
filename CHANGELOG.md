@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Startup** spawns one podman process for the CLI check instead of two: the
+  `pod logs --help` probe is now lazy (first Pod logs tab), and the two pod-refresh
+  calls run concurrently. See [docs/performance.md](docs/performance.md).
 - **Events tab** on the containers panel streaming `podman events` verbatim; the
   stream dies with the tab and shows `cli off: <reason>` instead of spawning when
   the CLI is unavailable.

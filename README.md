@@ -469,7 +469,8 @@ gofmt -l main.go pkg/ scripts/
 GOFLAGS=-mod=vendor go run ./scripts/cheatsheet generate
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CLAUDE.md](CLAUDE.md). Startup and CLI
+spawn costs are measured in [docs/performance.md](docs/performance.md).
 
 Design records for the Podman-native features live in
 [docs/superpowers/specs](docs/superpowers/specs) (pods, healthcheck, kube, UX,

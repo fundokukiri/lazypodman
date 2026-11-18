@@ -602,20 +602,35 @@ func (c *PodmanCommand) RefreshPodState(ctx context.Context) (*PodState, error) 
 		return nil, nil
 	}
 
-	pods, err := client.PodList(ctx)
-	if err != nil {
-		return c.cachedPodState(), err
+	// The two CLI calls are independent; run them together so startup pays for
+	// one rootless podman start instead of two in a row.
+	type podListResult struct {
+		pods []*Pod
+		err  error
 	}
 
-	podByContainer, err := client.ContainerPodMap(ctx)
-	if err != nil {
-		return c.cachedPodState(), err
+	podsCh := make(chan podListResult, 1)
+
+	go func() {
+		pods, err := client.PodList(ctx)
+		podsCh <- podListResult{pods: pods, err: err}
+	}()
+
+	podByContainer, mapErr := client.ContainerPodMap(ctx)
+	listed := <-podsCh
+
+	if listed.err != nil {
+		return c.cachedPodState(), listed.err
+	}
+
+	if mapErr != nil {
+		return c.cachedPodState(), mapErr
 	}
 
 	c.PodStateMutex.Lock()
 	defer c.PodStateMutex.Unlock()
 
-	state := joinPods(pods, podByContainer, c.infraContainersSnapshot())
+	state := joinPods(listed.pods, podByContainer, c.infraContainersSnapshot())
 	c.podState = state
 
 	return state, nil

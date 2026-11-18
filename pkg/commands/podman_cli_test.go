@@ -57,7 +57,6 @@ func TestDetectCLIEnabled(t *testing.T) {
 	assert.True(t, check.Enabled)
 	assert.Empty(t, check.Reason)
 	assert.Equal(t, "5.2.2", check.Version)
-	assert.True(t, check.Features["pod-logs-names"])
 	assert.Contains(t, check.Detail, "5.2.2")
 }
 
@@ -388,7 +387,7 @@ func TestPodLogsStreamsAndCloses(t *testing.T) {
 	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
 	requireNoError(t, os.WriteFile(stdoutFile, []byte("web first\nweb second\n"), 0o600))
 
-	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true, Features: map[string]bool{"pod-logs-names": true}}}
+	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true}, podLogsNamesProbed: true, podLogsNames: true}
 
 	stream, err := client.PodLogs(context.Background(), &Pod{Name: "web"}, nil, 100)
 	requireNoError(t, err)
@@ -410,7 +409,7 @@ func TestPodLogsCloseKillsChild(t *testing.T) {
 	binary := filepath.Join(dir, "podman")
 	requireNoError(t, os.WriteFile(binary, []byte("#!/bin/sh\nprintf 'web first\\n'\nsleep 30\n"), 0o755))
 
-	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true, Features: map[string]bool{"pod-logs-names": true}}}
+	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true}, podLogsNamesProbed: true, podLogsNames: true}
 
 	stream, err := client.PodLogs(context.Background(), &Pod{Name: "web"}, nil, 10)
 	requireNoError(t, err)
@@ -438,14 +437,44 @@ func (c *countingCLI) run(ctx context.Context, argv ...string) ([]byte, error) {
 
 // Startup latency is dominated by the number of podman processes: rootless podman
 // pays a storage init per spawn. Version and socket come from one `podman info`.
-func TestDetectCLIUsesTwoProcesses(t *testing.T) {
+// Startup must cost exactly one podman process: the `pod logs --help` feature probe
+// is lazy now, because a rootless podman pays a storage init per process.
+func TestDetectCLIUsesOneProcess(t *testing.T) {
 	socket := "/run/user/1000/podman/podman.sock"
 	counter := &countingCLI{inner: healthyFakeCLI(socket)}
 
 	check := detectCLI(context.Background(), socket, PodsAuto, counter.run)
 
 	assert.True(t, check.Enabled)
-	assert.Equal(t, []string{"info --format " + podmanInfoFormat, "pod logs --help"}, counter.calls)
+	assert.Equal(t, []string{"info --format " + podmanInfoFormat}, counter.calls)
+}
+
+func TestPodLogsNamesProbesOnceOnFirstUse(t *testing.T) {
+	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte("--names\n"), 0o644))
+
+	client := &cliPodmanClient{binary: binary}
+	client.check = CLICheck{Enabled: true}
+
+	assert.True(t, client.podLogsNamesAvailable(context.Background()))
+	assert.True(t, client.podLogsNamesAvailable(context.Background()))
+	assert.True(t, client.podLogsNamesAvailable(context.Background()))
+
+	recorded := readRecordedArgv(t, argvFile)
+	assert.Equal(t, 1, strings.Count(recorded, "[pod]"), "the probe runs once, not per log request")
+}
+
+func TestPodLogsNamesUnavailableIsCached(t *testing.T) {
+	binary, argvFile, _, _ := writeFakePodmanScript(t)
+
+	client := &cliPodmanClient{binary: binary}
+	client.check = CLICheck{Enabled: true}
+
+	assert.False(t, client.podLogsNamesAvailable(context.Background()))
+	assert.False(t, client.podLogsNamesAvailable(context.Background()))
+
+	recorded := readRecordedArgv(t, argvFile)
+	assert.Equal(t, 1, strings.Count(recorded, "[pod]"), "a missing --names is remembered too")
 }
 
 func TestDetectCLIInfoFailureFallsBackToVersion(t *testing.T) {

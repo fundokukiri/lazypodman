@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"github.com/fundokukiri/lazypodman/pkg/gui/panels"
 	"github.com/fundokukiri/lazypodman/pkg/utils"
@@ -136,7 +137,13 @@ func (gui *Gui) setViewContent(v *gocui.View, s string) error {
 
 // renderString resets the origin of a view and sets its content
 func (gui *Gui) renderString(g *gocui.Gui, viewName, s string) error {
+	generation := atomic.LoadUint64(&gui.mainRenderGeneration)
+
 	g.Update(func(*gocui.Gui) error {
+		if generation != atomic.LoadUint64(&gui.mainRenderGeneration) {
+			return nil
+		}
+
 		v, err := g.View(viewName)
 		if err != nil {
 			return nil // return gracefully if view has been deleted
@@ -163,7 +170,13 @@ func (gui *Gui) reRenderStringMain(s string) {
 
 // reRenderString sets the view's content, without changing its origin
 func (gui *Gui) reRenderString(viewName, s string) {
+	generation := atomic.LoadUint64(&gui.mainRenderGeneration)
+
 	gui.g.Update(func(*gocui.Gui) error {
+		if generation != atomic.LoadUint64(&gui.mainRenderGeneration) {
+			return nil
+		}
+
 		v, err := gui.g.View(viewName)
 		if err != nil {
 			return nil // return gracefully if view has been deleted

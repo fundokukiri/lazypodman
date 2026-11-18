@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
@@ -54,6 +55,8 @@ func (gui *Gui) NewSimpleRenderStringTask(getContent func() string) tasks.TaskFu
 
 func (gui *Gui) NewTask(opts TaskOpts) tasks.TaskFunc {
 	return func(ctx context.Context) {
+		atomic.AddUint64(&gui.mainRenderGeneration, 1)
+
 		mainView := gui.Views.Main
 		mainView.Autoscroll = opts.Autoscroll
 		mainView.Wrap = opts.Wrap

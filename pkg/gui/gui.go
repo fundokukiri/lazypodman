@@ -56,6 +56,11 @@ type Gui struct {
 	terminal      *terminalState
 	terminalMutex sync.Mutex
 
+	// mainRenderGeneration bumps whenever a new task takes over the main view.
+	// Pending async renders from a previous task compare against it and skip, so
+	// e.g. a stats update cannot land after the logs have started.
+	mainRenderGeneration uint64
+
 	// fullLogs remembers, per container, that the user asked for the whole log
 	// history instead of the default tail.
 	fullLogs      map[string]bool

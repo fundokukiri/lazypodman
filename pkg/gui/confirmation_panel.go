@@ -68,6 +68,12 @@ func (gui *Gui) createPromptPanel(title string, handleConfirm func(*gocui.Gui, *
 }
 
 func (gui *Gui) createPromptPanelWithInitial(title, initial string, handleConfirm func(*gocui.Gui, *gocui.View) error) error {
+	return gui.createPromptPanelWithInitialCancel(title, initial, handleConfirm, nil)
+}
+
+// createPromptPanelWithInitialCancel is createPromptPanelWithInitial plus a
+// cancel action, so a field edit can return to the menu that opened it.
+func (gui *Gui) createPromptPanelWithInitialCancel(title, initial string, handleConfirm, handleCancel func(*gocui.Gui, *gocui.View) error) error {
 	gui.onNewPopupPanel()
 	if err := gui.prepareConfirmationPanel(title, initial); err != nil {
 		return err
@@ -89,7 +95,7 @@ func (gui *Gui) createPromptPanelWithInitial(title, initial string, handleConfir
 		return view.SetCursor(len([]rune(initial)), 0)
 	})
 
-	return gui.setKeyBindings(gui.g, handleConfirm, nil)
+	return gui.setKeyBindings(gui.g, handleConfirm, handleCancel)
 }
 
 func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {

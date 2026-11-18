@@ -310,10 +310,14 @@ func (gui *Gui) showRunContainerListValue(state *runContainerState, field runFie
 }
 
 func (gui *Gui) editRunContainerValue(key, initial string, apply func(string), back func() error) error {
-	return gui.createPromptPanelWithInitial(gui.runLabel(key), initial, func(g *gocui.Gui, v *gocui.View) error {
+	confirm := func(g *gocui.Gui, v *gocui.View) error {
 		apply(strings.TrimSpace(gui.trimmedContent(v)))
 		return back()
-	})
+	}
+	cancel := func(g *gocui.Gui, v *gocui.View) error {
+		return back()
+	}
+	return gui.createPromptPanelWithInitialCancel(gui.runLabel(key), initial, confirm, cancel)
 }
 
 func formatRunCommand(binary string, args []string) string {

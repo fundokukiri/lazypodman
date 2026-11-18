@@ -117,10 +117,10 @@ func SafeKubeFilename(name string) string {
 	return safe
 }
 
-// WriteKubeFile writes a generated manifest with mode 0600, creating the directory
+// WriteManifestFile writes a generated manifest (kube YAML or Quadlet unit) with mode 0600, creating the directory
 // if needed. An existing file is only replaced when overwrite is true; the caller
 // must have asked the user first.
-func WriteKubeFile(path string, data []byte, overwrite bool) error {
+func WriteManifestFile(path string, data []byte, overwrite bool) error {
 	if !overwrite {
 		if _, err := os.Stat(path); err == nil {
 			return fmt.Errorf("file already exists: %s", path)

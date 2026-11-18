@@ -134,6 +134,10 @@ type GuiConfig struct {
 	// use legacy behaviour instead.
 	LegacySortContainers bool `yaml:"legacySortContainers,omitempty"`
 
+	// QuadletDir is where exported Quadlet .container units are written. Empty means
+	// <user config dir>/containers/systemd.
+	QuadletDir string `yaml:"quadletDir"`
+
 	// KubeDir is where generated kube YAML is written and where play/down look for
 	// manifests. Empty means <user config dir>/lazypodman/kube.
 	KubeDir string `yaml:"kubeDir"`

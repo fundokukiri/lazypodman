@@ -77,11 +77,11 @@ func TestSafeKubeFilename(t *testing.T) {
 	}
 }
 
-func TestWriteKubeFile(t *testing.T) {
+func TestWriteManifestFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "nested", "pod.yaml")
 
-	requireNoError(t, WriteKubeFile(path, []byte("kind: Pod\n"), false))
+	requireNoError(t, WriteManifestFile(path, []byte("kind: Pod\n"), false))
 
 	content, err := os.ReadFile(path)
 	requireNoError(t, err)
@@ -94,11 +94,11 @@ func TestWriteKubeFile(t *testing.T) {
 	}
 }
 
-func TestWriteKubeFileRefusesOverwrite(t *testing.T) {
+func TestWriteManifestFileRefusesOverwrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "pod.yaml")
-	requireNoError(t, WriteKubeFile(path, []byte("old\n"), false))
+	requireNoError(t, WriteManifestFile(path, []byte("old\n"), false))
 
-	err := WriteKubeFile(path, []byte("new\n"), false)
+	err := WriteManifestFile(path, []byte("new\n"), false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 
@@ -106,7 +106,7 @@ func TestWriteKubeFileRefusesOverwrite(t *testing.T) {
 	requireNoError(t, readErr)
 	assert.Equal(t, "old\n", string(content))
 
-	requireNoError(t, WriteKubeFile(path, []byte("new\n"), true))
+	requireNoError(t, WriteManifestFile(path, []byte("new\n"), true))
 
 	content, readErr = os.ReadFile(path)
 	requireNoError(t, readErr)

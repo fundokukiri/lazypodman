@@ -86,7 +86,7 @@ func (gui *Gui) promptKubeSave(yaml, path string, exists bool) {
 
 	gui.g.Update(func(g *gocui.Gui) error {
 		return gui.createConfirmationPanel(title, prompt, func(g *gocui.Gui, v *gocui.View) error {
-			if err := commands.WriteKubeFile(path, []byte(yaml), true); err != nil {
+			if err := commands.WriteManifestFile(path, []byte(yaml), true); err != nil {
 				return gui.createErrorPanel(err.Error())
 			}
 

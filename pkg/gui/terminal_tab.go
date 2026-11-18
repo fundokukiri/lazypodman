@@ -243,8 +243,10 @@ func (gui *Gui) layoutTerminalView(g *gocui.Gui) error {
 	mainView := gui.Views.Main
 	x0, y0, x1, y1 := mainView.Dimensions()
 
-	// Start on the row right under the tab titles so the info line hugs them.
-	if _, err := g.SetView("terminal", x0, y0+1, x1, y1, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+	// gocui always offsets a view's content by one cell, even without a frame, so
+	// using the main view's own top row keeps the header flush under the tabs
+	// instead of leaving a leftover main-view line above it.
+	if _, err := g.SetView("terminal", x0, y0, x1, y1, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
 		return err
 	}
 

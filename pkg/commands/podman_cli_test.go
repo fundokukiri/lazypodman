@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -319,4 +320,106 @@ func TestCLIContainerPodMapUsesPsAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, podByContainer, 3)
 	assert.Equal(t, "[ps]\n[-a]\n[--format]\n[json]\n---\n", readRecordedArgv(t, argvFile))
+}
+
+func TestParsePodLogLine(t *testing.T) {
+	names := []string{"web", "web-side", "side"}
+
+	cases := []struct {
+		line    string
+		ctr     string
+		message string
+	}{
+		{"web hello", "web", "hello"},
+		{"web-side hello there", "web-side", "hello there"},
+		{"side ", "side", ""},
+		{"webbish: hi", "", "webbish: hi"},
+		{"web", "", "web"},
+		{"", "", ""},
+	}
+
+	for _, tc := range cases {
+		ctr, message := parsePodLogLine(tc.line, names)
+		assert.Equal(t, tc.ctr, ctr, tc.line)
+		assert.Equal(t, tc.message, message, tc.line)
+	}
+}
+
+func containerNamed(name, state string) *Container {
+	ctr := &Container{Name: name}
+	ctr.Container.State = state
+
+	return ctr
+}
+
+func TestPodLogArgvs(t *testing.T) {
+	pod := &Pod{Name: "web"}
+
+	argvs, omitted := podLogArgvs(pod, nil, 100, true)
+	assert.Equal(t, [][]string{{"pod", "logs", "--follow", "--names", "--tail", "100", "--", "web"}}, argvs)
+	assert.Zero(t, omitted)
+
+	// The fallback prefers running containers and caps the process count.
+	containers := make([]*Container, 0, 10)
+	for _, name := range []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"} {
+		containers = append(containers, containerNamed(name, "exited"))
+	}
+
+	containers[8] = containerNamed("late", "running")
+
+	argvs, omitted = podLogArgvs(pod, containers, 50, false)
+	assert.Len(t, argvs, maxPodLogProcesses)
+	assert.Equal(t, 2, omitted)
+	assert.Equal(t, []string{"logs", "--follow", "--names", "--tail", "50", "--", "late"}, argvs[0])
+	assert.Equal(t, []string{"logs", "--follow", "--names", "--tail", "50", "--", "a"}, argvs[1])
+
+	// Containers whose name looks like a flag are skipped, never passed on.
+	argvs, _ = podLogArgvs(pod, []*Container{containerNamed("-rf", "running"), containerNamed("ok", "running")}, 10, false)
+	assert.Len(t, argvs, 1)
+	assert.Equal(t, "ok", argvs[0][len(argvs[0])-1])
+
+	argvs, omitted = podLogArgvs(pod, nil, 10, false)
+	assert.Empty(t, argvs)
+	assert.Zero(t, omitted)
+}
+
+func TestPodLogsStreamsAndCloses(t *testing.T) {
+	binary, argvFile, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte("web first\nweb second\n"), 0o600))
+
+	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true, Features: map[string]bool{"pod-logs-names": true}}}
+
+	stream, err := client.PodLogs(context.Background(), &Pod{Name: "web"}, nil, 100)
+	requireNoError(t, err)
+
+	content, err := io.ReadAll(stream)
+	requireNoError(t, err)
+	requireNoError(t, stream.Close())
+
+	assert.Equal(t, "web first\nweb second\n", string(content))
+	assert.Equal(t, "[pod]\n[logs]\n[--follow]\n[--names]\n[--tail]\n[100]\n[--]\n[web]\n---\n", readRecordedArgv(t, argvFile))
+}
+
+func TestPodLogsCloseKillsChild(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake podman script requires a POSIX shell")
+	}
+
+	dir := t.TempDir()
+	binary := filepath.Join(dir, "podman")
+	requireNoError(t, os.WriteFile(binary, []byte("#!/bin/sh\nprintf 'web first\\n'\nsleep 30\n"), 0o755))
+
+	client := &cliPodmanClient{binary: binary, check: CLICheck{Enabled: true, Features: map[string]bool{"pod-logs-names": true}}}
+
+	stream, err := client.PodLogs(context.Background(), &Pod{Name: "web"}, nil, 10)
+	requireNoError(t, err)
+
+	buffer := make([]byte, 64)
+	n, err := stream.Read(buffer)
+	requireNoError(t, err)
+	assert.Equal(t, "web first\n", string(buffer[:n]))
+
+	start := time.Now()
+	requireNoError(t, stream.Close())
+	assert.Less(t, time.Since(start), 5*time.Second, "Close must not wait for podman to finish on its own")
 }

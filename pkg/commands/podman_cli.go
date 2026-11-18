@@ -426,42 +426,14 @@ func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*C
 		argv []string
 	}
 
-	commands := []command{}
-	if c.check.Features["pod-logs-names"] {
-		commands = append(commands, command{argv: []string{
-			"pod", "logs", "--follow", "--names", "--tail", strconv.Itoa(tail), "--", pod.Name,
-		}})
-	} else {
-		selected := containers
-		if len(selected) > maxPodLogProcesses {
-			selected = append(selected[:0:0], selected...)
+	argvs, omitted := podLogArgvs(pod, containers, tail, c.check.Features["pod-logs-names"])
+	if omitted > 0 {
+		_, _ = writer.Write([]byte(fmt.Sprintf("# showing %d containers, %d omitted\n", len(argvs), omitted)))
+	}
 
-			running := make([]*Container, 0, len(selected))
-			stopped := make([]*Container, 0, len(selected))
-			for _, ctr := range selected {
-				if ctr.Container.State == "running" {
-					running = append(running, ctr)
-				} else {
-					stopped = append(stopped, ctr)
-				}
-			}
-
-			selected = append(running, stopped...)[:maxPodLogProcesses]
-		}
-
-		if len(selected) > 0 {
-			_, _ = writer.Write([]byte(fmt.Sprintf("# streaming %d of the pod's containers\n", len(selected))))
-		}
-
-		for _, ctr := range selected {
-			if err := validatePodRef(ctr.Name); err != nil {
-				continue
-			}
-
-			commands = append(commands, command{argv: []string{
-				"logs", "--follow", "--names", "--tail", strconv.Itoa(tail), "--", ctr.Name,
-			}})
-		}
+	commands := make([]command, 0, len(argvs))
+	for _, argv := range argvs {
+		commands = append(commands, command{argv: argv})
 	}
 
 	var wg sync.WaitGroup
@@ -529,4 +501,46 @@ func ParsePodsMode(value string) PodsMode {
 	default:
 		return PodsAuto
 	}
+}
+
+// podLogArgvs decides which podman processes back the logs tab. merged keeps it
+// to a single process (`pod logs --names`, Podman >= 4.1); otherwise one process
+// per container, running containers first, capped at maxPodLogProcesses. omitted
+// counts the containers the fallback cannot follow.
+func podLogArgvs(pod *Pod, containers []*Container, tail int, merged bool) (argvs [][]string, omitted int) {
+	tailArg := strconv.Itoa(tail)
+
+	if merged {
+		return [][]string{{"pod", "logs", "--follow", "--names", "--tail", tailArg, "--", pod.Name}}, 0
+	}
+
+	selected := make([]*Container, 0, len(containers))
+	for _, ctr := range containers {
+		if validatePodRef(ctr.Name) == nil {
+			selected = append(selected, ctr)
+		}
+	}
+
+	if len(selected) > maxPodLogProcesses {
+		running := make([]*Container, 0, len(selected))
+		stopped := make([]*Container, 0, len(selected))
+
+		for _, ctr := range selected {
+			if ctr.Container.State == "running" {
+				running = append(running, ctr)
+			} else {
+				stopped = append(stopped, ctr)
+			}
+		}
+
+		ordered := append(running, stopped...)
+		omitted = len(ordered) - maxPodLogProcesses
+		selected = ordered[:maxPodLogProcesses]
+	}
+
+	for _, ctr := range selected {
+		argvs = append(argvs, []string{"logs", "--follow", "--names", "--tail", tailArg, "--", ctr.Name})
+	}
+
+	return argvs, omitted
 }

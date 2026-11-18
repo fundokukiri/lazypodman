@@ -35,27 +35,59 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 		notifyStopped <- struct{}{}
 	}()
 
-	mainView := gui.Views.Main
+	// Stream straight into the view (as before) but collect the first short burst
+	// so the tab opens already scrolled to the bottom, and trim old lines so a
+	// long follow session cannot grow memory without bound.
+	logs := newLogStreamWriter(gui.Views.Main)
+	streamDone := make(chan error, 1)
 
-	if err := gui.writeContainerLogs(container, ctx, mainView); err != nil {
-		gui.Log.Error(err)
-	}
+	go func() {
+		streamDone <- gui.writeContainerLogs(container, ctx, logs)
+	}()
 
-	// if we are here because the task has been stopped, we should return
-	// if we are here then the container must have exited, meaning we should wait until it's back again before
-	ticker := time.NewTicker(time.Millisecond * 100)
+	startedAt := time.Now()
+	waitForRestart := false
+
+	ticker := time.NewTicker(time.Millisecond * 50)
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
+			logs.FlushInitial()
+			logs.TrimIfNeeded()
+
 			return
+		case err := <-streamDone:
+			logs.FlushInitial()
+			logs.TrimIfNeeded()
+
+			if err != nil {
+				gui.Log.Error(err)
+				return
+			}
+
+			// The container exited: wait until it is back, then let the task
+			// restart so the log stream is re-read.
+			waitForRestart = true
 		case <-ticker.C:
+			if logs.Buffering() && time.Since(startedAt) >= logFirstPaintWindow {
+				logs.FlushInitial()
+			}
+
+			logs.TrimIfNeeded()
+
+			if !waitForRestart {
+				continue
+			}
+
 			result, err := container.Inspect()
 			if err != nil {
 				// if we get an error, then the container has probably been removed so we'll get out of here
 				gui.Log.Error(err)
 				return
 			}
+
 			if result.State.Running {
 				return
 			}

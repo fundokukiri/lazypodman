@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Logs stream directly again (fast) but the first ~150 ms burst is written in
+  one frame so the tab opens at the bottom, and the view keeps at most 5000
+  lines so a long follow session no longer grows memory.
+
 - `space` now actually marks a container (and selects a menu item): gocui
   delivers the spacebar as `KeySpace` with an empty rune, so the previous rune
   `' '` bindings never fired.

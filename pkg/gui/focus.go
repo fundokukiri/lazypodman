@@ -18,7 +18,7 @@ func (gui *Gui) newLineFocused(v *gocui.View) error {
 	switch v.Name() {
 	case "confirmation":
 		return nil
-	case "main":
+	case "main", "terminal":
 		v.Highlight = false
 		return nil
 	case "filter":

@@ -8,7 +8,14 @@ package gui
 
 // excludes popups
 func (gui *Gui) currentStaticWindowName() string {
-	return gui.currentStaticViewName()
+	name := gui.currentStaticViewName()
+
+	// The terminal lives over the main panel, so layout must treat it as "main".
+	if name == "terminal" {
+		return "main"
+	}
+
+	return name
 }
 
 func (gui *Gui) currentSideWindowName() string {

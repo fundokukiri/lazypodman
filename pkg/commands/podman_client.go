@@ -42,6 +42,9 @@ type PodmanClient interface {
 
 	// StreamPodman runs any podman command and streams merged output line by line.
 	StreamPodman(ctx context.Context, argv []string, onLine func(string)) error
+
+	// OpenTerminal starts a real PTY shell (`podman exec -it ...`) for the Shell tab.
+	OpenTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error)
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

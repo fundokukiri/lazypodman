@@ -27,7 +27,7 @@ func (gui *Gui) getFocusLayout() func(g *gocui.Gui) error {
 func (gui *Gui) onFocusChange() error {
 	currentView := gui.g.CurrentView()
 	for _, view := range gui.g.Views() {
-		view.Highlight = view == currentView && view.Name() != "main"
+		view.Highlight = view == currentView && view.Name() != "main" && view.Name() != "terminal"
 	}
 	return nil
 }
@@ -106,6 +106,10 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 		if err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
 			return err
 		}
+	}
+
+	if err := gui.layoutTerminalView(g); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+		return err
 	}
 
 	// here is a good place log some stuff

@@ -18,6 +18,8 @@ type Views struct {
 
 	// main panel
 	Main *gocui.View
+	// interactive shell, painted over the main panel's content area
+	Terminal *gocui.View
 
 	// bottom line
 	Options     *gocui.View
@@ -57,6 +59,7 @@ func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
 		{viewPtr: &gui.Views.Networks, name: "networks", autoPosition: true},
 
 		{viewPtr: &gui.Views.Main, name: "main", autoPosition: true},
+		{viewPtr: &gui.Views.Terminal, name: "terminal", autoPosition: false},
 
 		// bottom line
 		{viewPtr: &gui.Views.Options, name: "options", autoPosition: true},
@@ -148,6 +151,9 @@ func (gui *Gui) createAllViews() error {
 
 	gui.Views.Information.Frame = false
 	gui.Views.Information.FgColor = gocui.ColorGreen
+
+	gui.Views.Terminal.Visible = false
+	gui.Views.Terminal.Frame = false
 
 	gui.Views.Confirmation.Visible = false
 	gui.Views.Confirmation.Wrap = true

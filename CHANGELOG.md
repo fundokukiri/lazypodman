@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Shell tab with a real terminal**: `x` in the Containers panel opens a menu
+  with `exec shell`, which starts `podman exec -it … /bin/sh` in a PTY and shows
+  it in a **shell** tab right after Logs (auto-switched). A VT10x buffer renders
+  full-screen tools such as `vim` and `htop`; `ctrl+x` closes the shell and
+  removes the tab. Adds `creack/pty` and `hinshun/vt10x`.
+
 - **Integration tests** for Podman-native features: startup check timing and process
   count, socket container list + pod snapshot, kube capability prefixes, kube
   generate, the events stream and Quadlet syntax built from a real inspect

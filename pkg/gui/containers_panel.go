@@ -34,7 +34,7 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 	return &panels.SideListPanel[*commands.Container]{
 		ContextState: &panels.ContextState[*commands.Container]{
 			GetMainTabs: func() []panels.MainTab[*commands.Container] {
-				return []panels.MainTab[*commands.Container]{
+				tabs := []panels.MainTab[*commands.Container]{
 					{
 						Key:    "logs",
 						Title:  gui.Tr.LogsTitle,
@@ -71,6 +71,21 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Render: gui.renderContainerEvents,
 					},
 				}
+
+				if gui.Panels.Containers != nil {
+					if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.terminalTabFor(container) {
+						// The shell tab only exists after x -> exec shell, right after Logs.
+						tabs = append(tabs[:1], append([]panels.MainTab[*commands.Container]{
+							{
+								Key:    terminalTabKey,
+								Title:  gui.Tr.ShellTitle,
+								Render: gui.renderContainerTerminal,
+							},
+						}, tabs[1:]...)...)
+					}
+				}
+
+				return tabs
 			},
 			GetItemContextCacheKey: func(container *commands.Container) string {
 				// Including the container state in the cache key so that if the container

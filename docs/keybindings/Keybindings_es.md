@@ -42,6 +42,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Export Quadlet .container file
   <kbd>E</kbd>: ejecutar shell
+  <kbd>x</kbd>: container shell
   <kbd>c</kbd>: ejecutar comando personalizado
   <kbd>b</kbd>: ver comandos masivos
   <kbd>w</kbd>: abrir en navegador (first port is http)

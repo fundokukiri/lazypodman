@@ -171,6 +171,19 @@ podman run -d --name hc-none docker.io/library/busybox sleep 600
 
 ---
 
+## J. Shell tab (terminal thật)
+
+- [ ] J1. Panel Containers, chọn container đang chạy → `x` → menu chỉ có **exec shell** (và Cancel), chưa có tab shell nào trước đó.
+- [ ] J2. Chọn **exec shell** → tab **shell** xuất hiện ngay **sau tab Logs** và được chọn tự động; con trỏ nằm trong vùng terminal.
+- [ ] J3. Gõ `ls -la` → output đúng, màu không có nhưng layout đúng; `top`/`htop` (nếu có) vẽ được toàn màn hình và thoát bằng `q` trong app.
+- [ ] J4. `vim /tmp/x` (nếu image có vim) mở đúng, gõ/xoá/di chuyển bằng mũi tên và `esc` hoạt động trong app.
+- [ ] J5. `ctrl+x` → shell đóng, tab mất, quay về danh sách container; mở lại bằng `x` vẫn được.
+- [ ] J6. Thoát shell bên trong (`exit`) → tab tự đóng, status line báo `shell exited`.
+- [ ] J7. Resize cửa sổ terminal → nội dung co giãn đúng (thử `vim` hoặc `top`).
+- [ ] J8. Container bị stop → shell tự đóng, tab biến mất, không treo app.
+- [ ] J9. Chọn container khác khi đang mở shell → tab shell biến mất (shell cũ vẫn giữ); quay lại container cũ → tab xuất hiện lại, gõ tiếp được.
+- [ ] J10. `E` vẫn mở terminal thật bên ngoài TUI như trước; `x` trong panel Containers không còn mở options menu (dùng `?`).
+
 ## I. Regression chung
 
 - [ ] **I1. Không có popup cho healthcheck**: kết quả healthy/unhealthy chỉ ở status line.

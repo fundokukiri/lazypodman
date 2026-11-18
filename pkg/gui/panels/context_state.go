@@ -41,7 +41,15 @@ func (self *ContextState[T]) GetCurrentContextKey(item T) string {
 }
 
 func (self *ContextState[T]) GetCurrentMainTab() MainTab[T] {
-	return self.GetMainTabs()[self.mainTabIdx]
+	tabs := self.GetMainTabs()
+
+	// The tab list can shrink under us (the shell tab only exists while a shell
+	// is open), so never index past the end.
+	if self.mainTabIdx >= len(tabs) {
+		self.mainTabIdx = 0
+	}
+
+	return tabs[self.mainTabIdx]
 }
 
 func (self *ContextState[T]) HandleNextMainTab() {

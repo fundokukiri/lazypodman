@@ -51,6 +51,10 @@ type Gui struct {
 	// by container ID so a refresh that rebuilds the list keeps the selection.
 	markedContainerIDs   map[string]bool
 	markedContainersLock sync.Mutex
+
+	// terminal is the single interactive shell tab, if one is open.
+	terminal      *terminalState
+	terminalMutex sync.Mutex
 }
 
 type Panels struct {

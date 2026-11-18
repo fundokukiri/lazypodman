@@ -25,6 +25,21 @@ func (gui *Gui) paletteItems() []*types.MenuItem {
 
 	items = append(items,
 		&types.MenuItem{
+			LabelColumns: []string{gui.Tr.ContainerShellTitle},
+			OnPress: func() error {
+				container, err := gui.Panels.Containers.GetSelectedItem()
+				if err != nil {
+					return nil
+				}
+
+				return gui.startContainerTerminal(container)
+			},
+		},
+		&types.MenuItem{
+			LabelColumns: []string{gui.Tr.CloseShell},
+			OnPress:      func() error { return gui.closeContainerTerminal() },
+		},
+		&types.MenuItem{
 			LabelColumns: []string{gui.Tr.KubeMenuTitle},
 			OnPress:      func() error { return gui.handlePodsKubeMenu(nil, nil) },
 		},

@@ -78,6 +78,7 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Env / Config / Top | Biến môi trường, cấu hình đầy đủ, tiến trình trong container | Các tab **Env**, **Config**, **Top** |
 | Vòng đời container | start / stop / restart / pause / remove (có xác nhận) | `s` `r` `p` `d` trong Containers; `S` start trong Services |
 | Attach / Exec shell | Vào shell hoặc gắn vào TTY của container | `a` (attach), `E` (exec shell) |
+| Shell tab (terminal thật) | Terminal đầy đủ (vim/htop/less) ngay trong TUI | Panel Containers → `x` → **exec shell**; `ctrl+x` để đóng |
 | Mở port trên browser | Mở port publish đầu tiên (nếu là http) | `w` |
 | Ẩn/hiện container đã dừng | Gọn danh sách | `e` |
 | Services (compose) | Gom container theo compose project/service, chạy up/down | Panel **Services**: `u` up service, `U` up project, `D` down project, `R` restart menu |
@@ -255,6 +256,8 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
   (đổi tab/panel để quay lại nội dung bình thường). Play/down cần thư mục
   `gui.kubeDir` tồn tại, còn generate thì tự tạo.
 - Kube chỉ có trong panel Pods, nên máy chỉ có socket (không có CLI) không dùng được.
+- Shell tab dùng PTY thật nhưng hiển thị dạng text: màu ANSI chưa được vẽ, không hỗ trợ
+  chuột; phím `ctrl+x` đóng shell (không dùng được trong app bên trong).
 - Events tab và auto-update cần CLI `podman`; không có CLI thì tab Events ghi
   `cli off:` và không spawn gì, còn auto-update chỉ hiện thông báo.
 - Quadlet export ghi file `.container` là điểm bắt đầu dễ đọc, không dịch toàn bộ

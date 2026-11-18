@@ -279,6 +279,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         'x',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainersExecShellMenu,
+			Description: gui.Tr.ContainerShellTitle,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'c',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainersCustomCommand,
@@ -467,6 +474,12 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Description: gui.Tr.ViewBulkCommands,
 		},
 		{
+			ViewName: "main",
+			Key:      gocui.KeyEnter,
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleFocusTerminal,
+		},
+		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
@@ -554,6 +567,7 @@ func (gui *Gui) staticKeybindings() []*Binding {
 // click bindings, which need the panels to exist.
 func (gui *Gui) GetInitialKeybindings() []*Binding {
 	bindings := gui.staticKeybindings()
+	bindings = append(bindings, gui.terminalKeyBindings()...)
 
 	for _, panel := range gui.allSidePanels() {
 		bindings = append(bindings, []*Binding{

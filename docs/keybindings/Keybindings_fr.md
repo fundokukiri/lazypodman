@@ -114,7 +114,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## Principal
 
 <pre>
-  <kbd>enter</kbd>: shell command
   <kbd>esc</kbd>: retour
 </pre>
 

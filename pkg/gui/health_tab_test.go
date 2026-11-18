@@ -295,7 +295,3 @@ func (f *fakeHealthPodClient) StreamPodman(_ context.Context, argv []string, onL
 
 	return nil
 }
-
-func (f *fakeHealthPodClient) OpenShell(_ context.Context, _ string) (*commands.ShellSession, error) {
-	return nil, nil
-}

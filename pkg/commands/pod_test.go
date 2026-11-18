@@ -286,7 +286,3 @@ func (f *fakePodClient) StreamKube(_ context.Context, _, _ []string, _ func(stri
 func (f *fakePodClient) StreamPodman(_ context.Context, _ []string, _ func(string)) error {
 	return nil
 }
-
-func (f *fakePodClient) OpenShell(_ context.Context, _ string) (*ShellSession, error) {
-	return nil, nil
-}

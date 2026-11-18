@@ -39,6 +39,9 @@ type PodmanClient interface {
 
 	// StreamKube runs play/down and streams merged output line by line.
 	StreamKube(ctx context.Context, prefix, args []string, onLine func(string)) error
+
+	// StreamPodman runs any podman command and streams merged output line by line.
+	StreamPodman(ctx context.Context, argv []string, onLine func(string)) error
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

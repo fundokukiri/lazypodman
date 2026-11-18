@@ -2,6 +2,20 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 # Lazypodman menu
 
+## Global
+
+<pre>
+  <kbd></kbd>: Command palette
+  <kbd>+</kbd>: modo de tela seguinte (normal/meia/tela cheia)
+  <kbd>_</kbd>: modo de tela anterior
+  <kbd>1</kbd>: focus projects panel
+  <kbd>2</kbd>: focus services panel
+  <kbd>3</kbd>: focus containers panel
+  <kbd>4</kbd>: focus images panel
+  <kbd>5</kbd>: focus volumes panel
+  <kbd>6</kbd>: focus networks panel
+</pre>
+
 ## Projeto
 
 <pre>
@@ -25,6 +39,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: anexar
   <kbd>m</kbd>: ver logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
+  <kbd>space</kbd>: mark/unmark container
+  <kbd>Q</kbd>: Export Quadlet .container file
   <kbd>E</kbd>: executar shell
   <kbd>c</kbd>: executar comando personalizado predefinido
   <kbd>b</kbd>: ver comandos em massa
@@ -99,19 +115,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>esc</kbd>: retornar
-</pre>
-
-## Global
-
-<pre>
-  <kbd>+</kbd>: modo de tela seguinte (normal/meia/tela cheia)
-  <kbd>_</kbd>: modo de tela anterior
-  <kbd>1</kbd>: focus projects panel
-  <kbd>2</kbd>: focus services panel
-  <kbd>3</kbd>: focus containers panel
-  <kbd>4</kbd>: focus images panel
-  <kbd>5</kbd>: focus volumes panel
-  <kbd>6</kbd>: focus networks panel
 </pre>
 
 ## Pods

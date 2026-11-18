@@ -176,6 +176,26 @@ type TranslationSet struct {
 	CliOff                     string
 	NoProbeOutput              string
 
+	EventsTitle string
+
+	PaletteTitle            string
+	AutoUpdateContainers    string
+	ConfirmAutoUpdate       string
+	AutoUpdateHeader        string
+	QuadletExport           string
+	QuadletSavedStatus      string
+	QuadletPlaintextWarning string
+	QuadletNeedsDetails     string
+	QuadletTitle            string
+
+	ToggleMark             string
+	MarkedCount            string
+	MarksCleared           string
+	StopContainersCount    string
+	RestartContainersCount string
+	PauseContainersCount   string
+	RemoveContainersCount  string
+
 	KubeMenuTitle        string
 	KubeGenerateMenu     string
 	KubePlayMenu         string
@@ -375,6 +395,23 @@ func englishSet() TranslationSet {
 		HealthRunOff:               "health run off:",
 		CliOff:                     "cli off:",
 		NoProbeOutput:              "(no output)",
+		EventsTitle:                "Events",
+		PaletteTitle:               "Command palette",
+		AutoUpdateContainers:       "Auto-update containers (podman auto-update)",
+		ConfirmAutoUpdate:          "Run podman auto-update?",
+		AutoUpdateHeader:           "# podman auto-update",
+		QuadletExport:              "Export Quadlet .container file",
+		QuadletSavedStatus:         "Saved %s",
+		QuadletPlaintextWarning:    "This unit contains environment variables in plaintext.",
+		QuadletNeedsDetails:        "Container details are not loaded yet",
+		QuadletTitle:               "Quadlet",
+		ToggleMark:                 "mark/unmark container",
+		MarkedCount:                "%d selected",
+		MarksCleared:               "selection cleared",
+		StopContainersCount:        "Stop %d containers?",
+		RestartContainersCount:     "Restart %d containers?",
+		PauseContainersCount:       "Pause/unpause %d containers?",
+		RemoveContainersCount:      "Remove %d containers?",
 
 		KubeMenuTitle:        "Kube",
 		KubeGenerateMenu:     "Generate kube YAML for this pod",

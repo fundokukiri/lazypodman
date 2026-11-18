@@ -282,3 +282,7 @@ func (f *fakePodClient) KubeGenerate(_ context.Context, _ []string, _ string) (s
 func (f *fakePodClient) StreamKube(_ context.Context, _, _ []string, _ func(string)) error {
 	return nil
 }
+
+func (f *fakePodClient) StreamPodman(_ context.Context, _ []string, _ func(string)) error {
+	return nil
+}

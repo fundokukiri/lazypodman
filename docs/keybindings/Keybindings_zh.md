@@ -2,6 +2,20 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 # Lazypodman 菜单
 
+## 全局
+
+<pre>
+  <kbd></kbd>: Command palette
+  <kbd>+</kbd>: 下一个屏幕模式（正常/半屏/全屏）
+  <kbd>_</kbd>: 上一个屏幕模式
+  <kbd>1</kbd>: focus projects panel
+  <kbd>2</kbd>: focus services panel
+  <kbd>3</kbd>: focus containers panel
+  <kbd>4</kbd>: focus images panel
+  <kbd>5</kbd>: focus volumes panel
+  <kbd>6</kbd>: focus networks panel
+</pre>
+
 ## 项目
 
 <pre>
@@ -25,6 +39,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: attach
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
+  <kbd>space</kbd>: mark/unmark container
+  <kbd>Q</kbd>: Export Quadlet .container file
   <kbd>E</kbd>: 执行shell
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>b</kbd>: 查看批量命令
@@ -99,19 +115,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>esc</kbd>: 返回
-</pre>
-
-## 全局
-
-<pre>
-  <kbd>+</kbd>: 下一个屏幕模式（正常/半屏/全屏）
-  <kbd>_</kbd>: 上一个屏幕模式
-  <kbd>1</kbd>: focus projects panel
-  <kbd>2</kbd>: focus services panel
-  <kbd>3</kbd>: focus containers panel
-  <kbd>4</kbd>: focus images panel
-  <kbd>5</kbd>: focus volumes panel
-  <kbd>6</kbd>: focus networks panel
 </pre>
 
 ## Pods

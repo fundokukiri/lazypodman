@@ -285,3 +285,13 @@ func (f *fakeHealthPodClient) StreamKube(_ context.Context, _, _ []string, onLin
 
 	return nil
 }
+
+func (f *fakeHealthPodClient) StreamPodman(_ context.Context, argv []string, onLine func(string)) error {
+	f.streamKubeCalls++
+
+	for _, line := range f.kubeStreamLines {
+		onLine(line)
+	}
+
+	return nil
+}

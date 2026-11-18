@@ -99,3 +99,7 @@ func TestSidePanelKeysWithPods(t *testing.T) {
 	assert.Equal(t, "[4]", gui.sidePanelTitlePrefix("containers"))
 	assert.Empty(t, gui.sidePanelTitlePrefix("menu"))
 }
+
+func (fakeEnabledPodClient) StreamPodman(context.Context, []string, func(string)) error {
+	return nil
+}

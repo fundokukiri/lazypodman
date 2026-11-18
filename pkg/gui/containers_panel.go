@@ -65,6 +65,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Title:  gui.Tr.TopTitle,
 						Render: gui.renderContainerTop,
 					},
+					{
+						Key:    "events",
+						Title:  gui.Tr.EventsTitle,
+						Render: gui.renderContainerEvents,
+					},
 				}
 			},
 			GetItemContextCacheKey: func(container *commands.Container) string {
@@ -122,7 +127,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 			return true
 		},
 		GetTableCells: func(container *commands.Container) []string {
-			return presentation.GetContainerDisplayStrings(&gui.Config.UserConfig.Gui, container, gui.podColumnEnabled())
+			cells := presentation.GetContainerDisplayStrings(&gui.Config.UserConfig.Gui, container, gui.podColumnEnabled())
+			// The mark is part of the name cell so the table keeps its width.
+			cells[2] = gui.containerMarkPrefix(container.ID) + cells[2]
+
+			return cells
 		},
 	}
 }
@@ -325,24 +334,31 @@ func (gui *Gui) handleHideStoppedContainers(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
-	ctr, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
+	targets := gui.containersToActOn()
+	if len(targets) == 0 {
 		return nil
 	}
 
-	handleMenuPress := func(configOptions container.RemoveOptions) error {
+	removeAll := func(configOptions container.RemoveOptions) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			if err := ctr.Remove(configOptions); err != nil {
-				if commands.HasErrorCode(err, commands.MustStopContainer) {
-					return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.MustForceToRemoveContainer, func(g *gocui.Gui, v *gocui.View) error {
-						return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-							configOptions.Force = true
-							return ctr.Remove(configOptions)
-						})
-					}, nil)
+			for _, ctr := range targets {
+				if err := ctr.Remove(configOptions); err != nil {
+					if commands.HasErrorCode(err, commands.MustStopContainer) {
+						return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.MustForceToRemoveContainer, func(g *gocui.Gui, v *gocui.View) error {
+							return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
+								configOptions.Force = true
+
+								return ctr.Remove(configOptions)
+							})
+						}, nil)
+					}
+
+					return gui.createErrorPanel(err.Error())
 				}
-				return gui.createErrorPanel(err.Error())
 			}
+
+			gui.clearMarkedContainers()
+
 			return nil
 		})
 	}
@@ -350,17 +366,22 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 	podman := gui.Config.PodmanBinary()
 	menuItems := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + ctr.ID[1:10]},
-			OnPress:      func() error { return handleMenuPress(container.RemoveOptions{}) },
+			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + targets[0].ID[1:10]},
+			OnPress:      func() error { return removeAll(container.RemoveOptions{}) },
 		},
 		{
-			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + ctr.ID[1:10]},
-			OnPress:      func() error { return handleMenuPress(container.RemoveOptions{RemoveVolumes: true}) },
+			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + targets[0].ID[1:10]},
+			OnPress:      func() error { return removeAll(container.RemoveOptions{RemoveVolumes: true}) },
 		},
 	}
 
+	title := ""
+	if len(targets) > 1 {
+		title = fmt.Sprintf(gui.Tr.RemoveContainersCount, len(targets))
+	}
+
 	return gui.Menu(CreateMenuOptions{
-		Title: "",
+		Title: title,
 		Items: menuItems,
 	})
 }
@@ -382,25 +403,55 @@ func (gui *Gui) PauseContainer(container *commands.Container) error {
 }
 
 func (gui *Gui) handleContainerPause(g *gocui.Gui, v *gocui.View) error {
-	ctr, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
+	targets := gui.containersToActOn()
+	if len(targets) == 0 {
 		return nil
 	}
 
-	return gui.PauseContainer(ctr)
+	if len(targets) == 1 {
+		return gui.PauseContainer(targets[0])
+	}
+
+	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() error {
+		for _, ctr := range targets {
+			var err error
+			if ctr.Details.State != nil && ctr.Details.State.Paused {
+				err = ctr.Unpause()
+			} else {
+				err = ctr.Pause()
+			}
+
+			if err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+		}
+
+		gui.clearMarkedContainers()
+
+		return gui.refreshContainersAndServices()
+	})
 }
 
 func (gui *Gui) handleContainerStop(g *gocui.Gui, v *gocui.View) error {
-	ctr, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
+	targets := gui.containersToActOn()
+	if len(targets) == 0 {
 		return nil
 	}
 
-	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.StopContainer, func(g *gocui.Gui, v *gocui.View) error {
+	prompt := gui.Tr.StopContainer
+	if len(targets) > 1 {
+		prompt = fmt.Sprintf(gui.Tr.StopContainersCount, len(targets))
+	}
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
-			if err := ctr.Stop(); err != nil {
-				return gui.createErrorPanel(err.Error())
+			for _, ctr := range targets {
+				if err := ctr.Stop(); err != nil {
+					return gui.createErrorPanel(err.Error())
+				}
 			}
+
+			gui.clearMarkedContainers()
 
 			return nil
 		})
@@ -408,15 +459,19 @@ func (gui *Gui) handleContainerStop(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) handleContainerRestart(g *gocui.Gui, v *gocui.View) error {
-	ctr, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
+	targets := gui.containersToActOn()
+	if len(targets) == 0 {
 		return nil
 	}
 
 	return gui.WithWaitingStatus(gui.Tr.RestartingStatus, func() error {
-		if err := ctr.Restart(); err != nil {
-			return gui.createErrorPanel(err.Error())
+		for _, ctr := range targets {
+			if err := ctr.Restart(); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
 		}
+
+		gui.clearMarkedContainers()
 
 		return nil
 	})
@@ -536,6 +591,10 @@ func (gui *Gui) handleContainersBulkCommand(g *gocui.Gui, v *gocui.View) error {
 		{
 			Name:             gui.Tr.PruneContainers,
 			InternalFunction: gui.handlePruneContainers,
+		},
+		{
+			Name:             gui.Tr.AutoUpdateContainers,
+			InternalFunction: gui.handleAutoUpdate,
 		},
 	}
 

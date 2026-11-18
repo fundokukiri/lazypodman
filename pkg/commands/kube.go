@@ -81,8 +81,11 @@ func (c *cliPodmanClient) KubeGenerate(ctx context.Context, prefix []string, ref
 // onLine as it arrives. The child is bound to ctx: cancelling the task kills it
 // and the call returns promptly.
 func (c *cliPodmanClient) StreamKube(ctx context.Context, prefix, args []string, onLine func(string)) error {
-	argv := append(append([]string{}, prefix...), args...)
+	return c.StreamPodman(ctx, append(append([]string{}, prefix...), args...), onLine)
+}
 
+// StreamPodman runs any podman command and streams its merged output line by line.
+func (c *cliPodmanClient) StreamPodman(ctx context.Context, argv []string, onLine func(string)) error {
 	command := exec.CommandContext(ctx, c.binary, argv...)
 	command.Cancel = func() error { return command.Process.Kill() }
 	command.WaitDelay = 2 * time.Second

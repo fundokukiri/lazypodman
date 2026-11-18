@@ -14,6 +14,9 @@ type CreateMenuOptions struct {
 	// OnCancel runs after the menu closes when the user presses esc/q or the
 	// Cancel item. Submenus pass a function that reopens their parent menu.
 	OnCancel func() error
+	// SelectedLine is the row to focus when the menu opens. Submenus use it to
+	// return to the row the user came from instead of jumping to the top.
+	SelectedLine int
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -94,7 +97,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 	gui.menuCancel = opts.OnCancel
 
 	gui.Panels.Menu.SetItems(opts.Items)
-	gui.Panels.Menu.SetSelectedLineIdx(0)
+	gui.Panels.Menu.SetSelectedLineIdx(opts.SelectedLine)
 
 	if err := gui.Panels.Menu.RerenderList(); err != nil {
 		return err

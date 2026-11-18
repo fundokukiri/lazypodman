@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	terminalTabKey = "shell"
-	terminalTick   = 60 * time.Millisecond
+	terminalTabKey       = "shell"
+	terminalTick         = 60 * time.Millisecond
+	terminalHistoryLimit = 5000
 )
 
 // terminalState is the single interactive shell currently attached to a tab.
@@ -24,6 +25,12 @@ type terminalState struct {
 	terminal    *commands.Terminal
 	mutex       sync.Mutex
 	cols, rows  int
+
+	// history keeps lines that scrolled off the screen so the user can page back
+	// through shell output, like the Logs tab.
+	history      []string
+	lastRows     []string
+	scrollOffset int
 }
 
 func (gui *Gui) currentTerminal() *terminalState {
@@ -343,22 +350,33 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		return
 	}
 
-	state.mutex.Lock()
-	rows, cursorX, cursorY, cursorVisible := state.terminal.Snapshot()
-	state.mutex.Unlock()
-
-	trimmed := trimTerminalRows(rows)
-
 	_, maxRows := gui.Views.Terminal.Size()
 
-	// The first row is the container header; the terminal gets the rest.
-	if maxRows > 1 && len(trimmed) > maxRows-1 {
-		trimmed = trimmed[:maxRows-1]
+	state.mutex.Lock()
+	rows, cursorX, cursorY, cursorVisible := state.terminal.Snapshot()
+	trimmed := trimTerminalRows(rows)
+
+	if lost := scrolledOffLines(state.lastRows, trimmed); len(lost) > 0 {
+		state.history = append(state.history, lost...)
+		if len(state.history) > terminalHistoryLimit {
+			state.history = state.history[len(state.history)-terminalHistoryLimit:]
+		}
 	}
 
+	state.lastRows = trimmed
+
+	// The first row is the container header; the terminal gets the rest.
+	height := maxRows - 1
+	if height < 0 {
+		height = 0
+	}
+
+	visible := terminalWindow(state.history, trimmed, height, state.scrollOffset)
+	state.mutex.Unlock()
+
 	content := terminalHeader(container, gui.Tr)
-	if len(trimmed) > 0 {
-		content += "\n" + strings.Join(trimmed, "\n")
+	if len(visible) > 0 {
+		content += "\n" + strings.Join(visible, "\n")
 	}
 
 	gui.g.Update(func(*gocui.Gui) error {
@@ -369,7 +387,11 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		_ = gui.setViewContent(gui.Views.Terminal, content)
 		gui.g.Cursor = cursorVisible && gui.g.CurrentView() == gui.Views.Terminal
 
-		if cursorY >= 0 && cursorY+1 < maxRows {
+		state.mutex.Lock()
+		offset := state.scrollOffset
+		state.mutex.Unlock()
+
+		if offset == 0 && cursorY >= 0 && cursorY+1 < maxRows {
 			_ = gui.Views.Terminal.SetCursor(cursorX, cursorY+1)
 		}
 
@@ -381,8 +403,9 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 // (q, b, x) are forwarded to the container, so they must not be advertised here.
 func (gui *Gui) terminalOptionsMap() map[string]string {
 	return map[string]string{
-		"ctrl+o": gui.Tr.LeaveShell,
-		"ctrl+x": gui.Tr.CloseShell,
+		"PgUp/PgDn": gui.Tr.Scroll,
+		"ctrl+o":    gui.Tr.LeaveShell,
+		"ctrl+x":    gui.Tr.CloseShell,
 	}
 }
 
@@ -448,8 +471,8 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 		&Binding{ViewName: "terminal", Key: gocui.KeyHome, Modifier: gocui.ModNone, Handler: send("\x1b[H")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyEnd, Modifier: gocui.ModNone, Handler: send("\x1b[F")},
 		&Binding{ViewName: "terminal", Key: gocui.KeyDelete, Modifier: gocui.ModNone, Handler: send("\x1b[3~")},
-		&Binding{ViewName: "terminal", Key: gocui.KeyPgup, Modifier: gocui.ModNone, Handler: send("\x1b[5~")},
-		&Binding{ViewName: "terminal", Key: gocui.KeyPgdn, Modifier: gocui.ModNone, Handler: send("\x1b[6~")},
+		&Binding{ViewName: "terminal", Key: gocui.KeyPgup, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(10) }, Description: gui.Tr.Scroll},
+		&Binding{ViewName: "terminal", Key: gocui.KeyPgdn, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(-10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlO, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.leaveTerminalFocus() }, Description: gui.Tr.LeaveShell},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlX, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.closeContainerTerminal() }, Description: gui.Tr.CloseShell},
 	)
@@ -468,6 +491,90 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 	}
 
 	return bindings
+}
+
+// scrollTerminal pages the shell history. Positive delta scrolls up.
+func (gui *Gui) scrollTerminal(delta int) error {
+	state := gui.currentTerminal()
+	if state == nil {
+		return nil
+	}
+
+	state.mutex.Lock()
+	state.scrollOffset += delta
+	if state.scrollOffset > len(state.history) {
+		state.scrollOffset = len(state.history)
+	}
+	if state.scrollOffset < 0 {
+		state.scrollOffset = 0
+	}
+	state.mutex.Unlock()
+
+	gui.g.Update(func(*gocui.Gui) error { return nil })
+
+	return nil
+}
+
+// scrolledOffLines returns the lines that left the top of the screen between two
+// snapshots (used to build the scrollback history).
+func scrolledOffLines(oldRows, newRows []string) []string {
+	for k := 1; k < len(oldRows) && k <= len(newRows); k++ {
+		if slicesEqual(oldRows[k:], newRows[:len(oldRows)-k]) {
+			return oldRows[:k]
+		}
+	}
+
+	return nil
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+// terminalWindow returns the slice of history+screen visible for a given scroll
+// offset, where offset 0 means the newest lines.
+func terminalWindow(history, screen []string, height, offset int) []string {
+	if height <= 0 {
+		return nil
+	}
+
+	all := make([]string, 0, len(history)+len(screen))
+	all = append(all, history...)
+	all = append(all, screen...)
+
+	maxOffset := len(all) - height
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+
+	if offset > maxOffset {
+		offset = maxOffset
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	start := len(all) - height - offset
+	if start < 0 {
+		start = 0
+	}
+
+	end := start + height
+	if end > len(all) {
+		end = len(all)
+	}
+
+	return all[start:end]
 }
 
 func (gui *Gui) writeTerminal(data []byte) error {

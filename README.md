@@ -273,9 +273,10 @@ commands (prune).
   **Logs** and switches to it. The terminal is a VT10x screen buffer, so `vim`,
   `htop` and `less` work; colours are parsed but drawn as plain text for now.
   `ctrl+x` again closes the shell and removes the tab; exiting the shell inside
-  the container does the same. `ctrl+o` leaves the terminal focused but keeps the
-  shell running, so `[`/`]` and the rest of the UI work again. Before this the tab does not exist, so nothing is spawned at
-  startup.
+  the container does the same. `PgUp`/`PgDn` page through up to 5000 lines of
+  shell scrollback. `ctrl+o` leaves the terminal focused but keeps the shell
+  running, so `[`/`]` and the rest of the UI work again. Before this the tab does
+  not exist, so nothing is spawned at startup.
 - The **Events** tab (Containers panel, last tab) streams `podman events`
   verbatim. The stream is tied to the tab: switching away kills the child.
   Without a usable Podman CLI the tab says `cli off: <reason>` and spawns

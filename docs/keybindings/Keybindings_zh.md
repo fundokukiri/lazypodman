@@ -123,6 +123,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 ## 
 
 <pre>
+  <kbd>Ċ</kbd>: 滚动
+  <kbd>ċ</kbd>: 滚动
   <kbd>ctrl+o</kbd>: leave shell, keep it running
   <kbd>ctrl+x</kbd>: close shell
 </pre>

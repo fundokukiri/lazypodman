@@ -90,6 +90,24 @@ func TestTerminalHeaderOmitsEmptyPod(t *testing.T) {
 	assert.NotContains(t, regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(header, ""), "pod:")
 }
 
+func TestScrolledOffLinesDetectsScrolling(t *testing.T) {
+	oldRows := []string{"a", "b", "c", "d"}
+	newRows := []string{"c", "d", "e", "f"}
+
+	assert.Equal(t, []string{"a", "b"}, scrolledOffLines(oldRows, newRows))
+	assert.Nil(t, scrolledOffLines(oldRows, []string{"x", "y", "z", "w"}))
+}
+
+func TestTerminalWindowPagesHistory(t *testing.T) {
+	history := []string{"1", "2", "3", "4"}
+	screen := []string{"5", "6", "7"}
+
+	assert.Equal(t, []string{"5", "6", "7"}, terminalWindow(history, screen, 3, 0))
+	assert.Equal(t, []string{"3", "4", "5"}, terminalWindow(history, screen, 3, 2))
+	assert.Equal(t, []string{"1", "2", "3"}, terminalWindow(history, screen, 3, 99), "offset is clamped")
+	assert.Equal(t, []string{"1", "2", "3", "4", "5", "6", "7"}, terminalWindow(history, screen, 20, 0))
+}
+
 func TestTerminalTabOnlyForItsContainer(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 	container := &commands.Container{ID: "abc", Name: "web"}
@@ -111,8 +129,9 @@ func TestTerminalOptionsShowHowToClose(t *testing.T) {
 	options := gui.terminalOptionsMap()
 
 	assert.Equal(t, map[string]string{
-		"ctrl+o": gui.Tr.LeaveShell,
-		"ctrl+x": gui.Tr.CloseShell,
+		"PgUp/PgDn": gui.Tr.Scroll,
+		"ctrl+o":    gui.Tr.LeaveShell,
+		"ctrl+x":    gui.Tr.CloseShell,
 	}, options)
-	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+x: close shell", gui.optionsMapToString(options))
+	assert.Equal(t, "PgUp/PgDn: scroll, ctrl+o: leave shell, keep it running, ctrl+x: close shell", gui.optionsMapToString(options))
 }

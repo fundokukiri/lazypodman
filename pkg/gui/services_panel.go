@@ -530,6 +530,10 @@ func (gui *Gui) handleServicesBulkCommand(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) handleServicesExecShell(g *gocui.Gui, v *gocui.View) error {
+	if gui.currentTerminal() != nil {
+		return gui.closeContainerTerminal()
+	}
+
 	service, err := gui.Panels.Services.GetSelectedItem()
 	if err != nil {
 		return nil

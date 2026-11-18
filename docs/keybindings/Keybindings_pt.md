@@ -41,7 +41,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Export Quadlet .container file
-  <kbd>E</kbd>: executar shell
+  <kbd>ctrl+x</kbd>: executar shell
   <kbd>c</kbd>: executar comando personalizado predefinido
   <kbd>b</kbd>: ver comandos em massa
   <kbd>w</kbd>: abrir no navegador (primeira porta é http)
@@ -68,7 +68,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>R</kbd>: ver opções de reinício
   <kbd>c</kbd>: executar comando personalizado predefinido
   <kbd>b</kbd>: ver comandos em massa
-  <kbd>E</kbd>: executar shell
+  <kbd>ctrl+x</kbd>: executar shell
   <kbd>w</kbd>: abrir no navegador (primeira porta é http)
   <kbd>enter</kbd>: focar no painel principal
   <kbd>[</kbd>: aba anterior

@@ -181,16 +181,16 @@ podman run -d --name hc-none docker.io/library/busybox sleep 600
 
 ## J. Shell tab (terminal thật)
 
-- [ ] J1. Panel Containers, chọn container đang chạy → `x` mở menu options như cũ, trong đó có mục **exec shell** (`E`); chưa có tab shell nào trước đó.
+- [ ] J1. Panel Containers, chọn container đang chạy → `x` mở menu options như cũ, trong đó có mục **exec shell** (`ctrl+x`); chưa có tab shell nào trước đó.
 - [ ] J2. Chọn **exec shell** → tab **shell** xuất hiện ngay **sau tab Logs** và được chọn tự động; con trỏ nằm trong vùng terminal.
 - [ ] J3. Gõ `ls -la` → output đúng, màu không có nhưng layout đúng; `top`/`htop` (nếu có) vẽ được toàn màn hình và thoát bằng `q` trong app.
 - [ ] J4. `vim /tmp/x` (nếu image có vim) mở đúng, gõ/xoá/di chuyển bằng mũi tên và `esc` hoạt động trong app.
-- [ ] J5. `ctrl+x` → shell đóng, tab mất, quay về danh sách container; mở lại bằng `x` vẫn được.
+- [ ] J5. `ctrl+x` trong shell → shell đóng, tab mất, quay về danh sách container; `ctrl+x` ở panel Containers mở lại được (một phím mở/đóng).
 - [ ] J6. Thoát shell bên trong (`exit`) → tab tự đóng, status line báo `shell exited`.
 - [ ] J7. Resize cửa sổ terminal → nội dung co giãn đúng (thử `vim` hoặc `top`).
 - [ ] J8. Container bị stop → shell tự đóng, tab biến mất, không treo app.
 - [ ] J9. Chọn container khác khi đang mở shell → tab shell biến mất (shell cũ vẫn giữ); quay lại container cũ → tab xuất hiện lại, gõ tiếp được.
-- [ ] J10. `E` mở terminal trong tab shell; `x` vẫn mở options menu như cũ; `a` vẫn attach native.
+- [ ] J10. `ctrl+x` mở/đóng terminal (toggle); `x` vẫn mở options menu như cũ; `a` vẫn attach native.
 - [ ] J11. Trong shell, nhấn `ctrl+o` → con trỏ rời terminal, shell vẫn chạy;
   `[`/`]` chuyển tab Logs/shell/Stats bình thường. Quay lại shell: chọn tab shell
   rồi `enter` (hoặc `→` vào vùng chính rồi `enter`).

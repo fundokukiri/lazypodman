@@ -272,7 +272,7 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
-			Key:         'E',
+			Key:         gocui.KeyCtrlX,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainersTerminal,
 			Description: gui.Tr.ExecShell,
@@ -391,7 +391,7 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "services",
-			Key:         'E',
+			Key:         gocui.KeyCtrlX,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServicesExecShell,
 			Description: gui.Tr.ExecShell,

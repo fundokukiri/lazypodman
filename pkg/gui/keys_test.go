@@ -159,24 +159,24 @@ func TestExecShellOpensTerminalTab(t *testing.T) {
 
 	found := false
 	for _, binding := range gui.staticKeybindings() {
-		if binding.ViewName == "containers" && binding.GetKey() == "E" {
+		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+x" {
 			found = true
 
 			if binding.Description != gui.Tr.ExecShell {
-				t.Errorf("E description = %q, want exec shell", binding.Description)
+				t.Errorf("ctrl+x description = %q, want exec shell", binding.Description)
 			}
 
 			if binding.Handler == nil {
-				t.Error("E has no handler")
+				t.Error("ctrl+x has no handler")
 			}
 		}
 
-		if binding.ViewName == "containers" && binding.GetKey() == "x" {
-			t.Error("containers must not shadow the global x options menu")
+		if binding.ViewName == "containers" && (binding.GetKey() == "E" || binding.GetKey() == "x") {
+			t.Errorf("containers must not bind %s", binding.GetKey())
 		}
 	}
 
 	if !found {
-		t.Fatal("E binding for the containers panel is missing")
+		t.Fatal("ctrl+x exec-shell binding for the containers panel is missing")
 	}
 }

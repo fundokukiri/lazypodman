@@ -529,7 +529,13 @@ func (gui *Gui) handleContainerViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
+// handleContainersTerminal opens the shell for the selected container, or closes
+// the one that is already open, so ctrl+x works as a single toggle.
 func (gui *Gui) handleContainersTerminal(g *gocui.Gui, v *gocui.View) error {
+	if gui.currentTerminal() != nil {
+		return gui.closeContainerTerminal()
+	}
+
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
 		return nil

@@ -225,8 +225,8 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach · `m` logs · `t` run healthcheck · `E` exec shell (in-app terminal) ·
-`ctrl+x` close the shell tab ·
+`r` restart · `a` attach · `m` logs · `t` run healthcheck ·
+`ctrl+x` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
@@ -239,7 +239,7 @@ change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach · `m` logs ·
-`E` exec shell · `c`/`b` custom / bulk command · `w` open port.
+`ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
 (menu, with force) · `b` bulk commands (prune stopped pods) · `c` custom command ·
@@ -268,12 +268,13 @@ commands (prune).
 
 ### Events, multi-select, palette and Quadlet
 
-- `x` opens the usual options menu; its **exec shell** entry (`E`) starts a real
-  PTY (`podman exec -it … /bin/sh`) in a new **shell** tab right after **Logs**
-  and switches to it. The terminal is a VT10x screen buffer, so `vim`, `htop` and
-  `less` work; colours are parsed but drawn as plain text for now. `ctrl+x`
-  closes the shell and removes the tab; exiting the shell inside the container
-  does the same. Before this the tab does not exist, so nothing is spawned at
+- `x` opens the usual options menu; its **exec shell** entry (`ctrl+x`) starts a
+  real PTY (`podman exec -it … /bin/sh`) in a new **shell** tab right after
+  **Logs** and switches to it. The terminal is a VT10x screen buffer, so `vim`,
+  `htop` and `less` work; colours are parsed but drawn as plain text for now.
+  `ctrl+x` again closes the shell and removes the tab; exiting the shell inside
+  the container does the same. `ctrl+o` leaves the terminal focused but keeps the
+  shell running, so `[`/`]` and the rest of the UI work again. Before this the tab does not exist, so nothing is spawned at
   startup.
 - The **Events** tab (Containers panel, last tab) streams `podman events`
   verbatim. The stream is tied to the tab: switching away kills the child.
@@ -307,7 +308,7 @@ The full generated list for every language lives in
 ### Typical workflows
 
 1. **Debug a failing service**: select it, `m` for logs, `]` for the Stats tab,
-   `E` to open a shell.
+   `ctrl+x` to open a shell.
 2. **Redeploy after a code change**: select the service, `R`, pick
    recreate/rebuild (driven by `commandTemplates.recreateService` /
    `rebuildService`).

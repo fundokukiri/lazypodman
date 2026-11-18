@@ -77,8 +77,8 @@ Khi **pods không khả dụng**, panel Pods bị ẩn và số thứ tự co l�
 | Chạy healthcheck | Chạy `podman healthcheck run` một lần | Panel Containers → `t` |
 | Env / Config / Top | Biến môi trường, cấu hình đầy đủ, tiến trình trong container | Các tab **Env**, **Config**, **Top** |
 | Vòng đời container | start / stop / restart / pause / remove (có xác nhận) | `s` `r` `p` `d` trong Containers; `S` start trong Services |
-| Attach / Exec shell | Vào shell hoặc gắn vào TTY của container | `a` (attach), `E` (exec shell terminal trong tab) |
-| Shell tab (terminal thật) | Terminal đầy đủ (vim/htop/less) ngay trong TUI | Panel Containers → `x` → **exec shell** (hoặc `E`); `ctrl+x` để đóng |
+| Attach / Exec shell | Vào shell hoặc gắn vào TTY của container | `a` (attach), `ctrl+x` (mở/đóng shell terminal trong tab) |
+| Shell tab (terminal thật) | Terminal đầy đủ (vim/htop/less) ngay trong TUI | Panel Containers → `x` → **exec shell** (hoặc `ctrl+x`); `ctrl+x` lần nữa để đóng |
 | Mở port trên browser | Mở port publish đầu tiên (nếu là http) | `w` |
 | Ẩn/hiện container đã dừng | Gọn danh sách | `e` |
 | Services (compose) | Gom container theo compose project/service, chạy up/down | Panel **Services**: `u` up service, `U` up project, `D` down project, `R` restart menu |
@@ -240,7 +240,7 @@ SSH tunnel. Store của Docker context không bao giờ bị đọc.
    **Containers** xem container nào lỗi → `s`/`r` thao tác trên cả pod.
 3. **Dọn dẹp**: Images `b` → prune; Volumes `b`; Networks `b`; Pods `b` → prune stopped
    pods. Mọi thao tác xoá đều hỏi xác nhận.
-4. **Debug nhanh trong container**: `E` để mở terminal trong tab **shell**, `a` để attach, `w` mở port ra
+4. **Debug nhanh trong container**: `ctrl+x` để mở/đóng terminal trong tab **shell**, `a` để attach, `w` mở port ra
    browser.
 
 ## 12. Giới hạn hiện tại

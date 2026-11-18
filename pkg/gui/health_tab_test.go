@@ -24,6 +24,12 @@ type fakeHealthPodClient struct {
 	output          string
 	exitCode        int
 	runErr          error
+
+	probeSubcommandCalls int
+	kubeGenerateCalls    int
+	streamKubeCalls      int
+	kubeYAML             string
+	kubeStreamLines      []string
 }
 
 func (f *fakeHealthPodClient) ProbeHealthcheck(context.Context) commands.Capability {
@@ -256,4 +262,26 @@ func TestHealthTabRendersFromMemory(t *testing.T) {
 
 	assert.Equal(t, 0, client.healthCalls)
 	assert.Equal(t, 0, client.probeCalls)
+}
+
+func (f *fakeHealthPodClient) ProbeSubcommand(context.Context, [][]string) ([]string, commands.Capability) {
+	f.probeSubcommandCalls++
+
+	return []string{"kube", "play"}, commands.Capability{State: commands.CapabilityAvailable}
+}
+
+func (f *fakeHealthPodClient) KubeGenerate(context.Context, []string, string) (string, error) {
+	f.kubeGenerateCalls++
+
+	return f.kubeYAML, nil
+}
+
+func (f *fakeHealthPodClient) StreamKube(_ context.Context, _, _ []string, onLine func(string)) error {
+	f.streamKubeCalls++
+
+	for _, line := range f.kubeStreamLines {
+		onLine(line)
+	}
+
+	return nil
 }

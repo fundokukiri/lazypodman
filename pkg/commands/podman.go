@@ -58,6 +58,9 @@ type PodmanCommand struct {
 	CapabilitiesMutex sync.Mutex
 	// HealthcheckProbeMutex serialises the lazy healthcheck probe.
 	HealthcheckProbeMutex sync.Mutex
+	// KubeMutex serialises the lazy kube probes and guards kubePrefixes.
+	KubeMutex    sync.Mutex
+	kubePrefixes map[CapabilityFeature][]string
 
 	Closers []io.Closer
 }
@@ -673,6 +676,10 @@ func (c *PodmanCommand) SetCapability(feature CapabilityFeature, capability Capa
 	c.CapabilitiesMutex.Lock()
 	defer c.CapabilitiesMutex.Unlock()
 
+	c.setCapabilityUnlocked(feature, capability)
+}
+
+func (c *PodmanCommand) setCapabilityUnlocked(feature CapabilityFeature, capability Capability) {
 	switch feature {
 	case FeatureHealthRun:
 		c.capabilities.HealthRun = capability

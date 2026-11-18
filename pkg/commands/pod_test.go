@@ -130,6 +130,8 @@ type fakePodClient struct {
 	healthExit      int
 	healthErr       error
 	probeCapability Capability
+
+	probeSubcommandCalls int
 }
 
 func (f *fakePodClient) Enabled() bool   { return f.enabled }
@@ -265,4 +267,18 @@ func (f *fakePodClient) ProbeHealthcheck(_ context.Context) Capability {
 	f.probeCalls++
 
 	return f.probeCapability
+}
+
+func (f *fakePodClient) ProbeSubcommand(_ context.Context, _ [][]string) ([]string, Capability) {
+	f.probeSubcommandCalls++
+
+	return nil, Capability{State: CapabilityUnavailable, Reason: "fake"}
+}
+
+func (f *fakePodClient) KubeGenerate(_ context.Context, _ []string, _ string) (string, error) {
+	return "", nil
+}
+
+func (f *fakePodClient) StreamKube(_ context.Context, _, _ []string, _ func(string)) error {
+	return nil
 }

@@ -40,6 +40,18 @@ func (fakeEnabledPodClient) ProbeHealthcheck(context.Context) commands.Capabilit
 	return commands.Capability{State: commands.CapabilityAvailable}
 }
 
+func (fakeEnabledPodClient) ProbeSubcommand(context.Context, [][]string) ([]string, commands.Capability) {
+	return nil, commands.Capability{State: commands.CapabilityUnavailable, Reason: "fake"}
+}
+
+func (fakeEnabledPodClient) KubeGenerate(context.Context, []string, string) (string, error) {
+	return "", nil
+}
+
+func (fakeEnabledPodClient) StreamKube(context.Context, []string, []string, func(string)) error {
+	return nil
+}
+
 func (fakeEnabledPodClient) PodLogs(context.Context, *commands.Pod, []*commands.Container, int) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader("")), nil
 }

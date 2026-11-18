@@ -29,6 +29,16 @@ type PodmanClient interface {
 
 	// ProbeHealthcheck reports whether the CLI has a healthcheck subcommand.
 	ProbeHealthcheck(ctx context.Context) Capability
+
+	// ProbeSubcommand returns the first argv variant this Podman accepts, plus
+	// the capability that goes with it.
+	ProbeSubcommand(ctx context.Context, variants [][]string) ([]string, Capability)
+
+	// KubeGenerate runs the kube generate command for one pod.
+	KubeGenerate(ctx context.Context, prefix []string, ref string) (string, error)
+
+	// StreamKube runs play/down and streams merged output line by line.
+	StreamKube(ctx context.Context, prefix, args []string, onLine func(string)) error
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

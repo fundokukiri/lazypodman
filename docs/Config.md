@@ -160,6 +160,37 @@ You may use the following go templates (such as `{{ .Container.ID }}` above) in 
 - [`{{ .Container }}`](https://pkg.go.dev/github.com/fundokukiri/lazypodman@v0.20.0/pkg/commands#Container) and its fields. For example: `{{ .Container.Container.ImageID }}`
 - [`{{ .Service }}`](https://pkg.go.dev/github.com/fundokukiri/lazypodman@v0.20.0/pkg/commands#Service) and its fields. For example: `{{ .Service.Name }}`
 
+
+## Healthcheck
+
+Every container panel has a **Health** tab, after **Stats**. It reads the health
+state and probe history from the container inspect data the socket already
+provides, so opening it starts no process and makes no extra call.
+
+`t` (containers panel) runs `podman healthcheck run` once for the selected
+container. Two conditions are checked before any process starts: the container
+must be running and must have a healthcheck (`--health-cmd`).
+
+- A healthy run shows `healthcheck: healthy` on the status line.
+- An unhealthy run shows `healthcheck: unhealthy (exit 1)`. That is a **result**,
+  not an error, so no error panel appears.
+- A run that cannot execute, or an exit code outside the documented table, opens
+  the error panel with Podman's output verbatim.
+
+The documented exit codes are `0` healthy, `1` unhealthy and `2` reserved
+(unhealthy). Only `0` is verified here; `1` and `2` come from Podman's
+documentation, and any other code is treated as an error rather than guessed at.
+
+**Side effect**: a manual run is recorded by Podman. It appends to the health log,
+can change the failing streak and the reported status, and can trigger
+`--health-on-failure` behaviour if the container was started with it.
+
+Running the probe needs the CLI, so the first `t` press probes
+`podman healthcheck run --help` once. A missing subcommand is cached for the
+session (and the corner then shows `health run off: <reason>`); a timeout is
+retried on the next press. Before a probe has failed nothing is claimed, which is
+why no off line appears on startup.
+
 ## Replacements
 
 You can add replacements like so:

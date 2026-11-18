@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Health** tab on the containers panel (after **Stats**) showing health
+  status, failing streak and the recorded probes, all from inspect data the
+  socket already provides.
+- `t` on the containers panel runs `podman healthcheck run` once. Healthy and
+  unhealthy are results shown on the status line (an unhealthy exit is not an
+  error); only spawn failures and undocumented exit codes open the error panel.
+  Documented exit codes beyond `0` are unverified; anything outside `0`/`1`/`2`
+  is treated as an error.
+- Per-feature capability state (`unknown`/`available`/`unavailable`): features
+  that need the CLI are probed lazily on first use, so startup still runs two
+  podman processes. A failed probe adds `health run off: <reason>` to the
+  bottom-right corner; a CLI failure shows a single `cli off: <reason>`.
 - Pods panel (between Services and Containers) with **Logs**, **Stats**,
   **Containers** and **Config** tabs. Pod logs are merged and prefixed with the
   container name; pod stats are the sum over the pod's containers.

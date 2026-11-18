@@ -200,7 +200,7 @@ Flags:
 
 Layout: the left column holds **Project → Services → Pods → Containers → Images
 → Volumes → Networks**; the main panel shows the selected item's **Logs / Stats /
-Config / Env / Top / Compose Config / About** tabs. When the pods feature is
+Health / Config / Env / Top / Compose Config / About** tabs. When the pods feature is
 unavailable the Pods panel is hidden and the remaining panels keep contiguous
 numbers (`1`…`6`).
 
@@ -222,8 +222,16 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach · `m` logs · `E` exec shell · `c` custom command ·
-`b` bulk commands · `w` open first published port in the browser.
+`r` restart · `a` attach · `m` logs · `t` run healthcheck · `E` exec shell ·
+`c` custom command · `b` bulk commands · `w` open first published port in the
+browser.
+
+The **Health** tab shows the health status, the failing streak and the recorded
+probes (newest first) from the container inspect data, so it costs no extra
+process or socket call. `t` runs `podman healthcheck run` once and reports
+`healthy` or `unhealthy` on the status line; an unhealthy result is a result,
+not an error. The run is recorded by Podman: it appends to the health log, can
+change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach · `m` logs ·
@@ -350,6 +358,11 @@ Environment variables: `PODMAN_HOST`, `CONTAINER_HOST`, `DOCKER_HOST`,
   context store is never read.
 - **Hidden infra containers**: the per-pod `-infra` (pause) containers are
   filtered out of the containers panel, like `podman ps` does.
+- **Healthcheck runs are lazy**: pressing `t` probes `podman healthcheck run`
+  once, only then. A missing subcommand is cached for the session; a timeout is
+  retried on the next press. Nothing is claimed about a feature before it is
+  probed, and the exit-code table shown in the docs is unverified beyond
+  `0 = healthy`.
 - **Pods**: the pods panel needs the `podman` CLI to talk to the same store as
   the socket. It is enabled only when the binary exists, is Podman ≥ 3.0 and its
   socket path matches the endpoint in use; otherwise the panel is hidden and the

@@ -218,3 +218,18 @@ Appended to the Phase 1 checklist, same three-level reporting:
 
 Exact i18n wording, table column widths, whether the result popup reuses
 `createPopupPanel` or a slimmer helper, and the tab's empty-state colour.
+
+## Implementation status (batch 1)
+
+Implemented as planned, with these notes:
+
+- `Capability` is tri-state with a `Transient` flag; `PodmanCommand.HealthcheckCapability`
+  holds a mutex across the probe and caches the outcome, so concurrent `t` presses
+  share one process (tested).
+- The result channel is a 10 s status-line flash added in `pkg/gui/app_status_manager.go`;
+  no popup is used for healthy/unhealthy.
+- The Health tab is fed by the existing details ticker; `t` refreshes details and
+  re-renders the current tab immediately after a run.
+- The plan's 7-item manual checklist is reproduced in
+  `docs/superpowers/plans/2026-11-18-healthcheck.md`. Everything in this batch is
+  **tested against synthetic fixtures only**; nothing is human-verified yet.

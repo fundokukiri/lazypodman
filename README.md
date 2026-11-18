@@ -1,3 +1,12 @@
+<h1 align="center">Lazypodman</h1>
+
+<p align="center">
+  <b>The lazier way to manage everything Podman — the Podman version of lazydocker</b><br>
+  A Podman-only fork of <a href="https://github.com/jesseduffield/lazydocker">lazydocker</a> by Jesse Duffield
+</p>
+
+<hr>
+
 <div align="center">
 <sup>Special thanks to:</sup>
 <br>

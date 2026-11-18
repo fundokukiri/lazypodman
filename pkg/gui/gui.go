@@ -51,6 +51,11 @@ type Gui struct {
 	// by container ID so a refresh that rebuilds the list keeps the selection.
 	markedContainerIDs   map[string]bool
 	markedContainersLock sync.Mutex
+
+	// shellSessions holds one line-oriented shell per container ID so switching
+	// tabs keeps it alive.
+	shellSessions      map[string]*shellState
+	shellSessionsMutex sync.Mutex
 }
 
 type Panels struct {
@@ -191,6 +196,7 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 func (gui *Gui) Run() error {
 	// closing our task manager which in turn closes the current task if there is any, so we aren't leaving processes lying around after closing lazypodman
 	defer gui.taskManager.Close()
+	defer gui.closeShellSessions()
 
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
 		OutputMode:       gocui.OutputTrue,

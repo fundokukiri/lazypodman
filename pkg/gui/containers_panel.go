@@ -41,6 +41,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Render: gui.renderContainerLogsToMain,
 					},
 					{
+						Key:    shellTabKey,
+						Title:  gui.Tr.ShellTitle,
+						Render: gui.renderContainerShell,
+					},
+					{
 						Key:    "stats",
 						Title:  gui.Tr.StatsTitle,
 						Render: gui.renderContainerStats,

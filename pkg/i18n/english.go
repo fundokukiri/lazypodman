@@ -189,6 +189,11 @@ type TranslationSet struct {
 	QuadletTitle            string
 
 	ToggleMark             string
+	ShellTitle             string
+	ShellStarted           string
+	ShellExited            string
+	ShellNoSession         string
+	ShellCommandTitle      string
 	MarkedCount            string
 	MarksCleared           string
 	StopContainersCount    string
@@ -406,6 +411,11 @@ func englishSet() TranslationSet {
 		QuadletNeedsDetails:        "Container details are not loaded yet",
 		QuadletTitle:               "Quadlet",
 		ToggleMark:                 "mark/unmark container",
+		ShellTitle:                 "shell",
+		ShellStarted:               "# /bin/sh started",
+		ShellExited:                "# shell exited",
+		ShellNoSession:             "# press enter to start /bin/sh in this container",
+		ShellCommandTitle:          "shell command",
 		MarkedCount:                "%d selected",
 		MarksCleared:               "selection cleared",
 		StopContainersCount:        "Stop %d containers?",

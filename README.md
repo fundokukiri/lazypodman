@@ -267,6 +267,10 @@ commands (prune).
 
 ### Events, multi-select, palette and Quadlet
 
+- The **Shell** tab (right after **Logs**) runs a line-oriented shell in the
+  container: `enter` starts `/bin/sh` and asks for a command, output streams into
+  the tab. It keeps running while you switch tabs. It is not a terminal, so
+  full-screen tools (`vim`, `htop`) still need `E`.
 - The **Events** tab (Containers panel, last tab) streams `podman events`
   verbatim. The stream is tied to the tab: switching away kills the child.
   Without a usable Podman CLI the tab says `cli off: <reason>` and spawns

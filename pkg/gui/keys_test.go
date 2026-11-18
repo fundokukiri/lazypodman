@@ -147,3 +147,7 @@ func TestSpaceBindingsUseKeySpace(t *testing.T) {
 		t.Errorf("expected the menu and containers space bindings, found %d", found)
 	}
 }
+
+func (fakeEnabledPodClient) OpenShell(context.Context, string) (*commands.ShellSession, error) {
+	return nil, nil
+}

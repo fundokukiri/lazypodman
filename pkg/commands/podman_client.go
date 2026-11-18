@@ -42,6 +42,9 @@ type PodmanClient interface {
 
 	// StreamPodman runs any podman command and streams merged output line by line.
 	StreamPodman(ctx context.Context, argv []string, onLine func(string)) error
+
+	// OpenShell starts a line-oriented shell (`podman exec -i ... /bin/sh`).
+	OpenShell(ctx context.Context, ref string) (*ShellSession, error)
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Shell tab** in the Containers panel (right after Logs): a line-oriented
+  `podman exec -i … /bin/sh` session. `enter` starts it and opens a command
+  prompt, merged output streams into the tab, the session survives tab switches
+  and is killed on exit. `E` still attaches a real terminal.
+
 ### Fixed
 
 - `space` now actually marks a container (and selects a menu item): gocui

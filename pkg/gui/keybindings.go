@@ -468,6 +468,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "main",
+			Key:         gocui.KeyEnter,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleShellPrompt,
+			Description: gui.Tr.ShellCommandTitle,
+		},
+		{
+			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleExitMain,

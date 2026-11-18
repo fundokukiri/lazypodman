@@ -105,9 +105,10 @@ func (gui *Gui) runDefaultCell(state *runContainerState, field runField) string 
 }
 
 // runColumns keeps every row at the same column count: label, gap, value, gap,
-// key, (default). The empty gap columns make the table breathe.
+// key, a wide gap, then (default). The marker is the last column, so it sits at
+// the menu's right edge instead of touching the key hint.
 func (gui *Gui) runColumns(label, value, key, marker string) []string {
-	return []string{label, "  ", value, "  ", key, marker}
+	return []string{label, "  ", value, "  ", key, "        ", marker}
 }
 
 func (gui *Gui) runDefaultLabel(field runField) string {

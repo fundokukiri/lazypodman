@@ -78,7 +78,7 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 
 	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("detach")))
 	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("command")))
-	assert.Equal(t, []string{"Detach", "  ", "on", "  ", "space", "(default)"}, gui.runColumns("Detach", "on", "space", "(default)"))
+	assert.Equal(t, []string{"Detach", "  ", "on", "  ", "space", "        ", "(default)"}, gui.runColumns("Detach", "on", "space", "(default)"))
 
 	state.addListValue("ports", "8080:80")
 	assert.Equal(t, "1 items", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
@@ -113,6 +113,6 @@ func TestRunMenuTableHasGapsBetweenColumns(t *testing.T) {
 	}
 
 	t.Log("\n" + table)
-	assert.Contains(t, table, "enter   (default)")
+	assert.Regexp(t, `enter/a {9,}\(default\)`, table)
 	assert.NotContains(t, table, "enter(default)")
 }

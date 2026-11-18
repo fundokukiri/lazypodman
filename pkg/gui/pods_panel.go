@@ -116,6 +116,7 @@ func (gui *Gui) refreshPods() error {
 	}
 
 	gui.Panels.Pods.SetItems(state.Pods)
+	gui.annotateContainersWithPods(state)
 
 	return gui.Panels.Pods.RerenderList()
 }
@@ -375,4 +376,27 @@ func (gui *Gui) podLogTail() int {
 	}
 
 	return tail
+}
+
+// annotateContainersWithPods stamps the pod name on the containers panel items so
+// the containers list can show a pod column without another podman call.
+func (gui *Gui) annotateContainersWithPods(state *commands.PodState) {
+	if state == nil {
+		return
+	}
+
+	for _, container := range gui.Panels.Containers.List.GetAllItems() {
+		container.PodName = state.PodByContainer[container.ID]
+	}
+
+	if err := gui.Panels.Containers.RerenderList(); err != nil {
+		gui.Log.Error(err)
+	}
+}
+
+// podColumnEnabled reports whether the containers panel shows the pod column.
+// Both the config option and an enabled pod client are required; without pods
+// every cell would be empty, so the column is omitted entirely.
+func (gui *Gui) podColumnEnabled() bool {
+	return gui.Config.UserConfig.Gui.ShowPodColumn && gui.PodsEnabled()
 }

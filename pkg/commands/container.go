@@ -24,9 +24,13 @@ type Container struct {
 	ContainerNumber string // might make this an int in the future if need be
 
 	// OneOff tells us if the container is just a job container or is actually bound to the service
-	OneOff          bool
-	ProjectName     string
-	ID              string
+	OneOff      bool
+	ProjectName string
+	ID          string
+
+	// PodName is the pod this container belongs to, filled from the podman CLI
+	// snapshot. Empty for standalone containers and whenever pods are disabled.
+	PodName         string
 	Container       container.Summary
 	Client          *client.Client
 	OSCommand       *OSCommand

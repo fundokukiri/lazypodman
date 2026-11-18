@@ -14,8 +14,8 @@ import (
 	"github.com/samber/lo"
 )
 
-func GetContainerDisplayStrings(guiConfig *config.GuiConfig, container *commands.Container) []string {
-	return []string{
+func GetContainerDisplayStrings(guiConfig *config.GuiConfig, container *commands.Container, podColumn bool) []string {
+	cells := []string{
 		getContainerDisplayStatus(guiConfig, container),
 		getContainerDisplaySubstatus(guiConfig, container),
 		container.Name,
@@ -23,6 +23,14 @@ func GetContainerDisplayStrings(guiConfig *config.GuiConfig, container *commands
 		utils.ColoredString(displayPorts(container), color.FgYellow),
 		utils.ColoredString(displayContainerImage(container), color.FgMagenta),
 	}
+
+	// The pod column is added for every row only when pods are available, so the
+	// table keeps its alignment; standalone containers get an empty cell.
+	if podColumn {
+		cells = append(cells, utils.ColoredString(container.PodName, color.FgBlue))
+	}
+
+	return cells
 }
 
 func displayContainerImage(container *commands.Container) string {

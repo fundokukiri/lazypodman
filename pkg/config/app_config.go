@@ -115,6 +115,10 @@ type GuiConfig struct {
 	// of clutter
 	ShowAllContainers bool `yaml:"showAllContainers,omitempty"`
 
+	// ShowPodColumn adds a column with the pod each container belongs to. It is
+	// only effective when the pods feature is available.
+	ShowPodColumn bool `yaml:"showPodColumn,omitempty"`
+
 	// ReturnImmediately determines whether you get the 'press enter to return to
 	// lazypodman' message after a subprocess has completed. You would set this to
 	// true if you often want to see the output of subprocesses before returning
@@ -392,6 +396,7 @@ func GetDefaultConfig() UserConfig {
 				OptionsTextColor:    []string{"blue"},
 			},
 			ShowAllContainers:          false,
+			ShowPodColumn:              true,
 			ReturnImmediately:          false,
 			WrapMainPanel:              true,
 			LegacySortContainers:       false,

@@ -64,8 +64,8 @@ logs:
   timestamps: false
   since: '60m' # set to '' to show all logs
   # tail limits how much history is fetched when a log tab opens (empty = all).
-  # Default is '200'; press L in the Logs tab to load the whole history.
-  tail: '200'
+  # Default is '20'; press ctrl+l in the Logs tab to load the whole history.
+  tail: '20'
 commandTemplates:
   podman: podman # The podman executable used for attach/exec (default: podman)
   podmanCompose: podman compose # Determines the compose command to run, referred to as .PodmanCompose in commandTemplates

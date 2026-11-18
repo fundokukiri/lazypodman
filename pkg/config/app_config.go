@@ -419,9 +419,9 @@ func GetDefaultConfig() UserConfig {
 		Logs: LogsConfig{
 			Timestamps: false,
 			Since:      "60m",
-			// 200 keeps the log tab cheap; the L key loads the full history for
-			// the selected container. "all"/"" still means everything.
-			Tail: "200",
+			// 20 keeps the log tab cheap; ctrl+l loads the full history for the
+			// selected container. "all"/"" still means everything.
+			Tail: "20",
 		},
 		CommandTemplates: CommandTemplatesConfig{
 			Podman:             "podman",

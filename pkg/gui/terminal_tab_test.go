@@ -112,6 +112,19 @@ func TestScrolledOffLinesDetectsScrolling(t *testing.T) {
 	assert.Nil(t, scrolledOffLines(oldRows, []string{"x", "y", "z", "w"}))
 }
 
+func TestTerminalScrollbarTracksOffset(t *testing.T) {
+	start, size, ok := terminalScrollbar(100, 20, 0)
+	assert.True(t, ok)
+	assert.Equal(t, 16, start, "thumb sits flush at the bottom when scrolled to the newest line")
+	assert.Equal(t, 4, size)
+
+	topStart, _, _ := terminalScrollbar(100, 20, 80)
+	assert.Equal(t, 0, topStart)
+
+	_, _, ok = terminalScrollbar(10, 20, 0)
+	assert.False(t, ok, "no scrollbar when everything fits")
+}
+
 func TestTerminalWindowPagesHistory(t *testing.T) {
 	history := []string{"1", "2", "3", "4"}
 	screen := []string{"5", "6", "7"}

@@ -11,6 +11,7 @@ import (
 	"github.com/fundokukiri/lazypodman/pkg/i18n"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
 	"github.com/jesseduffield/gocui"
+	"github.com/mattn/go-runewidth"
 )
 
 const (
@@ -350,7 +351,7 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		return
 	}
 
-	_, maxRows := gui.Views.Terminal.Size()
+	maxCols, maxRows := gui.Views.Terminal.Size()
 
 	state.mutex.Lock()
 	rows, cursorX, cursorY, cursorVisible := state.terminal.Snapshot()
@@ -371,9 +372,12 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		height = 0
 	}
 
+	total := len(state.history) + len(trimmed)
+	offset := state.scrollOffset
+
 	var visible []string
-	if state.scrollOffset > 0 {
-		visible = terminalWindow(state.history, trimmed, height, state.scrollOffset)
+	if offset > 0 {
+		visible = terminalWindow(state.history, trimmed, height, offset)
 	} else {
 		// Live view: draw the screen exactly as the PTY has it, so the cursor row
 		// keeps matching and history lines never push the shell down.
@@ -389,6 +393,23 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 	// area; otherwise rows it does not write can still show the view beneath it.
 	for len(visible) < height {
 		visible = append(visible, "")
+	}
+
+	// Draw a scrollbar thumb in the last column while there is history to page
+	// through, like the Logs view.
+	if start, size, ok := terminalScrollbar(total, height, offset); ok && maxCols > 1 {
+		for i := 0; i < len(visible) && i < height; i++ {
+			line := runewidth.Truncate(visible[i], maxCols-1, "")
+			line += strings.Repeat(" ", maxCols-1-runewidth.StringWidth(line))
+
+			if i >= start && i < start+size {
+				line += "▐"
+			} else {
+				line += " "
+			}
+
+			visible[i] = line
+		}
 	}
 
 	content := terminalHeader(container, gui.Tr)
@@ -544,6 +565,38 @@ func scrolledOffLines(oldRows, newRows []string) []string {
 	}
 
 	return nil
+}
+
+// terminalScrollbar returns the thumb start row and height for a history of
+// total lines shown in a window of the given height, where offset counts lines
+// scrolled up from the bottom.
+func terminalScrollbar(total, height, offset int) (int, int, bool) {
+	if height < 2 || total <= height {
+		return 0, 0, false
+	}
+
+	scrollable := total - height
+	if offset > scrollable {
+		offset = scrollable
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	size := height * height / total
+	if size < 1 {
+		size = 1
+	}
+	if size > height {
+		size = height
+	}
+
+	start := (scrollable - offset) * (height - 1) / scrollable
+	if start+size > height {
+		start = height - size
+	}
+
+	return start, size, true
 }
 
 func slicesEqual(a, b []string) bool {

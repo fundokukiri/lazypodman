@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Run container from an image**: `r` on the Images panel (also the first item
+  in the `x` menu) opens a schema-driven run menu. Core values are edited
+  inline; ports, volumes, env and other repeatable flags have add/edit/delete
+  lists; Advanced groups cover network, storage, resources, security,
+  healthcheck, runtime and environment flags, with extra args for anything
+  else. Defaults run the image detached, the exact argv is previewed and
+  confirmed, and failures show Podman's output verbatim.
+
 - **Shell tab with a real terminal**: `exec shell` (`E`, also reachable from the
   `x` options menu) starts `podman exec -it … /bin/sh` in a PTY and shows it in a
   **shell** tab right after Logs, auto-switched. A VT10x buffer renders

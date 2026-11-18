@@ -63,6 +63,8 @@ gui:
 logs:
   timestamps: false
   since: '60m' # set to '' to show all logs
+  # tail limits how much history is fetched when a log tab opens (empty = all).
+  # The view keeps the newest 10.000 lines; tail: '200' also lowers memory/startup.
   tail: '' # set to 200 to show last 200 lines of logs
 commandTemplates:
   podman: podman # The podman executable used for attach/exec (default: podman)

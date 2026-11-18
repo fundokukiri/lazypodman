@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Logs keep streaming immediately (old behaviour) but the view is capped at
+  10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows
+  memory without bound. Set `logs.tail` to also limit the initial fetch.
+
 - `space` now actually marks a container (and selects a menu item): gocui
   delivers the spacebar as `KeySpace` with an empty rune, so the previous rune
   `' '` bindings never fired.

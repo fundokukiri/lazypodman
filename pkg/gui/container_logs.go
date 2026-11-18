@@ -37,7 +37,9 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 
 	mainView := gui.Views.Main
 
-	if err := gui.writeContainerLogs(container, ctx, mainView); err != nil {
+	// Keep the old streaming behaviour (lines appear immediately) but bound the
+	// view's memory: follow mode would otherwise keep every line until exit.
+	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView)); err != nil {
 		gui.Log.Error(err)
 	}
 

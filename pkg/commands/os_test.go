@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,10 @@ import (
 
 // TestOSCommandRunCommandWithOutput is a function.
 func TestOSCommandRunCommandWithOutput(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("echo and rmdir are cmd builtins, not executables on Windows")
+	}
+
 	type scenario struct {
 		command string
 		test    func(string, error)
@@ -39,6 +44,10 @@ func TestOSCommandRunCommandWithOutput(t *testing.T) {
 
 // TestOSCommandRunCommand is a function.
 func TestOSCommandRunCommand(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("rmdir is a cmd builtin, not an executable on Windows")
+	}
+
 	type scenario struct {
 		command string
 		test    func(error)
@@ -60,6 +69,10 @@ func TestOSCommandRunCommand(t *testing.T) {
 
 // TestOSCommandEditFile is a function.
 func TestOSCommandEditFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the editor fallback probes `which`, which does not exist on Windows")
+	}
+
 	type scenario struct {
 		filename string
 		command  func(string, ...string) *exec.Cmd

@@ -20,7 +20,7 @@ func newKubeGui(client commands.PodmanClient, kubeDir string) *Gui {
 
 func TestKubeDirDefaultsToUserConfig(t *testing.T) {
 	base := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", base)
+	setConfigHome(t, base)
 
 	gui := newKubeGui(&fakeHealthPodClient{}, "")
 
@@ -29,7 +29,7 @@ func TestKubeDirDefaultsToUserConfig(t *testing.T) {
 
 func TestKubeDirExpandsHome(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setUserHome(t, home)
 
 	gui := newKubeGui(&fakeHealthPodClient{}, "~/kube")
 

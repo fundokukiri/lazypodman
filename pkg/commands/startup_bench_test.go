@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 	"time"
@@ -15,6 +16,10 @@ import (
 // start visible without needing podman (or a socket) on the machine.
 func fakeTimedPodman(tb testing.TB) (binary string, logFile string) {
 	tb.Helper()
+
+	if runtime.GOOS == "windows" {
+		tb.Skip("fake podman script requires a POSIX shell")
+	}
 
 	delayMs, _ := strconv.Atoi(os.Getenv("BENCH_PODMAN_DELAY_MS"))
 

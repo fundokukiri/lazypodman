@@ -100,6 +100,11 @@ func normalizeSocketPath(raw string) (string, bool) {
 	}
 
 	s = strings.TrimPrefix(s, "unix://")
+	// Collapse redundant leading slashes so the result is the same on every OS;
+	// filepath.Clean treats `//x` as a UNC root on Windows.
+	for strings.HasPrefix(s, "//") {
+		s = s[1:]
+	}
 
 	// Resolve symlinks when possible (e.g. /var/run -> /run), otherwise fall back
 	// to the cleaned path: a socket that does not exist yet is still comparable.

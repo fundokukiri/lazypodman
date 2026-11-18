@@ -7,9 +7,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// setConfigHome overrides the config directory on every OS: Windows ignores
+// XDG_CONFIG_HOME and reads %AppData%.
+func setConfigHome(t *testing.T, dir string) {
+	t.Helper()
+
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+}
+
+// setUserHome overrides the home directory on every OS: Windows ignores HOME
+// and reads %USERPROFILE%.
+func setUserHome(t *testing.T, dir string) {
+	t.Helper()
+
+	t.Setenv("HOME", dir)
+	t.Setenv("USERPROFILE", dir)
+}
+
 func TestQuadletDir(t *testing.T) {
 	base := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", base)
+	setConfigHome(t, base)
 
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 	gui.Config.UserConfig.Gui.QuadletDir = ""
@@ -19,7 +37,7 @@ func TestQuadletDir(t *testing.T) {
 
 func TestQuadletDirExpandsHomeAndKeepsAbsolute(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	setUserHome(t, home)
 
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 

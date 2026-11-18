@@ -33,9 +33,14 @@ func TestNormalizeSocketPath(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		want := c.want
+		if runtime.GOOS == "windows" && want != "" {
+			want = filepath.Clean(want)
+		}
+
 		got, comparable := normalizeSocketPath(c.in)
-		if got != c.want || comparable != c.comparable {
-			t.Errorf("normalizeSocketPath(%q) = (%q, %v), want (%q, %v)", c.in, got, comparable, c.want, c.comparable)
+		if got != want || comparable != c.comparable {
+			t.Errorf("normalizeSocketPath(%q) = (%q, %v), want (%q, %v)", c.in, got, comparable, want, c.comparable)
 		}
 	}
 }

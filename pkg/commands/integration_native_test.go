@@ -182,8 +182,12 @@ func TestIntegrationQuadletInstallAcceptsGeneratedUnit(t *testing.T) {
 		t.Fatalf("write unit: %v", err)
 	}
 
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "config"))
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	configHome := filepath.Join(t.TempDir(), "config")
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	t.Setenv("AppData", configHome)
 
 	if _, err := client.run(ctx, "quadlet", "install", "--reload-systemd=false", path); err != nil {
 		// podman resolves specifiers through systemd, which this sandbox does not run.
@@ -217,7 +221,10 @@ func TestIntegrationSocketAndPodRefresh(t *testing.T) {
 
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "config"))
+	t.Setenv("USERPROFILE", home)
+	configHome := filepath.Join(home, "config")
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	t.Setenv("AppData", configHome)
 
 	appConfig, err := config.NewAppConfig("lazypodman", "", "", "", "", true, nil, "", "")
 	if err != nil {

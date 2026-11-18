@@ -385,6 +385,12 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 
 	state.mutex.Unlock()
 
+	// Pad to the full inner height so the terminal view paints every cell of its
+	// area; otherwise rows it does not write can still show the view beneath it.
+	for len(visible) < height {
+		visible = append(visible, "")
+	}
+
 	content := terminalHeader(container, gui.Tr)
 	if len(visible) > 0 {
 		content += "\n" + strings.Join(visible, "\n")

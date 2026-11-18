@@ -7,7 +7,6 @@
 package gui
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
@@ -80,20 +79,13 @@ func (gui *Gui) createPromptPanelWithInitialCancel(title, initial string, handle
 	}
 	gui.Views.Confirmation.Editable = true
 
-	// Replace the previous prompt's buffer even when initial is empty: reusing
-	// the view otherwise leaves the last field's text in the next input.
-	gui.g.Update(func(g *gocui.Gui) error {
-		view, err := g.View("confirmation")
-		if err != nil {
-			return nil
-		}
-		if err := view.SetOrigin(0, 0); err != nil {
-			return err
-		}
-		view.Clear()
-		fmt.Fprint(view, gui.cleanString(initial))
-		return view.SetCursor(len([]rune(initial)), 0)
-	})
+	// Replace the previous prompt's buffer before handing focus over. Doing
+	// this synchronously matters: an update queued after the focus switch let
+	// the previous field's text show up in the next prompt.
+	view := gui.Views.Confirmation
+	view.SetContent(gui.cleanString(initial))
+	_ = view.SetOrigin(0, 0)
+	_ = view.SetCursor(len([]rune(initial)), 0)
 
 	return gui.setKeyBindings(gui.g, handleConfirm, handleCancel)
 }

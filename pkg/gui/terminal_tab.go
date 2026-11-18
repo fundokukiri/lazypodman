@@ -128,13 +128,18 @@ func (gui *Gui) closeContainerTerminal() error {
 	gui.setTerminal(nil)
 	_ = state.terminal.Close()
 
-	// Wipe the main view immediately: the tab that was showing before the shell
-	// (stats, env, ...) must not be visible behind the logs that are about to load.
+	// Wipe both views before reloading: the tab that was showing before the shell
+	// (stats, env, ...) and the terminal's last screen must not survive behind the
+	// logs that are about to load.
 	gui.clearMainView()
 
 	gui.g.Update(func(*gocui.Gui) error {
+		gui.Views.Terminal.Clear()
 		gui.Views.Terminal.Visible = false
 		gui.g.Cursor = false
+
+		gui.Views.Main.Clear()
+		_ = gui.Views.Main.SetOrigin(0, 0)
 
 		return nil
 	})

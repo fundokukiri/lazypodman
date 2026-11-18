@@ -107,10 +107,7 @@ func newPodmanClient(podmanHost string) (*client.Client, error) {
 // NewPodmanCommand talks to the Podman service and shells out to podman for
 // compose-related commands
 func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, config *config.AppConfig, errorChan chan error) (*PodmanCommand, error) {
-	podmanHost, err := determinePodmanHost()
-	if err != nil {
-		ogLog.Printf("> could not determine host %v", err)
-	}
+	podmanHost := determinePodmanHost()
 
 	// NOTE: Inject the determined endpoint into the environment. This allows the
 	//       `SSHHandler.HandleSSHContainerHost()` to create a local unix socket tunneled

@@ -20,18 +20,18 @@ var podmanHostEnvKeys = []string{"PODMAN_HOST", "CONTAINER_HOST", "DOCKER_HOST"}
 //   - an existing rootless Podman socket (e.g. $XDG_RUNTIME_DIR/podman/podman.sock)
 //   - an existing rootful Podman socket (/run/podman/podman.sock)
 //   - the default endpoint for the host operating system
-func determinePodmanHost() (string, error) {
+func determinePodmanHost() string {
 	for _, key := range podmanHostEnvKeys {
 		if host := os.Getenv(key); host != "" {
-			return normalizePodmanHost(host), nil
+			return normalizePodmanHost(host)
 		}
 	}
 
 	if host := discoverPodmanSocket(); host != "" {
-		return host, nil
+		return host
 	}
 
-	return defaultPodmanHost, nil
+	return defaultPodmanHost
 }
 
 // normalizePodmanHost accepts both URL style endpoints (unix://, tcp://,

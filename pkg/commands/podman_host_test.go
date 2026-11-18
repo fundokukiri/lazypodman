@@ -3,6 +3,7 @@ package commands
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/docker/docker/api/types/container"
@@ -58,14 +59,17 @@ func TestDeterminePodmanHostPrecedence(t *testing.T) {
 				t.Setenv("XDG_RUNTIME_DIR", t.TempDir())
 			}
 
-			actual, err := determinePodmanHost()
-			assert.NoError(t, err)
+			actual := determinePodmanHost()
 			assert.Equal(t, s.expected, actual)
 		})
 	}
 }
 
 func TestDiscoverRootlessPodmanSocket(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("rootless unix socket discovery is unix-only")
+	}
+
 	xdgRuntimeDir := t.TempDir()
 	t.Setenv("XDG_RUNTIME_DIR", xdgRuntimeDir)
 
@@ -77,8 +81,7 @@ func TestDiscoverRootlessPodmanSocket(t *testing.T) {
 	t.Setenv("CONTAINER_HOST", "")
 	t.Setenv("DOCKER_HOST", "")
 
-	host, err := determinePodmanHost()
-	assert.NoError(t, err)
+	host := determinePodmanHost()
 	assert.Equal(t, "unix://"+socketPath, host)
 }
 

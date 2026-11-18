@@ -50,6 +50,7 @@ type Gui struct {
 type Panels struct {
 	Projects   *panels.SideListPanel[*commands.Project]
 	Services   *panels.SideListPanel[*commands.Service]
+	Pods       *panels.SideListPanel[*commands.Pod]
 	Containers *panels.SideListPanel[*commands.Container]
 	Images     *panels.SideListPanel[*commands.Image]
 	Volumes    *panels.SideListPanel[*commands.Volume]
@@ -283,6 +284,7 @@ func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Projects:   gui.getProjectPanel(),
 		Services:   gui.getServicesPanel(),
+		Pods:       gui.getPodsPanel(),
 		Containers: gui.getContainersPanel(),
 		Images:     gui.getImagesPanel(),
 		Volumes:    gui.getVolumesPanel(),
@@ -303,6 +305,9 @@ func (gui *Gui) refresh() {
 			gui.Log.Error(err)
 		}
 		if err := gui.refreshProject(); err != nil {
+			gui.Log.Error(err)
+		}
+		if err := gui.refreshPods(); err != nil {
 			gui.Log.Error(err)
 		}
 	}()

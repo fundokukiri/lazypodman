@@ -339,7 +339,7 @@ func TestParsePodLogLine(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		ctr, message := parsePodLogLine(tc.line, names)
+		ctr, message := ParsePodLogLine(tc.line, names)
 		assert.Equal(t, tc.ctr, ctr, tc.line)
 		assert.Equal(t, tc.message, message, tc.line)
 	}

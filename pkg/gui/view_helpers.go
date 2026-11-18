@@ -366,6 +366,7 @@ func (gui *Gui) allSidePanels() []panels.ISideListPanel {
 	return []panels.ISideListPanel{
 		gui.Panels.Projects,
 		gui.Panels.Services,
+		gui.Panels.Pods,
 		gui.Panels.Containers,
 		gui.Panels.Images,
 		gui.Panels.Volumes,

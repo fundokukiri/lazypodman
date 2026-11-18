@@ -165,7 +165,7 @@ func formatPorts(ports []container.Port) string {
 // shape is not part of the Docker-compatible API, so the sum is what we can
 // verify. Containers without a stats sample yet are skipped, which drags the
 // sum down rather than crashing.
-func aggregatePodStats(containers []*Container) PodStatsRow {
+func AggregatePodStats(containers []*Container) PodStatsRow {
 	var row PodStatsRow
 
 	for _, ctr := range containers {

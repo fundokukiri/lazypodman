@@ -237,13 +237,13 @@ func TestAggregatePodStats(t *testing.T) {
 
 	noStats := &Container{}
 
-	row := aggregatePodStats([]*Container{web, side, noStats})
+	row := AggregatePodStats([]*Container{web, side, noStats})
 
 	assert.InDelta(t, 3.73, row.CPU, 0.0001)
 	assert.Equal(t, int64(300), row.MemUsage)
 	assert.Equal(t, int64(2000), row.MemLimit)
 
-	empty := aggregatePodStats(nil)
+	empty := AggregatePodStats(nil)
 	assert.Zero(t, empty.CPU)
 	assert.Zero(t, empty.MemUsage)
 }

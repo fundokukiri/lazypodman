@@ -94,6 +94,7 @@ func getBindingSections(mApp *app.App) []*bindingSection {
 			"project":    mApp.Tr.ProjectTitle,
 			"services":   mApp.Tr.ServicesTitle,
 			"containers": mApp.Tr.ContainersTitle,
+			"pods":       mApp.Tr.PodsTitle,
 			"images":     mApp.Tr.ImagesTitle,
 			"volumes":    mApp.Tr.VolumesTitle,
 			"networks":   mApp.Tr.NetworksTitle,

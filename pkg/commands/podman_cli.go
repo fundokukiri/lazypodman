@@ -367,7 +367,7 @@ const maxPodLogProcesses = 8
 // container name and the message. Names are matched at the start, longest first,
 // followed by a single space, so a message like "webbish: hi" is not attributed
 // to a container called "web".
-func parsePodLogLine(line string, names []string) (string, string) {
+func ParsePodLogLine(line string, names []string) (string, string) {
 	sorted := make([]string, 0, len(names))
 	for _, name := range names {
 		if name != "" {

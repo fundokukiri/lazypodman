@@ -75,6 +75,7 @@ type CommandObject struct {
 	Volume        *Volume
 	Network       *Network
 	Project       *Project
+	Pod           *Pod
 }
 
 // NewCommandObject takes a command object and returns a default command object with the passed command object merged in
@@ -627,4 +628,16 @@ func (c *PodmanCommand) infraContainersSnapshot() map[string]container.Summary {
 	}
 
 	return infra
+}
+
+// SetPodClient installs the Podman-native client. NewPodmanCommand calls it once
+// at startup; tests use it to stand in a fake.
+func (c *PodmanCommand) SetPodClient(client PodmanClient) {
+	c.podClient = client
+}
+
+// PodStateSnapshot returns the last successful pod snapshot, nil before the first
+// refresh. Callers must not mutate it.
+func (c *PodmanCommand) PodStateSnapshot() *PodState {
+	return c.cachedPodState()
 }

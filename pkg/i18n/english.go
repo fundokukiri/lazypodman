@@ -131,10 +131,34 @@ type TranslationSet struct {
 
 	FocusProjects   string
 	FocusServices   string
+	FocusPods       string
 	FocusContainers string
 	FocusImages     string
 	FocusVolumes    string
 	FocusNetworks   string
+
+	PodsTitle                string
+	PodsOff                  string
+	NoPods                   string
+	PodStatsTitle            string
+	PodContainersTitle       string
+	NoPodContainers          string
+	RemovePod                string
+	RemovePodForce           string
+	StartPod                 string
+	StopPod                  string
+	RestartPod               string
+	PausePod                 string
+	UnpausePod               string
+	ConfirmStartPod          string
+	ConfirmStopPod           string
+	ConfirmRestartPod        string
+	ConfirmRemovePod         string
+	ConfirmPausePod          string
+	ConfirmUnpausePod        string
+	PrunePods                string
+	ConfirmPrunePods         string
+	PodLogsOmittedContainers string
 }
 
 func englishSet() TranslationSet {
@@ -273,9 +297,33 @@ func englishSet() TranslationSet {
 
 		FocusProjects:   "focus projects panel",
 		FocusServices:   "focus services panel",
+		FocusPods:       "focus pods panel",
 		FocusContainers: "focus containers panel",
 		FocusImages:     "focus images panel",
 		FocusVolumes:    "focus volumes panel",
 		FocusNetworks:   "focus networks panel",
+
+		PodsTitle:                "Pods",
+		PodsOff:                  "pods off:",
+		NoPods:                   "No pods",
+		PodStatsTitle:            "Stats (sum of containers)",
+		PodContainersTitle:       "Containers",
+		NoPodContainers:          "This pod has no containers",
+		RemovePod:                "Remove",
+		RemovePodForce:           "Remove (force)",
+		StartPod:                 "Start",
+		StopPod:                  "Stop",
+		RestartPod:               "Restart",
+		PausePod:                 "Pause",
+		UnpausePod:               "Unpause",
+		ConfirmStartPod:          "Start pod?",
+		ConfirmStopPod:           "Stop pod?",
+		ConfirmRestartPod:        "Restart pod?",
+		ConfirmRemovePod:         "Remove pod? Its containers are removed too.",
+		ConfirmPausePod:          "Pause pod?",
+		ConfirmUnpausePod:        "Unpause pod?",
+		PrunePods:                "Prune stopped pods",
+		ConfirmPrunePods:         "Prune all stopped pods?",
+		PodLogsOmittedContainers: "only the first containers are streamed",
 	}
 }

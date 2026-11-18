@@ -320,6 +320,10 @@ type CustomCommands struct {
 
 	// Networks contains the custom commands for networks
 	Networks []CustomCommand `yaml:"networks,omitempty"`
+
+	// Pods contains the custom commands for pods. The .Pod placeholders work like
+	// the other groups.
+	Pods []CustomCommand `yaml:"pods,omitempty"`
 }
 
 // Replacements contains the stuff relating to rendering a container's info
@@ -429,6 +433,7 @@ func GetDefaultConfig() UserConfig {
 			Services:   []CustomCommand{},
 			Images:     []CustomCommand{},
 			Volumes:    []CustomCommand{},
+			Pods:       []CustomCommand{},
 		},
 		BulkCommands: CustomCommands{
 			Services: []CustomCommand{

@@ -528,14 +528,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		}...)
 	}
 
-	bindings = append(bindings, []*Binding{
-		{Handler: gui.handleGoTo(gui.Panels.Projects.View), Key: '1', Description: gui.Tr.FocusProjects},
-		{Handler: gui.handleGoTo(gui.Panels.Services.View), Key: '2', Description: gui.Tr.FocusServices},
-		{Handler: gui.handleGoTo(gui.Panels.Containers.View), Key: '3', Description: gui.Tr.FocusContainers},
-		{Handler: gui.handleGoTo(gui.Panels.Images.View), Key: '4', Description: gui.Tr.FocusImages},
-		{Handler: gui.handleGoTo(gui.Panels.Volumes.View), Key: '5', Description: gui.Tr.FocusVolumes},
-		{Handler: gui.handleGoTo(gui.Panels.Networks.View), Key: '6', Description: gui.Tr.FocusNetworks},
-	}...)
+	for _, panel := range gui.sidePanelKeys() {
+		bindings = append(bindings, &Binding{
+			Handler:     gui.handleGoTo(panel.view),
+			Key:         panel.key,
+			Description: panel.description,
+		})
+	}
+
+	bindings = append(bindings, gui.podBindings()...)
 
 	for _, panel := range gui.allListPanels() {
 		setUpDownClickBindings(panel.GetView().Name(), panel.HandlePrevLine, panel.HandleNextLine, panel.HandleClick)
@@ -603,5 +604,19 @@ func (gui *Gui) keybindings(g *gocui.Gui) error {
 func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
 		return f()
+	}
+}
+
+// podBindings are the pod lifecycle keys. They mirror the containers panel, with
+// capital S as start (lowercase s is stop) so the muscle memory carries over.
+func (gui *Gui) podBindings() []*Binding {
+	return []*Binding{
+		{ViewName: "pods", Key: 'd', Modifier: gocui.ModNone, Handler: gui.handlePodRemoveMenu, Description: gui.Tr.Remove},
+		{ViewName: "pods", Key: 's', Modifier: gocui.ModNone, Handler: gui.handlePodStop, Description: gui.Tr.StopPod},
+		{ViewName: "pods", Key: 'S', Modifier: gocui.ModNone, Handler: gui.handlePodStart, Description: gui.Tr.StartPod},
+		{ViewName: "pods", Key: 'r', Modifier: gocui.ModNone, Handler: gui.handlePodRestart, Description: gui.Tr.RestartPod},
+		{ViewName: "pods", Key: 'p', Modifier: gocui.ModNone, Handler: gui.handlePodPause, Description: gui.Tr.PausePod},
+		{ViewName: "pods", Key: 'b', Modifier: gocui.ModNone, Handler: gui.handlePodsBulkCommand, Description: gui.Tr.ViewBulkCommands},
+		{ViewName: "pods", Key: 'c', Modifier: gocui.ModNone, Handler: gui.handlePodsCustomCommand, Description: gui.Tr.RunCustomCommand},
 	}
 }

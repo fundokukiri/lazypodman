@@ -9,6 +9,7 @@ type Views struct {
 	// side panels
 	Project    *gocui.View
 	Services   *gocui.View
+	Pods       *gocui.View
 	Containers *gocui.View
 	Images     *gocui.View
 	Volumes    *gocui.View
@@ -48,6 +49,7 @@ func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
 		// no overlapping views
 		{viewPtr: &gui.Views.Project, name: "project", autoPosition: true},
 		{viewPtr: &gui.Views.Services, name: "services", autoPosition: true},
+		{viewPtr: &gui.Views.Pods, name: "pods", autoPosition: true},
 		{viewPtr: &gui.Views.Containers, name: "containers", autoPosition: true},
 		{viewPtr: &gui.Views.Images, name: "images", autoPosition: true},
 		{viewPtr: &gui.Views.Volumes, name: "volumes", autoPosition: true},
@@ -99,13 +101,18 @@ func (gui *Gui) createAllViews() error {
 	gui.Views.Main.IgnoreCarriageReturns = true
 
 	gui.Views.Project.Title = gui.Tr.ProjectTitle
-	gui.Views.Project.TitlePrefix = "[1]"
+	gui.Views.Project.TitlePrefix = gui.sidePanelTitlePrefix("project")
 	gui.Views.Project.Highlight = true
 	gui.Views.Project.SelBgColor = selectedLineBgColor
 
 	gui.Views.Services.Highlight = true
 	gui.Views.Services.Title = gui.Tr.ServicesTitle
-	gui.Views.Services.TitlePrefix = "[2]"
+	gui.Views.Services.TitlePrefix = gui.sidePanelTitlePrefix("services")
+
+	gui.Views.Pods.Highlight = true
+	gui.Views.Pods.Title = gui.Tr.PodsTitle
+	gui.Views.Pods.TitlePrefix = gui.sidePanelTitlePrefix("pods")
+	gui.Views.Pods.SelBgColor = selectedLineBgColor
 	gui.Views.Services.SelBgColor = selectedLineBgColor
 
 	gui.Views.Containers.Highlight = true
@@ -115,21 +122,21 @@ func (gui *Gui) createAllViews() error {
 	} else {
 		gui.Views.Containers.Title = gui.Tr.StandaloneContainersTitle
 	}
-	gui.Views.Containers.TitlePrefix = "[3]"
+	gui.Views.Containers.TitlePrefix = gui.sidePanelTitlePrefix("containers")
 
 	gui.Views.Images.Highlight = true
 	gui.Views.Images.Title = gui.Tr.ImagesTitle
 	gui.Views.Images.SelBgColor = selectedLineBgColor
-	gui.Views.Images.TitlePrefix = "[4]"
+	gui.Views.Images.TitlePrefix = gui.sidePanelTitlePrefix("images")
 
 	gui.Views.Volumes.Highlight = true
 	gui.Views.Volumes.Title = gui.Tr.VolumesTitle
-	gui.Views.Volumes.TitlePrefix = "[5]"
+	gui.Views.Volumes.TitlePrefix = gui.sidePanelTitlePrefix("volumes")
 	gui.Views.Volumes.SelBgColor = selectedLineBgColor
 
 	gui.Views.Networks.Highlight = true
 	gui.Views.Networks.Title = gui.Tr.NetworksTitle
-	gui.Views.Networks.TitlePrefix = "[6]"
+	gui.Views.Networks.TitlePrefix = gui.sidePanelTitlePrefix("networks")
 	gui.Views.Networks.SelBgColor = selectedLineBgColor
 
 	gui.Views.Options.Frame = false
@@ -174,7 +181,18 @@ func (gui *Gui) setInitialViewContent() error {
 }
 
 func (gui *Gui) getInformationContent() string {
-	return gui.Config.Version
+	content := gui.Config.Version
+
+	// When the Podman-native panel is unavailable, say why in the bottom-right
+	// corner instead of showing nothing. No popup: most users never need pods.
+	if gui.PodmanCommand != nil {
+		client := gui.PodmanCommand.Pods()
+		if client != nil && !client.Enabled() && client.Reason() != "" {
+			content += " | " + gui.Tr.PodsOff + " " + client.Reason()
+		}
+	}
+
+	return content
 }
 
 func (gui *Gui) popupViewNames() []string {

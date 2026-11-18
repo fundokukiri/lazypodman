@@ -219,3 +219,31 @@ func TestRefreshPodStateDisabledIsNoop(t *testing.T) {
 	assert.Nil(t, state)
 	assert.Zero(t, client.listCalls)
 }
+
+func TestAggregatePodStats(t *testing.T) {
+	newStats := func(cpu float64, usage int, limit int64) *RecordedStats {
+		stats := &RecordedStats{DerivedStats: DerivedStats{CPUPercentage: cpu}}
+		stats.ClientStats.MemoryStats.Usage = usage
+		stats.ClientStats.MemoryStats.Limit = limit
+
+		return stats
+	}
+
+	web := &Container{}
+	web.StatHistory = []*RecordedStats{newStats(0.5, 1, 1), newStats(1.234, 100, 1000)}
+
+	side := &Container{}
+	side.StatHistory = []*RecordedStats{newStats(2.5, 200, 1000)}
+
+	noStats := &Container{}
+
+	row := aggregatePodStats([]*Container{web, side, noStats})
+
+	assert.InDelta(t, 3.73, row.CPU, 0.0001)
+	assert.Equal(t, int64(300), row.MemUsage)
+	assert.Equal(t, int64(2000), row.MemLimit)
+
+	empty := aggregatePodStats(nil)
+	assert.Zero(t, empty.CPU)
+	assert.Zero(t, empty.MemUsage)
+}

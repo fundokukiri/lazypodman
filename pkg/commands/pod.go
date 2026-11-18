@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -157,4 +158,28 @@ func formatPorts(ports []container.Port) string {
 	sort.Strings(rendered)
 
 	return strings.Join(rendered, ", ")
+}
+
+// aggregatePodStats sums the socket stats of the pod's containers, infra
+// container included. `podman pod stats` reports the same numbers but its JSON
+// shape is not part of the Docker-compatible API, so the sum is what we can
+// verify. Containers without a stats sample yet are skipped, which drags the
+// sum down rather than crashing.
+func aggregatePodStats(containers []*Container) PodStatsRow {
+	var row PodStatsRow
+
+	for _, ctr := range containers {
+		stats, ok := ctr.GetLastStats()
+		if !ok || stats == nil {
+			continue
+		}
+
+		row.CPU += stats.DerivedStats.CPUPercentage
+		row.MemUsage += int64(stats.ClientStats.MemoryStats.Usage)
+		row.MemLimit += int64(stats.ClientStats.MemoryStats.Limit)
+	}
+
+	row.CPU = math.Round(row.CPU*100) / 100
+
+	return row
 }

@@ -80,17 +80,17 @@ func TestBuildImageLabelsCoverEveryField(t *testing.T) {
 	}
 }
 
-func TestBuildImageBindingIsAvailableOnImages(t *testing.T) {
+func TestBuildImageBindingIsGlobal(t *testing.T) {
 	gui := &Gui{Tr: translations()}
 
 	found := false
 	for _, binding := range gui.staticKeybindings() {
-		if binding.ViewName == "images" && binding.Key == 'B' {
+		if binding.ViewName == "" && binding.Key == 'B' {
 			found = true
 		}
 	}
 
-	assert.True(t, found, "images panel should bind B to build an image")
+	assert.True(t, found, "B should open the build menu from any panel")
 }
 
 func guiValueLabel(key string) string {

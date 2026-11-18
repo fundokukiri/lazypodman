@@ -9,7 +9,7 @@ import (
 	"github.com/jesseduffield/gocui"
 )
 
-func (gui *Gui) handleImagesBuildImage(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleBuildImage(g *gocui.Gui, v *gocui.View) error {
 	return gui.showBuildImageMenu(newBuildImageState(), 0)
 }
 
@@ -40,7 +40,7 @@ func (gui *Gui) showBuildImageMenu(state *runContainerState, selected int) error
 			},
 		},
 		&types.MenuItem{
-			LabelColumns: gui.runColumns(gui.trString(gui.Tr.BuildImage, "Build"), "", "enter"),
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.BuildImageTitle, "Build"), "", "enter"),
 			OnPress:      func() error { return gui.previewBuildImage(state) },
 		},
 	)

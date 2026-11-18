@@ -225,6 +225,7 @@ numbers (`1`…`6`).
 | `q` | quit |
 | `+` / `_` | screen mode (normal / half / fullscreen) |
 | `o` / `e` | open / edit the config (Projects panel) |
+| `B` | build an image from a Containerfile (any panel) |
 
 ### Panel keys
 
@@ -267,9 +268,9 @@ The kube menu keeps manifests in `gui.kubeDir` (default
   assumed; if neither works the corner shows `kube generate off:` / `kube play off:`. 
   `--replace` and `--build` are not passed.
 
-**Images**: `r` run · `B` build · `d` remove · `c` custom command · `b` bulk
-commands (prune). **Volumes, Networks**: `d` remove · `c` custom command · `b`
-bulk commands (prune).
+**Images**: `r` run · `d` remove · `c` custom command · `b` bulk commands
+(prune). **Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
+commands (prune).
 
 ### Logs
 
@@ -337,7 +338,8 @@ bulk commands (prune).
 
 ### Build an image
 
-- Press `B` on the Images panel to open the build menu. **Context** is the build
+- Press `B` from any panel to open the build menu; it does not use the selected
+  image. **Context** is the build
   directory (`.` by default), **Containerfile** stays `auto` so Podman finds the
   `Containerfile`/`Dockerfile`, and **Tags** is a repeatable `-t` list.
 - **Advanced** groups build options, build args/labels, network/DNS, resources,

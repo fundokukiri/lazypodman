@@ -146,6 +146,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Handler:  gui.handleCustomCommand,
 		},
 		{
+			ViewName:    "",
+			Key:         'B',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleBuildImage,
+			Description: gui.Tr.BuildImage,
+		},
+		{
 			ViewName:    "project",
 			Key:         'e',
 			Modifier:    gocui.ModNone,
@@ -416,13 +423,6 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleImagesRunContainer,
 			Description: gui.Tr.RunContainer,
-		},
-		{
-			ViewName:    "images",
-			Key:         'B',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleImagesBuildImage,
-			Description: gui.Tr.BuildImage,
 		},
 		{
 			ViewName:    "images",

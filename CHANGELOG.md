@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `podman commit` argv is previewed and confirmed, the container ref goes after
   `--`, failures show Podman's output and success reloads the image list.
 
-- **Build an image from a Containerfile**: `B` on the Images panel opens a
+- **Build an image from a Containerfile**: `B` from any panel opens a
   schema-driven build menu (context, Containerfile, tags, Advanced groups for
   build args, network, resources, security, output/cache and auth/secrets). The
   exact `podman build` argv is previewed and confirmed; failures show Podman's

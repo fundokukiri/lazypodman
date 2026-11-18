@@ -6,6 +6,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+p</kbd>: Command palette
+  <kbd>B</kbd>: build image from Containerfile
   <kbd>+</kbd>: next screen mode (normal/half/fullscreen)
   <kbd>_</kbd>: prev screen mode
   <kbd>1</kbd>: focus projects panel
@@ -82,7 +83,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>r</kbd>: run container
-  <kbd>B</kbd>: Build image
   <kbd>c</kbd>: ejecutar comando personalizado
   <kbd>d</kbd>: limpiar imagen
   <kbd>b</kbd>: ver comandos masivos

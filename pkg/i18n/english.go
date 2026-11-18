@@ -508,7 +508,7 @@ func englishSet() TranslationSet {
 		KubePlayHeader:       "# playing %s",
 		KubeDownHeader:       "# down %s",
 
-		BuildImage:               "Build image",
+		BuildImage:               "build image from Containerfile",
 		BuildImageTitle:          "Build image",
 		BuildImageConfirmTitle:   "Confirm build",
 		BuildImageConfirm:        "Build this image?",

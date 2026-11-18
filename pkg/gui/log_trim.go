@@ -19,6 +19,8 @@ type logTrimTarget interface {
 	Write(p []byte) (int, error)
 	SetContent(string)
 	BufferLines() []string
+	Size() (int, int)
+	SetOriginY(int) error
 }
 
 // logTrimWriter streams lines straight into the view, exactly like the old code,
@@ -45,7 +47,26 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 		w.trimLocked()
 	}
 
+	w.pinToBottomLocked()
+
 	return n, err
+}
+
+// pinToBottomLocked makes the newest line visible. gocui's Autoscroll does this
+// on draw, but pinning the origin here keeps the follow view at the bottom even
+// when a draw is skipped, which otherwise leaves realtime logs stuck.
+func (w *logTrimWriter) pinToBottomLocked() {
+	_, height := w.view.Size()
+	if height <= 0 {
+		return
+	}
+
+	origin := w.lines - height
+	if origin < 0 {
+		origin = 0
+	}
+
+	_ = w.view.SetOriginY(origin)
 }
 
 func (w *logTrimWriter) trimLocked() {

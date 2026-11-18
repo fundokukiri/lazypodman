@@ -6,3 +6,7 @@ Lazypodman.code-workspace
 coverage.txt
 profile.out
 .claude/
+
+# local agent packages (Superpowers/Ponytail), installed by scripts/install-agent-packages.sh
+.pi/
+.agents/

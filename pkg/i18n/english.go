@@ -197,6 +197,7 @@ type TranslationSet struct {
 	ShellCloseHint         string
 	ShellExited            string
 	CloseShell             string
+	LeaveShell             string
 	MarkedCount            string
 	MarksCleared           string
 	StopContainersCount    string
@@ -422,6 +423,7 @@ func englishSet() TranslationSet {
 		ShellCloseHint:             "shell open: ctrl+x closes it",
 		ShellExited:                "shell exited",
 		CloseShell:                 "close shell",
+		LeaveShell:                 "leave shell, keep it running",
 		MarkedCount:                "%d selected",
 		MarksCleared:               "selection cleared",
 		StopContainersCount:        "Stop %d containers?",

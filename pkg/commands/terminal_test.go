@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hinshun/vt10x"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,4 +123,28 @@ func TestTerminalWriteAndSnapshotWithoutTerminal(t *testing.T) {
 	rows, _, _, visible := terminal.Snapshot()
 	assert.Nil(t, rows)
 	assert.False(t, visible)
+}
+
+func TestScrollbackKeepsBurstOutput(t *testing.T) {
+	terminal := &Terminal{historyScreen: vt10x.New(vt10x.WithSize(20, 200))}
+
+	for i := 0; i < 50; i++ {
+		_, _ = fmt.Fprintf(terminal.historyScreen, "line %d\r\n", i)
+	}
+
+	rows, _, cursorY, ok := terminal.Scrollback()
+	assert.True(t, ok)
+	// The blank row where the caret waits is kept so the prompt has a place.
+	assert.Len(t, rows, 51)
+	assert.Equal(t, "line 0", rows[0])
+	assert.Equal(t, "line 49", rows[49])
+	assert.Equal(t, 50, cursorY)
+}
+
+func TestScrollbackIgnoresAltScreen(t *testing.T) {
+	terminal := &Terminal{historyScreen: vt10x.New(vt10x.WithSize(20, 200))}
+	_, _ = terminal.historyScreen.Write([]byte("\x1b[?1049h"))
+
+	_, _, _, ok := terminal.Scrollback()
+	assert.False(t, ok)
 }

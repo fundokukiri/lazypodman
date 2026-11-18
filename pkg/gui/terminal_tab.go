@@ -32,6 +32,7 @@ type terminalState struct {
 	history      []string
 	lastRows     []string
 	scrollOffset int
+	scrollable   int
 }
 
 func (gui *Gui) currentTerminal() *terminalState {
@@ -354,17 +355,8 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 	maxCols, maxRows := gui.Views.Terminal.Size()
 
 	state.mutex.Lock()
-	rows, cursorX, cursorY, cursorVisible := state.terminal.Snapshot()
+	rows, screenCursorX, screenCursorY, cursorVisible := state.terminal.Snapshot()
 	trimmed := trimTerminalRows(rows)
-
-	if lost := scrolledOffLines(state.lastRows, trimmed); len(lost) > 0 {
-		state.history = append(state.history, lost...)
-		if len(state.history) > terminalHistoryLimit {
-			state.history = state.history[len(state.history)-terminalHistoryLimit:]
-		}
-	}
-
-	state.lastRows = trimmed
 
 	// The first row is the container header; the terminal gets the rest.
 	height := maxRows - 1
@@ -372,18 +364,64 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 		height = 0
 	}
 
-	total := len(state.history) + len(trimmed)
+	historyRows, historyCursorX, historyCursorY, scrollbackOK := state.terminal.Scrollback()
+
 	offset := state.scrollOffset
 
 	var visible []string
-	if offset > 0 {
-		visible = terminalWindow(state.history, trimmed, height, offset)
+	var total int
+	cursorX, cursorY := screenCursorX, screenCursorY
+
+	if scrollbackOK && len(historyRows) > 0 {
+		total = len(historyRows)
+		state.scrollable = total - height
+		if state.scrollable < 0 {
+			state.scrollable = 0
+		}
+
+		if offset > state.scrollable {
+			offset = state.scrollable
+			state.scrollOffset = offset
+		}
+
+		visible = terminalWindow(nil, historyRows, height, offset)
+
+		start := total - height - offset
+		if start < 0 {
+			start = 0
+		}
+
+		cursorX, cursorY = historyCursorX, historyCursorY-start
+		if cursorY < 0 || cursorY >= len(visible) {
+			cursorY = -1
+		}
 	} else {
-		// Live view: draw the screen exactly as the PTY has it, so the cursor row
-		// keeps matching and history lines never push the shell down.
-		visible = trimmed
-		if len(visible) > height {
-			visible = visible[len(visible)-height:]
+		// Alt-screen programs (vim, htop, less) redraw the screen; fall back to
+		// per-frame scroll detection so the live screen still works.
+		if lost := scrolledOffLines(state.lastRows, trimmed); len(lost) > 0 {
+			state.history = append(state.history, lost...)
+			if len(state.history) > terminalHistoryLimit {
+				state.history = state.history[len(state.history)-terminalHistoryLimit:]
+			}
+		}
+
+		state.lastRows = trimmed
+
+		total = len(state.history) + len(trimmed)
+		state.scrollable = total - height
+		if state.scrollable < 0 {
+			state.scrollable = 0
+		}
+
+		if offset > 0 {
+			visible = terminalWindow(state.history, trimmed, height, offset)
+		} else {
+			// Live view: draw the screen exactly as the PTY has it, so the cursor
+			// row keeps matching and history lines never push the shell down.
+			visible = trimmed
+			if len(visible) > height {
+				visible = visible[len(visible)-height:]
+			}
 		}
 	}
 
@@ -424,15 +462,13 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 
 		_ = gui.setViewContent(gui.Views.Terminal, content)
 
-		state.mutex.Lock()
-		offset := state.scrollOffset
-		state.mutex.Unlock()
-
 		// Hide the caret while paging: it belongs to the live screen, not to the
 		// history window, so leaving it visible makes it float over old output.
-		gui.g.Cursor = offset == 0 && cursorVisible && gui.g.CurrentView() == gui.Views.Terminal
+		showCursor := offset == 0 && cursorVisible && cursorY >= 0 &&
+			gui.g.CurrentView() == gui.Views.Terminal
+		gui.g.Cursor = showCursor
 
-		if offset == 0 && cursorY >= 0 && cursorY+1 < maxRows {
+		if showCursor && cursorY+1 < maxRows {
 			_ = gui.Views.Terminal.SetCursor(cursorX, cursorY+1)
 		}
 
@@ -545,8 +581,8 @@ func (gui *Gui) scrollTerminal(delta int) error {
 
 	state.mutex.Lock()
 	state.scrollOffset += delta
-	if state.scrollOffset > len(state.history) {
-		state.scrollOffset = len(state.history)
+	if state.scrollOffset > state.scrollable {
+		state.scrollOffset = state.scrollable
 	}
 	if state.scrollOffset < 0 {
 		state.scrollOffset = 0

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,7 +20,11 @@ import (
 // are parsed but not rendered yet: gocui draws plain text.
 type Terminal struct {
 	screen vt10x.Terminal
-	pty    *os.File
+	// historyScreen swallows the same output on a very tall screen so scrollback
+	// survives bursts (e.g. cat of a long file) that a per-frame snapshot would
+	// miss. Full-screen apps are detected through ModeAltScreen and ignored.
+	historyScreen vt10x.Terminal
+	pty           *os.File
 
 	cancel    context.CancelFunc
 	closeOnce sync.Once
@@ -29,6 +34,9 @@ type Terminal struct {
 
 // TerminalBudget bounds how long Close waits for the child to exit.
 var TerminalBudget = 2 * time.Second
+
+// HistoryRows is how many rows the scrollback screen keeps.
+const HistoryRows = 2000
 
 // OpenTerminal starts an interactive shell in the container and sizes the PTY to
 // cols x rows. The caller owns the returned Terminal and must Close it.
@@ -54,16 +62,17 @@ func (c *cliPodmanClient) OpenTerminal(ctx context.Context, ref string, cols, ro
 	}
 
 	terminal := &Terminal{
-		screen: vt10x.New(vt10x.WithSize(cols, rows)),
-		pty:    file,
-		cancel: cancel,
-		done:   make(chan struct{}),
+		screen:        vt10x.New(vt10x.WithSize(cols, rows)),
+		historyScreen: vt10x.New(vt10x.WithSize(cols, HistoryRows)),
+		pty:           file,
+		cancel:        cancel,
+		done:          make(chan struct{}),
 	}
 
 	go func() {
 		defer close(terminal.done)
 
-		_, _ = io.Copy(terminal.screen, file)
+		_, _ = io.Copy(io.MultiWriter(terminal.screen, terminal.historyScreen), file)
 	}()
 
 	return terminal, nil
@@ -91,6 +100,7 @@ func (t *Terminal) Resize(cols, rows int) error {
 	}
 
 	t.screen.Resize(cols, rows)
+	t.historyScreen.Resize(cols, HistoryRows)
 
 	return pty.Setsize(t.pty, &pty.Winsize{Cols: uint16(cols), Rows: uint16(rows)})
 }
@@ -119,6 +129,61 @@ func (t *Terminal) Snapshot() (rows []string, cursorX, cursorY int, visible bool
 	}
 
 	return rows, cursor.X, cursor.Y, t.screen.CursorVisible()
+}
+
+// Scrollback returns the full history of a plain (non-alt-screen) session as
+// plain text rows, with leading and trailing blank rows trimmed. The cursor is
+// returned relative to the trimmed rows. ok is false for full-screen programs.
+func (t *Terminal) Scrollback() (rows []string, cursorX, cursorY int, ok bool) {
+	if t == nil || t.historyScreen == nil {
+		return nil, 0, 0, false
+	}
+
+	t.historyScreen.Lock()
+	defer t.historyScreen.Unlock()
+
+	if t.historyScreen.Mode()&vt10x.ModeAltScreen != 0 {
+		return nil, 0, 0, false
+	}
+
+	cols, screenRows := t.historyScreen.Size()
+	cursor := t.historyScreen.Cursor()
+
+	all := make([]string, screenRows)
+	for y := 0; y < screenRows; y++ {
+		line := make([]rune, cols)
+		for x := 0; x < cols; x++ {
+			line[x] = t.historyScreen.Cell(x, y).Char
+		}
+
+		all[y] = strings.TrimRight(string(line), " ")
+	}
+
+	start := 0
+	for start < len(all) && all[start] == "" {
+		start++
+	}
+
+	if start == len(all) {
+		return nil, cursor.X, 0, true
+	}
+
+	end := len(all)
+	for end > start && all[end-1] == "" {
+		end--
+	}
+
+	if cursor.Y+1 > end {
+		end = cursor.Y + 1
+	}
+
+	rows = all[start:end]
+	cursorY = cursor.Y - start
+	if cursorY < 0 {
+		cursorY = 0
+	}
+
+	return rows, cursor.X, cursorY, true
 }
 
 // Done is closed when the shell process ends.

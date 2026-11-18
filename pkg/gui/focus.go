@@ -31,9 +31,16 @@ func (gui *Gui) newLineFocused(v *gocui.View) error {
 // TODO: move some of this logic into our onFocusLost and onFocus hooks
 func (gui *Gui) switchFocus(newView *gocui.View) error {
 	gui.Mutexes.ViewStackMutex.Lock()
-	defer gui.Mutexes.ViewStackMutex.Unlock()
+	err := gui.switchFocusAux(newView)
+	gui.Mutexes.ViewStackMutex.Unlock()
 
-	return gui.switchFocusAux(newView)
+	if err != nil {
+		return err
+	}
+
+	// Render the options line outside ViewStackMutex: it looks at the current
+	// side panel, which takes the same mutex.
+	return gui.renderPanelOptions()
 }
 
 func (gui *Gui) switchFocusAux(newView *gocui.View) error {
@@ -45,10 +52,6 @@ func (gui *Gui) switchFocusAux(newView *gocui.View) error {
 	}
 
 	gui.g.Cursor = newView.Editable
-
-	if err := gui.renderPanelOptions(); err != nil {
-		return err
-	}
 
 	newViewStack := gui.State.ViewStack
 
@@ -68,19 +71,29 @@ func (gui *Gui) switchFocusAux(newView *gocui.View) error {
 
 func (gui *Gui) returnFocus() error {
 	gui.Mutexes.ViewStackMutex.Lock()
-	defer gui.Mutexes.ViewStackMutex.Unlock()
 
 	if len(gui.State.ViewStack) <= 1 {
+		gui.Mutexes.ViewStackMutex.Unlock()
+
 		return nil
 	}
 
 	previousViewName := gui.State.ViewStack[len(gui.State.ViewStack)-2]
 	previousView, err := gui.g.View(previousViewName)
 	if err != nil {
+		gui.Mutexes.ViewStackMutex.Unlock()
+
 		return err
 	}
 
-	return gui.switchFocusAux(previousView)
+	err = gui.switchFocusAux(previousView)
+	gui.Mutexes.ViewStackMutex.Unlock()
+
+	if err != nil {
+		return err
+	}
+
+	return gui.renderPanelOptions()
 }
 
 func (gui *Gui) removeViewFromStack(view *gocui.View) {

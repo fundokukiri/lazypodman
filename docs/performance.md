@@ -71,3 +71,20 @@ spawn instead of two matters more than any micro-optimisation in the TUI.
 - The compose check shells out through the user's `commandTemplates`, so a slow
   compose provider delays the compose/services panels, not the container list.
 - `pod logs --help` now costs one spawn the first time a Pod logs tab is opened.
+
+## Real measurement (podman 6.2.0, root + vfs, no runtime)
+
+Measured in a sandbox where podman could create containers but not run them
+(no cgroupfs write access), so this covers the CLI and socket paths only:
+
+| Measurement | Value |
+| --- | --- |
+| CLI enablement check (`newCLIPodmanClient`, real binary) | **185 ms** |
+| Startup processes logged by a wrapper `podman` | 2 (`info --format`, `compose version`) |
+
+`go test -tags integration ./pkg/commands/ -run Integration -v` logs the timing and
+fails if the enablement check exceeds 3 s, which is 15x the observed value and still
+catches a second spawn or a hanging probe.
+
+A rootless user session with a cold storage layer will be slower; the point of the
+measurement is the process count and the ratio, not the absolute milliseconds.

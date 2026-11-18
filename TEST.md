@@ -214,3 +214,34 @@ Khi xong, các chỗ đang ghi "chưa kiểm chứng" trong
   - UX (Events / multi-select / palette): `2026-11-18-ux-design.md`, `2026-11-18-ux.md`
   - Quadlet + auto-update: `2026-11-18-quadlet-design.md`, `2026-11-18-quadlet.md`
 - Bảng "Verification status" cuối mỗi design là nơi cần cập nhật sau khi bạn chạy xong.
+
+---
+
+## Kết quả đã chạy (podman 6.2.0, sandbox root + vfs, không systemd/không runtime)
+
+Môi trường: `podman version 6.2.0`, chạy bằng `--storage-driver=vfs` trong
+`/tmp/podman-root`, API qua `unix:///run/podman/podman.sock`. Container **create/inspect
+được** nhưng **start bị chặn** (`cgroupfs` read-only, không `/dev/net/tun`), nên mọi mục
+cần container chạy vẫn chưa kiểm chứng.
+
+Đã chạy tự động (`-tags integration`):
+
+| Mục | Kết quả | Ghi chú |
+| --- | --- | --- |
+| Startup check (số process, thời gian) | **verified by agent (podman 6.2.0)** | 1 process, **185 ms**; test fail nếu > 3 s |
+| Parse `pod pod ls` + `ps -a` JSON | **verified by agent (podman 6.2.0)** | danh sách rỗng vẫn parse đúng; container tạo bằng CLI được map |
+| Socket API + `RefreshPodState` | **verified by agent (podman 6.2.0)** | socket list thấy container vừa tạo, pod snapshot không lỗi |
+| C7: chọn cú pháp kube | **verified (6.2.0)** | prefix chọn `kube generate` / `kube play` |
+| C10: `podman kube play --down` | **verified (6.2.0)** | flag tồn tại |
+| KubeGenerate với container thật | **verified (6.2.0)** | output có `kind: Pod`, `Created with podman-6.2.0` |
+| D1/D4: events stream | **verified (6.2.0)** | nhận dòng thật: `... container create ... (image=..., name=...)` |
+| G2: unit Quadlet từ inspect thật | **verified (6.2.0)** | có `[Container]`, `Image=`, `ContainerName=`, `PublishPort=`, `Volume=`, env sorted |
+| G4: systemd nhận file | **không kiểm chứng được ở đây** | `podman quadlet install` cần systemd dbus; sandbox không có. Cần máy có `systemctl --user` |
+| B1–B8 healthcheck, A1–A11 pods, E/F UI, H auto-update | **not verified** | cần container chạy và TUI thật |
+
+Lệnh tái lập trong repo:
+
+```sh
+CONTAINERS_STORAGE_CONF=/tmp/storage.conf \
+GOFLAGS=-mod=vendor go test -tags integration ./pkg/commands/ -run Integration -v
+```

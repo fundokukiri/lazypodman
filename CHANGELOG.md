@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Integration tests** for Podman-native features: startup check timing and process
+  count, socket container list + pod snapshot, kube capability prefixes, kube
+  generate, the events stream and Quadlet syntax built from a real inspect
+  (`-tags integration`).
 - **Startup** spawns one podman process for the CLI check instead of two: the
   `pod logs --help` probe is now lazy (first Pod logs tab), and the two pod-refresh
   calls run concurrently. See [docs/performance.md](docs/performance.md).

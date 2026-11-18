@@ -1,72 +1,105 @@
-# Lazypodman
+<div align="center">
+<sup>Special thanks to:</sup>
+<br>
+<br>
+<a href="https://www.subble.com/jobs/engineer">
+  <div>
+    <img src="assets/subble-job-ad.jpg" width="400" alt="Subble">
+  </div>
+  <b>Click here to learn more</b>
+</a>
+<br>
 
-**The lazier way to manage everything podman.**
+<hr>
+</div>
 
-Lazypodman là terminal UI (TUI) để quản lý Podman: container, image, volume,
-network, project compose, logs, stats và các thao tác thường dùng — tất cả trong
-một cửa sổ, mỗi thao tác chỉ cách một phím bấm.
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/8456633/59972109-8e9c8480-95cc-11e9-8350-38f7f86ba76d.png">
+</p>
 
-Đây là bản fork của [lazydocker](https://github.com/jesseduffield/lazydocker)
-(MIT, Jesse Duffield) được chuyển sang nói chuyện với **Podman service API**
-thay vì Docker daemon. Toàn bộ giao diện, panel và keybinding đến từ lazydocker;
-phần khác biệt nằm ở cách dò endpoint Podman, compose và các chi tiết Podman
-(xem [Khác biệt so với lazydocker](#khác-biệt-so-với-lazydocker)).
+A simple terminal UI for both podman and podman-compose, written in Go with the [gocui](https://github.com/jroimartin/gocui 'gocui') library.
 
-**Mục lục**
+This repository is **Lazypodman**, a fork of
+[lazydocker](https://github.com/jesseduffield/lazydocker) by Jesse Duffield. The UI,
+panels and keybindings are unchanged; the daemon layer now talks to the Podman
+service API. See [Lazypodman (this fork)](#lazypodman-this-fork) for what changed,
+how to build it and how it finds your Podman socket.
 
-- [Yêu cầu](#yêu-cầu)
-- [Cài đặt](#cài-đặt)
-- [Lazypodman tìm Podman service ở đâu](#lazypodman-tìm-podman-service-ở-đâu)
-- [Hướng dẫn sử dụng](#hướng-dẫn-sử-dụng)
-- [Cấu hình](#cấu-hình)
-- [Khác biệt so với lazydocker](#khác-biệt-so-với-lazydocker)
-- [Xử lý sự cố](#xử-lý-sự-cố)
-- [Phát triển & kiểm thử](#phát-triển--kiểm-thử)
-- [Giấy phép](#giấy-phép)
+![CI](https://github.com/jesseduffield/lazygit/workflows/Continuous%20Integration/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jesseduffield/lazydocker)](https://goreportcard.com/report/github.com/jesseduffield/lazydocker)
+[![GolangCI](https://golangci.com/badges/github.com/jesseduffield/lazydocker.svg)](https://golangci.com)
+[![GoDoc](https://godoc.org/github.com/jesseduffield/lazydocker?status.svg)](http://godoc.org/github.com/jesseduffield/lazydocker)
+![GitHub repo size](https://img.shields.io/github/repo-size/jesseduffield/lazydocker)
+[![GitHub Releases](https://img.shields.io/github/downloads/jesseduffield/lazydocker/total)](https://github.com/jesseduffield/lazydocker/releases)
+[![GitHub tag](https://img.shields.io/github/tag/jesseduffield/lazydocker.svg)](https://github.com/jesseduffield/lazydocker/releases/latest)
+[![homebrew](https://img.shields.io/homebrew/v/lazydocker)](https://github.com/Homebrew/homebrew-core/blob/master/Formula/lazydocker.rb)
 
----
+![Gif](/docs/resources/demo3.gif)
 
-## Yêu cầu
+[Demo](https://youtu.be/NICqQPxwJWw)
 
-| Thành phần | Phiên bản / ghi chú |
-| --- | --- |
-| Podman | >= **4.0**, có service API (socket) đang chạy |
-| Compose (tuỳ chọn) | `podman compose` (Podman >= 4.1) hoặc script `podman-compose` |
-| Go (chỉ khi build) | >= **1.22** |
-| Hệ điều hành | Linux, macOS (`podman machine`), Windows (`podman machine`) |
+## Sponsors
 
-Lazypodman dùng **Docker-compatible API** do Podman cung cấp, nên cần bật
-socket/service trước khi chạy:
+<p align="center">
+ Maintenance of this project is made possible by all the <a href="https://github.com/jesseduffield/lazydocker/graphs/contributors">contributors</a> and <a href="https://github.com/sponsors/jesseduffield">sponsors</a>. If you'd like to sponsor this project and have your avatar or company logo appear below <a href="https://github.com/sponsors/jesseduffield">click here</a>. 💙
+</p>
+
+<p align="center">
+<!-- sponsors --><a href="https://github.com/intabulas"><img src="https://github.com/intabulas.png" width="60px" alt="Mark Lussier" /></a><a href="https://github.com/peppy"><img src="https://github.com/peppy.png" width="60px" alt="Dean Herbert" /></a><a href="https://github.com/piot"><img src="https://github.com/piot.png" width="60px" alt="Peter Bjorklund" /></a><a href="https://github.com/rgwood"><img src="https://github.com/rgwood.png" width="60px" alt="Reilly Wood" /></a><a href="https://github.com/oliverguenther"><img src="https://github.com/oliverguenther.png" width="60px" alt="Oliver Günther" /></a><a href="https://github.com/pawanjay176"><img src="https://github.com/pawanjay176.png" width="60px" alt="Pawan Dhananjay" /></a><a href="https://github.com/bdach"><img src="https://github.com/bdach.png" width="60px" alt="Bartłomiej Dach" /></a><a href="https://github.com/davidklsn"><img src="https://github.com/davidklsn.png" width="60px" alt="David Karlsson" /></a><a href="https://github.com/carstengehling"><img src="https://github.com/carstengehling.png" width="60px" alt="Carsten Gehling" /></a><a href="https://github.com/ceuk"><img src="https://github.com/ceuk.png" width="60px" alt="CEUK" /></a><a href="https://github.com/akospwc"><img src="https://github.com/akospwc.png" width="60px" alt="Akos Putz" /></a><a href="https://github.com/Xetera"><img src="https://github.com/Xetera.png" width="60px" alt="Xetera" /></a><a href="https://github.com/HoldenLucas"><img src="https://github.com/HoldenLucas.png" width="60px" alt="Holden Lucas" /></a><a href="https://github.com/nartc"><img src="https://github.com/nartc.png" width="60px" alt="Chau Tran" /></a><a href="https://github.com/matejcik"><img src="https://github.com/matejcik.png" width="60px" alt="matejcik" /></a><a href="https://github.com/lucatume"><img src="https://github.com/lucatume.png" width="60px" alt="theAverageDev (Luca Tumedei)" /></a><a href="https://github.com/IvanZuy"><img src="https://github.com/IvanZuy.png" width="60px" alt="Ivan Zaitsev" /></a><a href="https://github.com/nicholascloud"><img src="https://github.com/nicholascloud.png" width="60px" alt="Nicholas Cloud" /></a><a href="https://github.com/PhotonQuantum"><img src="https://github.com/PhotonQuantum.png" width="60px" alt="LightQuantum" /></a><a href="https://github.com/GitSquared"><img src="https://github.com/GitSquared.png" width="60px" alt="Gabriel Saillard" /></a><a href="https://github.com/ava1ar"><img src="https://github.com/ava1ar.png" width="60px" alt="Aliaksandr Stelmachonak" /></a><a href="https://github.com/minidfx"><img src="https://github.com/minidfx.png" width="60px" alt="Burgy Benjamin" /></a><a href="https://github.com/JoeKlemmer"><img src="https://github.com/JoeKlemmer.png" width="60px" alt="Joe Klemmer" /></a><a href="https://github.com/tobi"><img src="https://github.com/tobi.png" width="60px" alt="Tobias Lütke" /></a><a href="https://github.com/benbfortis"><img src="https://github.com/benbfortis.png" width="60px" alt="Ben Beaumont" /></a><a href="https://github.com/jakewarren"><img src="https://github.com/jakewarren.png" width="60px" alt="" /></a><a href="https://github.com/tgpholly"><img src="https://github.com/tgpholly.png" width="60px" alt="Holly" /></a><a href="https://github.com/jisantuc"><img src="https://github.com/jisantuc.png" width="60px" alt="James Santucci" /></a><a href="https://github.com/bitprophet"><img src="https://github.com/bitprophet.png" width="60px" alt="Jeff Forcier" /></a><a href="https://github.com/tayleighr"><img src="https://github.com/tayleighr.png" width="60px" alt="" /></a><a href="https://github.com/Novakov"><img src="https://github.com/Novakov.png" width="60px" alt="Maciej T. Nowak" /></a><a href="https://github.com/farzadmf"><img src="https://github.com/farzadmf.png" width="60px" alt="Farzad Majidfayyaz" /></a><a href="https://github.com/nekhaevskiy"><img src="https://github.com/nekhaevskiy.png" width="60px" alt="Yury" /></a><a href="https://github.com/reivilibre"><img src="https://github.com/reivilibre.png" width="60px" alt="" /></a><a href="https://github.com/andreaskurth"><img src="https://github.com/andreaskurth.png" width="60px" alt="Andreas Kurth" /></a><a href="https://github.com/BSteffaniak"><img src="https://github.com/BSteffaniak.png" width="60px" alt="Braden Steffaniak" /></a><a href="https://github.com/jordan-gillard"><img src="https://github.com/jordan-gillard.png" width="60px" alt="Jordan Gillard" /></a><a href="https://github.com/smangels"><img src="https://github.com/smangels.png" width="60px" alt="Sebastian" /></a><a href="https://github.com/George-Spanos"><img src="https://github.com/George-Spanos.png" width="60px" alt="George Spanos" /></a><a href="https://github.com/frantisekstanko"><img src="https://github.com/frantisekstanko.png" width="60px" alt="Frantisek Stanko" /></a><a href="https://github.com/amslezak"><img src="https://github.com/amslezak.png" width="60px" alt="Andy Slezak" /></a><a href="https://github.com/mkock"><img src="https://github.com/mkock.png" width="60px" alt="Martin Kock" /></a><a href="https://github.com/illarionvk"><img src="https://github.com/illarionvk.png" width="60px" alt="Illarion Koperski" /></a><a href="https://github.com/WhiteBlackGoose"><img src="https://github.com/WhiteBlackGoose.png" width="60px" alt="" /></a><a href="https://github.com/jessealama"><img src="https://github.com/jessealama.png" width="60px" alt="Jesse Alama" /></a><a href="https://github.com/codacy"><img src="https://github.com/codacy.png" width="60px" alt="Codacy" /></a><a href="https://github.com/colbr"><img src="https://github.com/colbr.png" width="60px" alt="Brett" /></a><a href="https://github.com/heijmans"><img src="https://github.com/heijmans.png" width="60px" alt="Jan Heijmans" /></a><a href="https://github.com/Vesther"><img src="https://github.com/Vesther.png" width="60px" alt="Kevin Nowald" /></a><a href="https://github.com/sempruijs"><img src="https://github.com/sempruijs.png" width="60px" alt="sem pruijs" /></a><a href="https://github.com/omarluq"><img src="https://github.com/omarluq.png" width="60px" alt="Omar Luq " /></a><a href="https://github.com/ethanjli"><img src="https://github.com/ethanjli.png" width="60px" alt="Ethan Li" /></a><a href="https://github.com/phubaba"><img src="https://github.com/phubaba.png" width="60px" alt="" /></a><a href="https://github.com/fomrat"><img src="https://github.com/fomrat.png" width="60px" alt="Brian MacAskill" /></a><a href="https://github.com/canhazcodez"><img src="https://github.com/canhazcodez.png" width="60px" alt="Maxi" /></a><a href="https://github.com/nikbrunner"><img src="https://github.com/nikbrunner.png" width="60px" alt="nbr" /></a><a href="https://github.com/neunkasulle"><img src="https://github.com/neunkasulle.png" width="60px" alt="Jan Zenkner" /></a><a href="https://github.com/ahkohd"><img src="https://github.com/ahkohd.png" width="60px" alt="Victor Aremu" /></a><a href="https://github.com/RVxLab"><img src="https://github.com/RVxLab.png" width="60px" alt="" /></a><a href="https://github.com/igor-ramazanov"><img src="https://github.com/igor-ramazanov.png" width="60px" alt="Igor Ramazanov" /></a><a href="https://github.com/glotchimo"><img src="https://github.com/glotchimo.png" width="60px" alt="Elliott Maguire" /></a><a href="https://github.com/n8nio"><img src="https://github.com/n8nio.png" width="60px" alt="n8n - Workflow Automation" /></a><a href="https://github.com/kaleballmon"><img src="https://github.com/kaleballmon.png" width="60px" alt="kaleb allmon" /></a><a href="https://github.com/joshuadavidthomas"><img src="https://github.com/joshuadavidthomas.png" width="60px" alt="Josh Thomas" /></a><a href="https://github.com/josephjacks"><img src="https://github.com/josephjacks.png" width="60px" alt="JJ" /></a><a href="https://github.com/FrederickGeek8"><img src="https://github.com/FrederickGeek8.png" width="60px" alt="Frederick Morlock" /></a><a href="https://github.com/agrippanux"><img src="https://github.com/agrippanux.png" width="60px" alt="Darren Craine" /></a><a href="https://github.com/ezdac"><img src="https://github.com/ezdac.png" width="60px" alt="Maximilian Langenfeld" /></a><a href="https://github.com/sarzhann"><img src="https://github.com/sarzhann.png" width="60px" alt="Nurzhan" /></a><a href="https://github.com/dbuls"><img src="https://github.com/dbuls.png" width="60px" alt="Davis Buls" /></a><a href="https://github.com/MGreek"><img src="https://github.com/MGreek.png" width="60px" alt="Grec Marc" /></a><a href="https://github.com/sainu"><img src="https://github.com/sainu.png" width="60px" alt="sainu" /></a><a href="https://github.com/mguellsegarra"><img src="https://github.com/mguellsegarra.png" width="60px" alt="Marc Güell Segarra" /></a><a href="https://github.com/lppassos"><img src="https://github.com/lppassos.png" width="60px" alt="" /></a><a href="https://github.com/chrisolsen"><img src="https://github.com/chrisolsen.png" width="60px" alt="Chris Olsen" /></a><a href="https://github.com/vladimir-popov"><img src="https://github.com/vladimir-popov.png" width="60px" alt="Vladimir Popov" /></a><a href="https://github.com/neilcode"><img src="https://github.com/neilcode.png" width="60px" alt="Neil Lambert" /></a><a href="https://github.com/shaungarwood"><img src="https://github.com/shaungarwood.png" width="60px" alt="Shaun Garwood" /></a><a href="https://github.com/dhh"><img src="https://github.com/dhh.png" width="60px" alt="David Heinemeier Hansson" /></a><a href="https://github.com/wayanjimmy"><img src="https://github.com/wayanjimmy.png" width="60px" alt="Wayan jimmy" /></a><!-- sponsors -->
+</p>
+
+## Elevator Pitch
+
+Minor rant incoming: Something's not working? Maybe a service is down. `docker-compose ps`. Yep, it's that microservice that's still buggy. No issue, I'll just restart it: `docker-compose restart`. Okay now let's try again. Oh wait the issue is still there. Hmm. `docker-compose ps`. Right so the service must have just stopped immediately after starting. I probably would have known that if I was reading the log stream, but there is a lot of clutter in there from other services. I could get the logs for just that one service with `docker compose logs --follow myservice` but that dies everytime the service dies so I'd need to run that command every time I restart the service. I could alternatively run `docker-compose up myservice` and in that terminal window if the service is down I could just `up` it again, but now I've got one service hogging a terminal window even after I no longer care about its logs. I guess when I want to reclaim the terminal realestate I can do `ctrl+P,Q`, but... wait, that's not working for some reason. Should I use ctrl+C instead? I can't remember if that closes the foreground process or kills the actual service.
+
+What a headache!
+
+Memorising docker commands is hard. Memorising aliases is slightly less hard. Keeping track of your containers across multiple terminal windows is near impossible. What if you had all the information you needed in one terminal window with every common command living one keypress away (and the ability to add custom commands as well). Lazydocker's goal is to make that dream a reality.
+
+- [Requirements](https://github.com/jesseduffield/lazydocker#requirements)
+- [Installation](https://github.com/jesseduffield/lazydocker#installation)
+- [Usage](https://github.com/jesseduffield/lazydocker#usage)
+- [Keybindings](/docs/keybindings)
+- [Cool Features](https://github.com/jesseduffield/lazydocker#cool-features)
+- [Contributing](https://github.com/jesseduffield/lazydocker#contributing)
+- [Video Tutorial](https://youtu.be/NICqQPxwJWw)
+- [Config Docs](/docs/Config.md)
+- [Twitch Stream](https://www.twitch.tv/jesseduffield)
+- [FAQ](https://github.com/jesseduffield/lazydocker#faq)
+- [Lazypodman (this fork)](#lazypodman-this-fork)
+
+## Requirements
+
+### This fork (Podman)
+
+- Podman >= **4.0** with the service API (socket) running
+- `podman compose` (Podman >= 4.1) or the standalone `podman-compose` script
+  (optional, used by the services panel)
+
+Enable the socket once per user (rootless) or per machine (rootful):
 
 ```sh
-# Rootless (phổ biến nhất)
-systemctl --user enable --now podman.socket
-
-# Rootful
-sudo systemctl enable --now podman.socket
+systemctl --user enable --now podman.socket   # rootless
+sudo systemctl enable --now podman.socket     # rootful
 ```
 
-Kiểm tra nhanh:
-
-```sh
-podman info                      # daemon/service đang chạy?
-echo $XDG_RUNTIME_DIR/podman/podman.sock
-```
-
-Trên macOS/Windows cần khởi động máy ảo Podman:
+On macOS and Windows start the Podman machine first:
 
 ```sh
 podman machine start
-podman system connection list    # xem URI để dùng cho CONTAINER_HOST
+podman system connection list   # shows the endpoint to use for CONTAINER_HOST
 ```
 
----
+### Upstream lazydocker
 
-## Cài đặt
+- Docker >= **29.0.0** (API >= **1.24**)
+- Docker-Compose >= **1.23.2** (optional)
 
-### 1. Build từ source (khuyến nghị)
+## Installation
 
-Dependencies đã được vendor sẵn, không cần mạng sau khi clone:
+### From source (this fork)
+
+Dependencies are vendored, so no network access is needed after cloning:
 
 ```sh
 git clone https://github.com/lazypodman/lazypodman.git
@@ -75,35 +108,12 @@ GOFLAGS=-mod=vendor go build -o lazypodman .
 ./lazypodman
 ```
 
-Hoặc cài vào `$GOBIN`/`$GOPATH/bin`:
+Install into `$GOBIN`/`$GOPATH/bin`: `GOFLAGS=-mod=vendor go install -mod=vendor`.
 
-```sh
-GOFLAGS=-mod=vendor go install -mod=vendor
-```
-
-Chạy thử không cần build:
-
-```sh
-GOFLAGS=-mod=vendor go run . --help
-```
-
-### 2. Binary release
-
-Tải file nén cho nền tảng của bạn ở trang Releases, giải nén và đặt
-`lazypodman` vào một thư mục trong `PATH`:
-
-```sh
-curl -L -o lazypodman.tar.gz \
-  https://github.com/lazypodman/lazypodman/releases/latest/download/lazypodman_<version>_Linux_x86_64.tar.gz
-tar xzvf lazypodman.tar.gz lazypodman
-install -Dm 755 lazypodman -t "$HOME/.local/bin"
-```
-
-### 3. Chạy trong container Podman
+Run inside a container (Podman socket mounted in):
 
 ```sh
 podman build -t lazypodman .
-
 podman run --rm -it \
   --security-opt label=disable \
   -v /run/podman/podman.sock:/run/podman/podman.sock \
@@ -112,226 +122,240 @@ podman run --rm -it \
   lazypodman
 ```
 
-Repo cũng có `docker-compose.yml` (dùng được với `podman-compose` hoặc
-`podman compose`) cho cùng thiết lập trên:
+The channels below distribute **upstream lazydocker**; they are kept here for
+reference and history. To install lazypodman use the source or container build
+above (or the releases of this repository).
 
+### Homebrew
+
+Normally `lazydocker` formula can be found in the Homebrew core but we suggest you to tap our formula to get frequently updated one. It works with Linux, too.
+
+**Tap**:
 ```sh
-podman-compose run --rm lazypodman   # hoặc: podman compose run --rm lazypodman
+brew install jesseduffield/lazydocker/lazydocker
 ```
 
-### 4. Alias cho nhanh
-
+**Core**:
 ```sh
-echo "alias lzp='lazypodman'" >> ~/.zshrc   # hoặc ~/.bashrc
+brew install lazydocker
 ```
 
----
+### Scoop (Windows)
 
-## Lazypodman tìm Podman service ở đâu
+You can install `lazydocker` using [scoop](https://scoop.sh/):
 
-Theo thứ tự ưu tiên giảm dần:
+```sh
+scoop install lazydocker
+```
+### Chocolatey (Windows)
 
-| # | Nguồn | Ví dụ |
+You can install `lazydocker` using [Chocolatey](https://chocolatey.org/):
+
+```sh
+choco install lazydocker
+```
+### asdf-vm
+
+You can install [asdf-lazydocker plugin](https://github.com/comdotlinux/asdf-lazydocker) using [asdf-vm](https://asdf-vm.com/):
+#### Setup (Once)
+```sh
+asdf plugin add lazydocker https://github.com/comdotlinux/asdf-lazydocker.git
+```
+
+#### For Install / Upgrade
+```sh
+asdf list all lazydocker
+asdf install lazydocker latest
+asdf global lazydocker latest
+```
+
+### Binary Release (Linux/OSX/Windows)
+
+You can manually download a binary release from [the release page](https://github.com/jesseduffield/lazydocker/releases).
+
+Automated install/update, don't forget to always verify what you're piping into bash:
+
+```sh
+curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+```
+The script installs downloaded binary to `$HOME/.local/bin` directory by default, but it can be changed by setting `DIR` environment variable.
+
+### Go
+
+Required Go Version >= **1.19**
+
+```sh
+go install github.com/jesseduffield/lazydocker@latest
+```
+
+Required Go version >= **1.8**, <= **1.17**
+
+```sh
+go get github.com/jesseduffield/lazydocker
+```
+
+### Arch Linux AUR
+
+You can install lazydocker using the [AUR](https://aur.archlinux.org/packages/lazydocker) by running:
+
+```sh
+yay -S lazydocker
+```
+
+### Docker
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/lazyteam/lazydocker.svg)](https://hub.docker.com/r/lazyteam/lazydocker)
+[![Docker Stars](https://img.shields.io/docker/stars/lazyteam/lazydocker.svg)](https://hub.docker.com/r/lazyteam/lazydocker)
+[![Docker Automated](https://img.shields.io/docker/cloud/automated/lazyteam/lazydocker.svg)](https://hub.docker.com/r/lazyteam/lazydocker)
+
+1. <details><summary>Click if you have an ARM device</summary><p>
+
+    - If you have a ARM 32 bit v6 architecture
+
+        ```sh
+        docker build -t lazyteam/lazydocker \
+        --build-arg BASE_IMAGE_BUILDER=arm32v6/golang \
+        --build-arg GOARCH=arm \
+        --build-arg GOARM=6 \
+        https://github.com/jesseduffield/lazydocker.git
+        ```
+
+    - If you have a ARM 32 bit v7 architecture
+
+        ```sh
+        docker build -t lazyteam/lazydocker \
+        --build-arg BASE_IMAGE_BUILDER=arm32v7/golang \
+        --build-arg GOARCH=arm \
+        --build-arg GOARM=7 \
+        https://github.com/jesseduffield/lazydocker.git
+        ```
+
+    - If you have a ARM 64 bit v8 architecture
+
+        ```sh
+        docker build -t lazyteam/lazydocker \
+        --build-arg BASE_IMAGE_BUILDER=arm64v8/golang \
+        --build-arg GOARCH=arm64 \
+        https://github.com/jesseduffield/lazydocker.git
+        ```
+
+    </p></details>
+
+1. Run the container
+
+    ```sh
+    docker run --rm -it -v \
+    /var/run/docker.sock:/var/run/docker.sock \
+    -v /yourpath:/.config/jesseduffield/lazydocker \
+    lazyteam/lazydocker
+    ```
+
+    - Don't forget to change `/yourpath` to an actual path you created to store lazydocker's config
+    - You can also use this [docker-compose.yml](https://github.com/jesseduffield/lazydocker/blob/master/docker-compose.yml)
+    - You might want to create an alias, for example:
+
+        ```sh
+        echo "alias lzd='docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v /yourpath/config:/.config/jesseduffield/lazydocker lazyteam/lazydocker'" >> ~/.zshrc
+        ```
+
+
+
+For development, you can build the image using:
+
+```sh
+git clone https://github.com/jesseduffield/lazydocker.git
+cd lazydocker
+docker build -t lazyteam/lazydocker \
+    --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+    --build-arg VCS_REF=`git rev-parse --short HEAD` \
+    --build-arg VERSION=`git describe --abbrev=0 --tag` \
+    .
+```
+
+If you encounter a compatibility issue with Docker bundled binary, try rebuilding
+the image with the build argument `--build-arg DOCKER_VERSION="v$(docker -v | cut -d" " -f3 | rev | cut -c 2- | rev)"`
+so that the bundled docker binary matches your host docker binary version.
+
+### Manual
+
+You'll need to [install Go](https://golang.org/doc/install)
+
+```
+git clone https://github.com/jesseduffield/lazydocker.git
+cd lazydocker
+go install
+```
+
+You can also use `go run main.go` to compile and run in one go (pun definitely intended)
+
+## Usage
+
+For this fork the binary is called `lazypodman`:
+
+```sh
+echo "alias lzp='lazypodman'" >> ~/.zshrc
+```
+
+Flags: `-f/--file` (alternate compose files), `-p/--project` (compose project
+name), `-c/--config` (print the merged config), `-d/--debug` (debug log).
+Environment: `PODMAN_HOST`, `CONTAINER_HOST`, `DOCKER_HOST`, `CONFIG_DIR`.
+
+The rest of this section is the upstream lazydocker usage text:
+
+Call `lazydocker` in your terminal. I personally use this a lot so I've made an alias for it like so:
+
+```
+echo "alias lzd='lazydocker'" >> ~/.zshrc
+```
+
+(you can substitute .zshrc for whatever rc file you're using)
+
+- Basic video tutorial [here](https://youtu.be/NICqQPxwJWw).
+- List of keybindings
+  [here](/docs/keybindings).
+
+## Lazypodman (this fork)
+
+Lazypodman is the lazydocker UI wired to **Podman** instead of the Docker daemon.
+It talks to the Docker-compatible API that `podman system service` exposes, so
+everything you know from lazydocker (panels, tabs, keybindings, custom commands,
+config file) works the same way.
+
+### How lazypodman finds the Podman service
+
+In order of decreasing precedence:
+
+| # | Source | Example |
 | --- | --- | --- |
-| 1 | `PODMAN_HOST` (riêng của lazypodman) | `unix:///run/user/1000/podman/podman.sock` |
-| 2 | `CONTAINER_HOST` (biến chuẩn của Podman CLI) | `tcp://127.0.0.1:8888` |
-| 3 | `DOCKER_HOST` (vẫn tôn trọng, cho podman-docker/CI) | `unix:///run/podman/podman.sock` |
-| 4 | Socket rootless đang tồn tại | `$XDG_RUNTIME_DIR/podman/podman.sock`, `/run/user/<uid>/podman/podman.sock` |
-| 5 | Socket rootful đang tồn tại | `/run/podman/podman.sock` |
-| 6 | Default của nền tảng | Windows: `npipe:////./pipe/podman-machine-default` |
+| 1 | `PODMAN_HOST` (lazypodman-specific) | `unix:///run/user/1000/podman/podman.sock` |
+| 2 | `CONTAINER_HOST` (Podman CLI variable) | `tcp://127.0.0.1:8888` |
+| 3 | `DOCKER_HOST` (still honored) | `unix:///run/podman/podman.sock` |
+| 4 | an existing rootless socket | `$XDG_RUNTIME_DIR/podman/podman.sock`, `/run/user/<uid>/podman/podman.sock` |
+| 5 | an existing rootful socket | `/run/podman/podman.sock` |
+| 6 | platform default | Windows: `npipe:////./pipe/podman-machine-default` |
 
-- Đường dẫn trần (không có scheme) cũng được chấp nhận:
-  `CONTAINER_HOST=/run/user/1000/podman/podman.sock` → tự thêm `unix://`.
-- Endpoint `ssh://` được tunnel tự động về socket local:
+- A bare path is accepted and turned into a URL:
+  `CONTAINER_HOST=/run/user/1000/podman/podman.sock`.
+- `ssh://` endpoints are tunneled to a local socket automatically; the remote
+  socket is taken from the URL (default `/run/podman/podman.sock`):
   ```sh
   CONTAINER_HOST=ssh://user@host/run/user/1000/podman/podman.sock lazypodman
   ```
-  (không ghi path thì mặc định tunnel tới `/run/podman/podman.sock` trên host)
-- Docker context (`~/.docker/contexts`) **không** được dùng — hãy dùng biến môi
-  trường ở trên.
+- Docker contexts (`~/.docker/contexts`) are **not** used: set one of the
+  variables above instead.
 
----
+### Configuration changes
 
-## Hướng dẫn sử dụng
+Same file and options as lazydocker, with these differences:
 
-Chạy trong thư mục có file compose để thấy thêm panel Services/Project:
+| Option | Default | Note |
+| --- | --- | --- |
+| `commandTemplates.podman` | `podman` | CLI used for attach/exec; set to `podman-remote` if needed |
+| `commandTemplates.podmanCompose` | `podman compose` | Replaces `dockerCompose`; falls back to `podman-compose` automatically |
+| `commandTemplates.composeConfig` | `{{ .PodmanCompose }} config` | Replaces `dockerComposeConfig` |
 
-```sh
-cd /duong/dan/co/compose-file
-lazypodman
-```
-
-### Cờ dòng lệnh
-
-| Cờ | Ý nghĩa |
-| --- | --- |
-| `-f, --file` | Chỉ định compose file khác (lặp lại được nhiều lần) |
-| `-p, --project` | Đặt tên compose project |
-| `-c, --config` | In config mặc định (sau khi merge với config của bạn) |
-| `-d, --debug` | Bật log debug |
-| `--version` / `-h` | Phiên bản / trợ giúp |
-
-### Bố cục màn hình
-
-- Cột trái: **Project → Services → Containers → Images → Volumes → Networks**
-  (panel Project/Services chỉ hiện khi bạn đang ở trong thư mục compose hoặc
-  truyền `-p`).
-- Panel phải (main): các tab **Logs / Stats / Config / Env / Top / Config
-  compose / About** tuỳ item đang chọn.
-
-### Điều hướng chung
-
-| Phím | Tác dụng |
-| --- | --- |
-| `1`…`6` | Nhảy tới panel Projects/Services/Containers/Images/Volumes/Networks |
-| `tab` / `shift+tab` | Panel kế tiếp / trước đó (hoặc `l` / `h`) |
-| `↑` `↓` / `k` `j` | Di chuyển trong danh sách |
-| `enter` | Focus panel chính (xem chi tiết item) |
-| `[` / `]` | Tab trước / kế tiếp trong panel chính |
-| `/` | Lọc danh sách |
-| `esc` | Quay lại / đóng panel phụ |
-| `q` | Thoát (khi không có panel phụ) |
-| `+` / `_` | Đổi screen mode (normal / half / fullscreen) |
-| `o` / `e` | Mở / sửa file config (ở panel Project) |
-
-### Phím theo panel
-
-**Containers**
-
-| Phím | Tác dụng |
-| --- | --- |
-| `d` | Xoá container (`podman rm`) |
-| `e` | Ẩn/hiện container đã dừng |
-| `p` | Pause / unpause |
-| `s` | Stop |
-| `r` | Restart |
-| `a` | Attach vào container |
-| `m` | Xem logs (tab Logs) |
-| `E` | Mở shell trong container (`podman exec -it …`) |
-| `c` | Chạy custom command |
-| `b` | Bulk commands (thao tác hàng loạt) |
-| `w` | Mở port đầu tiên (http) bằng browser |
-
-**Services**
-
-| Phím | Tác dụng |
-| --- | --- |
-| `u` / `U` | `compose up` service / cả project |
-| `D` | `compose down` project |
-| `s` / `S` | Stop / start service |
-| `r` / `R` | Restart / menu restart |
-| `p` | Pause |
-| `a` | Attach |
-| `m` | Logs |
-| `E` | Exec shell |
-| `c` / `b` | Custom command / bulk command |
-| `w` | Mở port bằng browser |
-
-**Images / Volumes / Networks**
-
-| Phím | Tác dụng |
-| --- | --- |
-| `d` | Xoá (image/volume/network) |
-| `c` / `b` | Custom command / bulk command (bao gồm prune) |
-
-> Danh sách đầy đủ cho mọi ngôn ngữ: [docs/keybindings](/docs/keybindings).
-> Sinh lại bằng `GOFLAGS=-mod=vendor go run ./scripts/cheatsheet generate`.
-
-### Quy trình thường gặp
-
-1. **Debug một service lỗi**: chọn service → `m` xem logs, `]` sang tab Stats
-   để xem CPU/RAM, `E` để vào shell.
-2. **Sửa code xong cần deploy lại**: chọn service → `R` → chọn recreate/rebuild
-   (dùng `commandTemplates.recreateService` / `rebuildService`).
-3. **Dọn dẹp ổ đĩa**: panel Images / Volumes / Networks → `b` → prune.
-4. **Xem compose config thực tế**: chọn project → tab **Compose Config**.
-
----
-
-## Cấu hình
-
-### Vị trí file config
-
-| OS | Đường dẫn |
-| --- | --- |
-| Linux | `~/.config/lazypodman/config.yml` |
-| macOS | `~/Library/Application Support/jesseduffield/lazypodman/config.yml` (hoặc `~/Library/Application Support/lazypodman/config.yml` trên máy mới) |
-| Windows | `C:\Users\<User>\AppData\Roaming\lazypodman\config.yml` |
-
-- Ghi đè thư mục: biến môi trường `CONFIG_DIR`.
-- Mở nhanh trong app: panel **Project** → `o` (mở) hoặc `e` (sửa).
-- Xem config sau khi merge với default: `lazypodman -c`.
-- Thay đổi chỉ có hiệu lực sau khi khởi động lại lazypodman.
-
-Tham chiếu đầy đủ mọi field: [docs/Config.md](/docs/Config.md) và
-[godoc pkg/config](https://pkg.go.dev/github.com/lazypodman/lazypodman/pkg/config).
-
-### Các nhóm cấu hình chính
-
-```yaml
-gui:
-  language: "auto"              # auto | en | pl | nl | de | tr | zh | fr | es | pt
-  border: "rounded"             # rounded | single | double | hidden
-  theme:
-    activeBorderColor: [green, bold]
-    inactiveBorderColor: [default]
-    selectedLineBgColor: [blue]
-    optionsTextColor: [blue]
-  sidePanelWidth: 0.3333        # tỉ lệ chiều rộng panel trái
-  showBottomLine: true
-  wrapMainPanel: true
-  ignoreMouseEvents: false
-  returnImmediately: false      # không dừng ở màn hình "press enter to return"
-  screenMode: "normal"          # normal | half | fullscreen
-  containerStatusHealthStyle: "long"  # long | short | icon
-  expandFocusedSidePanel: true
-confirmOnQuit: false
-```
-
-```yaml
-logs:
-  timestamps: false
-  since: '60m'      # '' = lấy toàn bộ logs
-  tail: ''          # ví dụ 200 = chỉ lấy 200 dòng cuối
-
-commandTemplates:
-  podman: podman                 # binary podman dùng cho attach/exec (đổi thành podman-remote nếu remote)
-  podmanCompose: podman compose  # hoặc "podman-compose", "podman compose -f a.yml -f b.yml"
-  restartService: '{{ .PodmanCompose }} restart {{ .Service.Name }}'
-  up: '{{ .PodmanCompose }} up -d'
-  down: '{{ .PodmanCompose }} down'
-  downWithVolumes: '{{ .PodmanCompose }} down --volumes'
-  upService: '{{ .PodmanCompose }} up -d {{ .Service.Name }}'
-  startService: '{{ .PodmanCompose }} start {{ .Service.Name }}'
-  stopService: '{{ .PodmanCompose }} stop {{ .Service.Name }}'
-  serviceLogs: '{{ .PodmanCompose }} logs --since=60m --follow {{ .Service.Name }}'
-  viewServiceLogs: '{{ .PodmanCompose }} logs --follow {{ .Service.Name }}'
-  rebuildService: '{{ .PodmanCompose }} up -d --build {{ .Service.Name }}'
-  recreateService: '{{ .PodmanCompose }} up -d --force-recreate {{ .Service.Name }}'
-  allLogs: '{{ .PodmanCompose }} logs --tail=300 --follow'
-  viewAlLogs: '{{ .PodmanCompose }} logs'
-  composeConfig: '{{ .PodmanCompose }} config'
-  checkComposeConfig: '{{ .PodmanCompose }} config --quiet'
-  serviceTop: '{{ .PodmanCompose }} top {{ .Service.Name }}'
-```
-
-```yaml
-stats:
-  maxDuration: 3m
-  graphs:
-    - caption: CPU (%)
-      statPath: DerivedStats.CPUPercentage
-      color: cyan
-    - caption: Memory (%)
-      statPath: DerivedStats.MemoryPercentage
-      color: green
-```
-
-### Custom commands / Bulk commands
-
-Dùng được Go template với `{{ .Podman }}`, `{{ .PodmanCompose }}`,
-`{{ .Container }}`, `{{ .Service }}`, `{{ .Image }}`, `{{ .Volume }}`,
-`{{ .Network }}`, `{{ .Project }}`:
+Custom commands can now use `{{ .Podman }}` in addition to `{{ .PodmanCompose }}`
+and the object fields:
 
 ```yaml
 customCommands:
@@ -339,102 +363,115 @@ customCommands:
     - name: bash
       attach: true
       command: '{{ .Podman }} exec -it {{ .Container.ID }} bash'
-    - name: logs 100 dòng
-      attach: true
-      shell: true
-      command: '{{ .Podman }} logs --tail 100 {{ .Container.ID }} | less'
-
-bulkCommands:
-  containers:
-    - name: prune stopped
-      command: 'podman container prune -f'
-  images:
-    - name: prune dangling
-      command: 'podman image prune -f'
 ```
 
-`attach: true` → chuyển sang subprocess tương tác; `attach: false` → chạy nền.
-`serviceNames` giới hạn command cho một số service nhất định.
+The config files live in `~/.config/lazypodman/config.yml` (Linux),
+`~/Library/Application Support/lazypodman/config.yml` (macOS) and
+`%AppData%\lazypodman\config.yml` (Windows). Override the directory with
+`CONFIG_DIR`. Print the merged config with `lazypodman -c`; full reference in
+[docs/Config.md](/docs/Config.md).
 
-### Biến môi trường
+### Podman specifics
 
-| Biến | Ý nghĩa |
-| --- | --- |
-| `PODMAN_HOST` | Endpoint Podman (ưu tiên cao nhất) |
-| `CONTAINER_HOST` | Endpoint Podman (chuẩn của podman CLI) |
-| `DOCKER_HOST` | Vẫn được đọc nếu hai biến trên trống |
-| `CONFIG_DIR` | Ghi đè thư mục chứa `config.yml` |
-| `DEBUG=TRUE` | Bật log debug (tương đương `-d`) |
+- **Infra containers are hidden.** Every Podman pod has a hidden `-infra`
+  (pause) container; lazypodman filters them out of the containers panel just
+  like `podman ps` does.
+- **Compose detection.** `podman compose` is used when it works, otherwise
+  `podman-compose`. Both `com.docker.compose.*` labels and podman-compose's
+  `io.podman.compose.*` labels are understood, so services/projects are found
+  either way.
+- **Stats stay sane.** Podman may omit `system_cpu_usage` or report an unlimited
+  memory limit; lazypodman reports `0%` instead of `Inf`/`NaN`.
+- **Pruning and removal** go through the Podman API (`podman container/image/
+  volume/network prune` semantics), and menus show the configured `podman`
+  binary name.
 
----
+### Troubleshooting this fork
 
-## Khác biệt so với lazydocker
+- *"Can't reach the podman service socket"*: the service is not running. Start
+  `podman.socket` (see [Requirements](#requirements)) or export
+  `CONTAINER_HOST` pointing at your socket.
+- *Empty services panel*: run lazypodman from the compose project directory (or
+  pass `-p`), and make sure `podman compose config --quiet` (or
+  `podman-compose config --quiet`) succeeds there.
+- *No logs / no stats*: only the last 60 minutes of logs are fetched by default;
+  change `logs.since` in the config.
 
-- **Chỉ Podman**: mặc định dò socket rootless/rootful và biến của Podman,
-  không dùng Docker context store.
-- **Ẩn container infra**: mỗi pod có container `-infra` (pause) ẩn; lazypodman
-  lọc khỏi panel Containers giống `podman ps`.
-- **Compose linh hoạt**: thử `podman compose` trước, tự fallback
-  `podman-compose`; đọc cả label `com.docker.compose.*` và
-  `io.podman.compose.*`.
-- **Binary cấu hình được**: `commandTemplates.podman` cho phép dùng
-  `podman-remote` hoặc đường dẫn tuyệt đối.
-- **Tên config/khoá**: `commandTemplates.podmanCompose` (thay cho
-  `dockerCompose`), `commandTemplates.composeConfig`.
-- **Stats an toàn hơn**: tránh chia 0/Inf khi Podman không trả
-  `system_cpu_usage` hoặc memory limit = 0.
+## Cool features
 
----
+everything is one keypress away (or one click away! Mouse support FTW):
 
-## Xử lý sự cố
+- viewing the state of your docker or docker-compose container environment at a glance
+- viewing logs for a container/service
+- viewing ascii graphs of your containers' metrics so that you can not only feel but also look like a developer
+- customising those graphs to measure nearly any metric you want
+- attaching to a container/service
+- restarting/removing/rebuilding containers/services
+- viewing the ancestor layers of a given image
+- pruning containers, images, or volumes that are hogging up disk space
 
-**"Can't reach the podman service socket"**
-→ Service chưa chạy hoặc socket khác vị trí. Bật `podman.socket` (xem
-[Yêu cầu](#yêu-cầu)), hoặc xuất `CONTAINER_HOST` trỏ đúng socket.
+## Contributing
 
-**Lỗi "connection to the podman service failed"**
-→ Kiểm tra `podman info` chạy được bằng chính user đang dùng. Với rootless,
-chạy đúng user (không dùng `sudo`) và đảm bảo `XDG_RUNTIME_DIR` được set.
+There is still a lot of work to go! Please check out the [contributing guide](CONTRIBUTING.md).
+For contributor discussion about things not better discussed here in the repo, join the discord channel
 
-**Panel Services trống**
-→ Bạn không ở trong thư mục compose, thiếu `podman compose`/`podman-compose`,
-hoặc compose file không hợp lệ. Thử `podman compose config --quiet` (hoặc
-`podman-compose config --quiet`) ngay trong thư mục đó.
+<a href="https://discord.gg/ehwFt2t4wt"><img src='/docs/resources/discord.png' width='75'></a>
 
-**Không thấy logs / số liệu**
-→ Mặc định chỉ lấy logs 60 phút gần nhất (`logs.since`). Xem thêm
-[FAQ logs](/docs/Config.md).
+## Donate
 
-**Không select được text bằng chuột**
-→ Giữ `option`/`alt` khi kéo chuột, hoặc tắt chuột bằng
-`gui.ignoreMouseEvents: true`.
+If you would like to support the development of lazydocker, consider [sponsoring me](https://github.com/sponsors/jesseduffield) (github is matching all donations dollar-for-dollar for 12 months)
 
----
+## Social
 
-## Phát triển & kiểm thử
+If you want to see what I (Jesse) am up to in terms of development, follow me on
+[twitter](https://twitter.com/DuffieldJesse) or watch me program on
+[twitch](https://www.twitch.tv/jesseduffield)
 
-```sh
-export PATH=$PATH:/usr/local/go/bin   # nếu Go chưa có trong PATH
+## FAQ
 
-GOFLAGS=-mod=vendor go build ./...
-GOFLAGS=-mod=vendor go test ./...
-GOFLAGS=-mod=vendor go vet ./...
-gofmt -l main.go pkg/ scripts/
+### How do I edit my config?
 
-# Sinh lại docs/keybindings sau khi sửa i18n
-GOFLAGS=-mod=vendor go run ./scripts/cheatsheet generate
-```
+By opening lazydocker, clicking on the 'project' panel in the top left, and pressing 'o' (or 'e' if your editor is vim). See [Config Docs](/docs/Config.md)
 
-Xem thêm [CONTRIBUTING.md](CONTRIBUTING.md) và [CLAUDE.md](CLAUDE.md).
+### How do I get text to wrap in my main panel?
 
----
+In the future I want to make this the default, but for now there are some CPU issues that arise with wrapping. If you want to enable wrapping, use `gui.wrapMainPanel: true`
 
-## Giấy phép
+### How do you select text?
 
-Lazypodman là bản fork của **lazydocker**
-(https://github.com/jesseduffield/lazydocker), phát hành theo **MIT License**.
+Because we support mouse events, you will need to hold option while dragging the mouse to indicate you're trying to select text rather than click on something. Alternatively you can disable mouse events via the `gui.ignoreMouseEvents` config value.
 
-Bản quyền của dự án gốc và toàn bộ mã nguồn kế thừa được giữ nguyên:
+Mac Users: See [Issue #190](https://github.com/jesseduffield/lazydocker/issues/190) for other options.
+
+### Why can't I see my container's logs?
+
+By default we only show logs from the last hour, so that we're not putting too much strain on the machine. This may be why you can't see logs when you first start lazydocker. This can be overwritten in the config's `commandTemplates`
+
+If you are running lazydocker in Docker container, it is a know bug, that you can't see logs or CPU usage.
+
+### Does this fork still work with Docker?
+
+No. Lazypodman is Podman-only: it looks for the Podman socket and defaults to
+the Podman compose commands. Use upstream lazydocker if you need the Docker
+daemon.
+
+### Where do I report bugs in the fork?
+
+Open an issue on this repository. Issues in the upstream project (UI, panels,
+keybindings inherited from lazydocker) can also be reported at
+[jesseduffield/lazydocker](https://github.com/jesseduffield/lazydocker/issues).
+
+## Alternatives
+
+- [docui](https://github.com/skanehira/docui) - Skanehira beat me to the punch on making a docker terminal UI, so definitely check out that repo as well! I think the two repos can live in harmony though: lazydocker is more about managing existing containers/services, and docui is more about creating and configuring them.
+- [Portainer](https://github.com/portainer/portainer) - Portainer tries to solve the same problem but it's accessed via your browser rather than your terminal. It also supports docker swarm.
+- See [Awesome Docker list](https://github.com/veggiemonk/awesome-docker/blob/master/README.md#terminal) for similar tools to work with Docker.
+
+## License
+
+Lazypodman is a fork of [lazydocker](https://github.com/jesseduffield/lazydocker)
+by Jesse Duffield and contributors, and is distributed under the same **MIT
+License**. The original copyright notice is kept in [LICENSE](LICENSE):
 
 ```
 MIT License
@@ -459,7 +496,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-- Mã nguồn gốc: lazydocker — Copyright (c) 2018 Jesse Duffield, MIT.
-- Các thay đổi cho Podman trong repo này cũng phát hành theo MIT; xem
-  [LICENSE](LICENSE) để biết nội dung đầy đủ.

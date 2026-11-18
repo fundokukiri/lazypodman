@@ -43,9 +43,18 @@ func (gui *Gui) runLabel(key string) string {
 		}
 	}
 
+	if gui.Tr != nil && gui.Tr.BuildImageLabels != nil {
+		if label := gui.Tr.BuildImageLabels[key]; label != "" {
+			return label
+		}
+	}
+
 	if sets := i18n.GetTranslationSets(); sets != nil {
 		english := sets["en"]
 		if label := english.RunContainerLabels[key]; label != "" {
+			return label
+		}
+		if label := english.BuildImageLabels[key]; label != "" {
 			return label
 		}
 	}

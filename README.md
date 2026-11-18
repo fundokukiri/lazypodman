@@ -16,8 +16,9 @@ projects, logs and stats in one window, every common action one keypress away.
 - ASCII graphs of container CPU/memory, or of any stat path you configure
 - Attach to a container, open an in-app PTY shell tab, view its processes
   (`top`), config and env
-- Start/stop/restart/pause/remove/rebuild containers and services, or run a new
-  container from an image with a fully editable menu
+- Start/stop/restart/pause/remove/rebuild containers and services, run a new
+  container from an image, or build an image from a Containerfile with a fully
+  editable menu
 - Inspect image layers, prune containers, images, volumes and networks
 - Custom commands and bulk commands, configured per panel
 - Pods, kube generate/play/down, a Health tab with healthcheck runs, a live
@@ -266,8 +267,9 @@ The kube menu keeps manifests in `gui.kubeDir` (default
   assumed; if neither works the corner shows `kube generate off:` / `kube play off:`. 
   `--replace` and `--build` are not passed.
 
-**Images, Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
-commands (prune).
+**Images**: `r` run · `B` build · `d` remove · `c` custom command · `b` bulk
+commands (prune). **Volumes, Networks**: `d` remove · `c` custom command · `b`
+bulk commands (prune).
 
 ### Logs
 
@@ -320,6 +322,18 @@ commands (prune).
 - Before anything runs, the full `podman run` command is shown in a confirmation
   panel. Arguments are passed as an argv slice (never through a shell), and a
   failure shows Podman's own output. Success refreshes containers and services.
+
+### Build an image
+
+- Press `B` on the Images panel to open the build menu. **Context** is the build
+  directory (`.` by default), **Containerfile** stays `auto` so Podman finds the
+  `Containerfile`/`Dockerfile`, and **Tags** is a repeatable `-t` list.
+- **Advanced** groups build options, build args/labels, network/DNS, resources,
+  security, output/cache and auth/secrets. Repeatable flags open add/edit/delete
+  lists; anything unmodelled goes in **Extra args**.
+- **Build** previews the exact `podman build` command and asks for confirmation.
+  Arguments are passed as an argv slice (never through a shell). A failed build
+  shows Podman's own output; a successful one reloads the image list.
 
 ### Events, multi-select, palette and Quadlet
 

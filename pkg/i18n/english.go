@@ -126,6 +126,12 @@ type TranslationSet struct {
 	RunContainerContainerID     string
 	RunContainerAuto            string
 	RunContainerLabels          map[string]string
+	BuildImage                  string
+	BuildImageTitle             string
+	BuildImageConfirmTitle      string
+	BuildImageConfirm           string
+	BuildImageRunningStatus     string
+	BuildImageLabels            map[string]string
 	ViewBulkCommands            string
 	FilterList                  string
 	OpenInBrowser               string
@@ -496,6 +502,41 @@ func englishSet() TranslationSet {
 		KubePlayHeader:       "# playing %s",
 		KubeDownHeader:       "# down %s",
 
+		BuildImage:              "Build image",
+		BuildImageTitle:         "Build image",
+		BuildImageConfirmTitle:  "Confirm build",
+		BuildImageConfirm:       "Build this image?",
+		BuildImageRunningStatus: "Building image",
+		BuildImageLabels: map[string]string{
+			"context": "Context", "containerfile": "Containerfile", "tags": "Tags",
+			"build_options_group": "Build options", "build_args_group": "Build args & labels",
+			"build_network_group": "Network & DNS", "build_resources_group": "Resources",
+			"build_security_group": "Security", "build_output_group": "Output & cache",
+			"build_auth_group": "Auth & secrets",
+			"format":           "Format", "target": "Target stage", "platform": "Platform",
+			"jobs": "Jobs", "no_cache": "No cache", "all_platforms": "All platforms",
+			"squash": "Squash layers", "quiet": "Quiet",
+			"build_arg": "Build arg", "build_arg_file": "Build arg file",
+			"build_env": "Build env", "build_label": "Build label",
+			"build_annotation": "Build annotation", "unsetenv": "Unset env",
+			"unsetlabel": "Unset label", "unsetannotation": "Unset annotation",
+			"build_network": "Build network", "add_host": "Add host", "dns": "DNS",
+			"dns_search": "DNS search", "dns_option": "DNS option",
+			"cpuset_cpus": "CPU set", "memory": "Memory", "memory_swap": "Memory swap",
+			"shm_size": "SHM size", "cpu_shares": "CPU shares",
+			"cgroup_parent": "Cgroup parent", "ulimit": "Ulimit", "isolation": "Isolation",
+			"security_opt": "Security opt", "cap_add": "Cap add", "cap_drop": "Cap drop",
+			"userns": "User namespace", "userns_uid_map": "User namespace UID map",
+			"userns_gid_map": "User namespace GID map", "group_add": "Group add",
+			"device": "Device", "from": "Replace FROM", "output": "Output",
+			"iidfile": "Image ID file", "metadata_file": "Metadata file",
+			"manifest": "Manifest", "cache_from": "Cache from", "cache_to": "Cache to",
+			"cache_ttl": "Cache TTL", "timestamp": "Timestamp",
+			"source_date_epoch": "Source date epoch", "ignorefile": "Ignore file",
+			"authfile": "Auth file", "cert_dir": "Cert dir", "creds": "Credentials",
+			"secret": "Secret", "ssh": "SSH", "build_volume": "Build volume",
+			"build_mount": "Build mount",
+		},
 		RunContainerLabels: map[string]string{
 			"image": "Image",
 			"name":  "Name", "command": "Command", "entrypoint": "Entrypoint",

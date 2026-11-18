@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Build an image from a Containerfile**: `B` on the Images panel opens a
+  schema-driven build menu (context, Containerfile, tags, Advanced groups for
+  build args, network, resources, security, output/cache and auth/secrets). The
+  exact `podman build` argv is previewed and confirmed; failures show Podman's
+  output verbatim and success reloads the image list.
+
 - **Run container from an image**: `r` on the Images panel (also the first item
   in the `x` menu) opens a schema-driven run menu. Core values are edited
   inline; ports, volumes, env and other repeatable flags have add/edit/delete

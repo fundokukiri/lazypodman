@@ -62,15 +62,11 @@ func (gui *Gui) trString(value, fallback string) string {
 }
 
 func (gui *Gui) runValueLabel(state *runContainerState, field runField) string {
-	defaultSuffix := func(value string) string {
-		return fmt.Sprintf("%s (%s)", value, gui.trString(gui.Tr.RunContainerDefault, "default"))
-	}
-
 	switch field.Kind {
 	case runListField:
 		values := state.lists[field.Key]
 		if len(values) == 0 {
-			return defaultSuffix(gui.trString(gui.Tr.RunContainerEmpty, "none"))
+			return gui.trString(gui.Tr.RunContainerEmpty, "none")
 		}
 		return fmt.Sprintf("%d %s", len(values), gui.trString(gui.Tr.RunContainerItems, "items"))
 	case runToggleField:
@@ -78,35 +74,40 @@ func (gui *Gui) runValueLabel(state *runContainerState, field runField) string {
 		if state.dirty[field.Key] {
 			on = state.toggles[field.Key]
 		}
-		value := gui.trString(gui.Tr.RunContainerOff, "off")
 		if on {
-			value = gui.trString(gui.Tr.RunContainerOn, "on")
+			return gui.trString(gui.Tr.RunContainerOn, "on")
 		}
-		if state.dirty[field.Key] {
-			return value
-		}
-		return defaultSuffix(value)
+		return gui.trString(gui.Tr.RunContainerOff, "off")
 	default:
 		value := state.text[field.Key]
-		if state.dirty[field.Key] {
-			if value != "" {
-				return value
-			}
-			if field.Key == "name" {
-				return gui.trString(gui.Tr.RunContainerAuto, "auto")
-			}
-			return gui.runDefaultLabel(field)
-		}
-
-		if field.Key == "name" && value != "" {
-			return defaultSuffix(value)
-		}
 		if value != "" {
 			return value
 		}
-
-		return defaultSuffix(gui.runDefaultLabel(field))
+		if field.Key == "name" {
+			return gui.trString(gui.Tr.RunContainerAuto, "auto")
+		}
+		return gui.runDefaultLabel(field)
 	}
+}
+
+// runDefaultCell is the rightmost column. Keeping it separate from the value
+// lets the table pad a gap before the key column instead of gluing the marker
+// to the value.
+func (gui *Gui) runDefaultCell(state *runContainerState, field runField) string {
+	if state.dirty[field.Key] {
+		return ""
+	}
+	if field.Kind == runListField && len(state.lists[field.Key]) > 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("(%s)", gui.trString(gui.Tr.RunContainerDefault, "default"))
+}
+
+// runColumns keeps every row at the same column count: label, gap, value, gap,
+// key, (default). The empty gap columns make the table breathe.
+func (gui *Gui) runColumns(label, value, key, marker string) []string {
+	return []string{label, "  ", value, "  ", key, marker}
 }
 
 func (gui *Gui) runDefaultLabel(field runField) string {
@@ -136,16 +137,12 @@ func (gui *Gui) runFieldHint(field runField) string {
 func (gui *Gui) showRunContainerMenu(state *runContainerState) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{
-				gui.trString(func() string {
-					if gui.Tr != nil {
-						return gui.Tr.RunContainerImage
-					}
-					return ""
-				}(), "Image"),
-				state.image,
-				"enter",
-			},
+			LabelColumns: gui.runColumns(gui.trString(func() string {
+				if gui.Tr != nil {
+					return gui.Tr.RunContainerImage
+				}
+				return ""
+			}(), "Image"), state.image, "enter", ""),
 			OnPress: func() error {
 				return gui.editRunContainerValue("image", state.image, func(value string) {
 					if value != "" {
@@ -159,7 +156,7 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState) error {
 	for _, field := range runContainerFields {
 		field := field
 		items = append(items, &types.MenuItem{
-			LabelColumns: []string{gui.runLabel(field.Key), gui.runValueLabel(state, field), gui.runFieldHint(field)},
+			LabelColumns: gui.runColumns(gui.runLabel(field.Key), gui.runValueLabel(state, field), gui.runFieldHint(field), gui.runDefaultCell(state, field)),
 			OnPress: func() error {
 				return gui.activateRunContainerField(state, field, func() error {
 					return gui.showRunContainerMenu(state)
@@ -170,11 +167,11 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState) error {
 
 	items = append(items,
 		&types.MenuItem{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerAdvanced, "Advanced"), "", "enter"},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerAdvanced, "Advanced"), "", "enter", ""),
 			OnPress:      func() error { return gui.showRunContainerAdvanced(state) },
 		},
 		&types.MenuItem{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerRun, "Run"), "", "enter"},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerRun, "Run"), "", "enter", ""),
 			OnPress:      func() error { return gui.previewRunContainer(state) },
 		},
 	)
@@ -185,7 +182,7 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState) error {
 func (gui *Gui) showRunContainerAdvanced(state *runContainerState) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerBack, "back")},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerBack, "back"), "", "", ""),
 			OnPress:      func() error { return gui.showRunContainerMenu(state) },
 		},
 	}
@@ -193,13 +190,13 @@ func (gui *Gui) showRunContainerAdvanced(state *runContainerState) error {
 	for _, group := range runContainerGroups {
 		group := group
 		items = append(items, &types.MenuItem{
-			LabelColumns: []string{gui.runLabel(group.Key), "", "enter"},
+			LabelColumns: gui.runColumns(gui.runLabel(group.Key), "", "enter", ""),
 			OnPress:      func() error { return gui.showRunContainerGroup(state, group) },
 		})
 	}
 
 	items = append(items, &types.MenuItem{
-		LabelColumns: []string{gui.trString(gui.Tr.RunContainerExtraArgs, "Extra args"), state.extraArgs, "enter"},
+		LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerExtraArgs, "Extra args"), state.extraArgs, "enter", ""),
 		OnPress: func() error {
 			return gui.editRunContainerValue("extra_args", state.extraArgs, func(value string) {
 				state.extraArgs = value
@@ -213,7 +210,7 @@ func (gui *Gui) showRunContainerAdvanced(state *runContainerState) error {
 func (gui *Gui) showRunContainerGroup(state *runContainerState, group runFieldGroup) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerBack, "back")},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerBack, "back"), "", "", ""),
 			OnPress:      func() error { return gui.showRunContainerAdvanced(state) },
 		},
 	}
@@ -221,7 +218,7 @@ func (gui *Gui) showRunContainerGroup(state *runContainerState, group runFieldGr
 	for _, field := range group.Fields {
 		field := field
 		items = append(items, &types.MenuItem{
-			LabelColumns: []string{gui.runLabel(field.Key), gui.runValueLabel(state, field), gui.runFieldHint(field)},
+			LabelColumns: gui.runColumns(gui.runLabel(field.Key), gui.runValueLabel(state, field), gui.runFieldHint(field), gui.runDefaultCell(state, field)),
 			OnPress: func() error {
 				return gui.activateRunContainerField(state, field, func() error {
 					return gui.showRunContainerGroup(state, group)
@@ -254,7 +251,7 @@ func (gui *Gui) activateRunContainerField(state *runContainerState, field runFie
 func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField, back func() error) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerDefault, "default")},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerDefault, "default"), "", "", ""),
 			OnPress: func() error {
 				delete(state.text, field.Key)
 				delete(state.dirty, field.Key)
@@ -266,7 +263,7 @@ func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField,
 	for _, choice := range field.Choices {
 		choice := choice
 		items = append(items, &types.MenuItem{
-			LabelColumns: []string{choice},
+			LabelColumns: gui.runColumns(choice, "", "", ""),
 			OnPress: func() error {
 				state.text[field.Key] = choice
 				state.markDirty(field.Key)
@@ -281,11 +278,11 @@ func (gui *Gui) showRunContainerChoice(state *runContainerState, field runField,
 func (gui *Gui) showRunContainerList(state *runContainerState, field runField, back func() error) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerBack, "back")},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerBack, "back"), "", "", ""),
 			OnPress:      back,
 		},
 		{
-			LabelColumns: []string{fmt.Sprintf("+ %s %s", gui.trString(gui.Tr.RunContainerAdd, "add"), gui.runLabel(field.Key))},
+			LabelColumns: gui.runColumns(fmt.Sprintf("+ %s %s", gui.trString(gui.Tr.RunContainerAdd, "add"), gui.runLabel(field.Key)), "", "", ""),
 			OnPress: func() error {
 				return gui.editRunContainerValue(field.Key, "", func(value string) {
 					state.addListValue(field.Key, value)
@@ -297,7 +294,7 @@ func (gui *Gui) showRunContainerList(state *runContainerState, field runField, b
 	for index, value := range state.lists[field.Key] {
 		index, value := index, value
 		items = append(items, &types.MenuItem{
-			LabelColumns: []string{value},
+			LabelColumns: gui.runColumns(value, "", "", ""),
 			OnPress:      func() error { return gui.showRunContainerListValue(state, field, index, value, back) },
 		})
 	}
@@ -308,11 +305,11 @@ func (gui *Gui) showRunContainerList(state *runContainerState, field runField, b
 func (gui *Gui) showRunContainerListValue(state *runContainerState, field runField, index int, value string, back func() error) error {
 	items := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerBack, "back")},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerBack, "back"), "", "", ""),
 			OnPress:      func() error { return gui.showRunContainerList(state, field, back) },
 		},
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerEdit, "edit"), value},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerEdit, "edit"), value, "", ""),
 			OnPress: func() error {
 				return gui.editRunContainerValue(field.Key, value, func(newValue string) {
 					state.setListValue(field.Key, index, newValue)
@@ -320,7 +317,7 @@ func (gui *Gui) showRunContainerListValue(state *runContainerState, field runFie
 			},
 		},
 		{
-			LabelColumns: []string{gui.trString(gui.Tr.RunContainerDelete, "delete"), value},
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerDelete, "delete"), value, "", ""),
 			OnPress: func() error {
 				state.removeListValue(field.Key, index)
 				return gui.showRunContainerList(state, field, back)

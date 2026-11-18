@@ -1,10 +1,12 @@
 package gui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/image"
 	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/fundokukiri/lazypodman/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,11 +70,15 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 	gui := &Gui{Tr: translations()}
 	state := newRunContainerState("alpine")
 
-	assert.Contains(t, gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), " (default)")
-	assert.Equal(t, "on (default)", gui.runValueLabel(state, runFieldByKey("detach")))
-	assert.Equal(t, "none (default)", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
-	assert.Equal(t, "image default (default)", gui.runValueLabel(state, runFieldByKey("command")))
-	assert.Equal(t, "unset (default)", gui.runValueLabel(state, runFieldByKey("cpus")))
+	assert.True(t, strings.HasPrefix(gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "alpine_"))
+	assert.Equal(t, "on", gui.runValueLabel(state, runFieldByKey("detach")))
+	assert.Equal(t, "none", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
+	assert.Equal(t, "image default", gui.runValueLabel(state, runFieldByKey("command")))
+	assert.Equal(t, "unset", gui.runValueLabel(state, runFieldByKey("cpus")))
+
+	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("detach")))
+	assert.Equal(t, "(default)", gui.runDefaultCell(state, runFieldByKey("command")))
+	assert.Equal(t, []string{"Detach", "  ", "on", "  ", "space", "(default)"}, gui.runColumns("Detach", "on", "space", "(default)"))
 
 	state.addListValue("ports", "8080:80")
 	assert.Equal(t, "1 items", gui.runValueLabel(state, runField{Key: "ports", Kind: runListField}))
@@ -80,6 +86,7 @@ func TestRunValueLabelShowsDefaultsAndLists(t *testing.T) {
 	state.toggles["detach"] = false
 	state.markDirty("detach")
 	assert.Equal(t, "off", gui.runValueLabel(state, runFieldByKey("detach")))
+	assert.Empty(t, gui.runDefaultCell(state, runFieldByKey("detach")))
 }
 
 func TestDockerImageSummaryRepoTagsTypeIsUsed(t *testing.T) {
@@ -87,4 +94,25 @@ func TestDockerImageSummaryRepoTagsTypeIsUsed(t *testing.T) {
 	img := &commands.Image{Image: image.Summary{RepoTags: []string{"alpine:latest"}}}
 
 	assert.Equal(t, "alpine:latest", runImageRef(img))
+}
+
+func TestRunMenuTableHasGapsBetweenColumns(t *testing.T) {
+	gui := &Gui{Tr: translations()}
+	state := newRunContainerState("nginx:alpine")
+
+	rows := [][]string{
+		gui.runColumns("Image", state.image, "enter", ""),
+		gui.runColumns("Name", gui.runValueLabel(state, runField{Key: "name", Kind: runTextField}), "enter", gui.runDefaultCell(state, runField{Key: "name", Kind: runTextField})),
+		gui.runColumns("Detach", gui.runValueLabel(state, runFieldByKey("detach")), "space", gui.runDefaultCell(state, runFieldByKey("detach"))),
+		gui.runColumns("Ports", gui.runValueLabel(state, runFieldByKey("ports")), "enter/a", gui.runDefaultCell(state, runFieldByKey("ports"))),
+	}
+
+	table, err := utils.RenderTable(rows)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("\n" + table)
+	assert.Contains(t, table, "enter   (default)")
+	assert.NotContains(t, table, "enter(default)")
 }

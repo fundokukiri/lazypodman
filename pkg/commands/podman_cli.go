@@ -56,6 +56,16 @@ type CLICheck struct {
 // It never returns an error: every failure becomes a short Reason, because a
 // machine without podman (or with a podman talking to another store) is an
 // expected state, not a crash. `run` is injected so the checks are testable.
+// podmanInfoFormat asks `podman info` for the two facts the check needs in one
+// process: the client version and the socket the CLI talks to. Rootless podman
+// pays a storage/database initialisation cost per process, so the count matters.
+const podmanInfoFormat = "{{.Version.Version}}|{{.Host.RemoteSocket.Path}}"
+
+// detectCLI decides whether the podman CLI can back the Podman-native features.
+//
+// It never returns an error: every failure becomes a short Reason, because a
+// machine without podman (or with a podman talking to another store) is an
+// expected state, not a crash. `run` is injected so the checks are testable.
 func detectCLI(
 	ctx context.Context,
 	socketPath string,
@@ -73,24 +83,51 @@ func detectCLI(
 	ctx, cancel := context.WithTimeout(ctx, cliCheckBudget)
 	defer cancel()
 
-	versionOut, err := run(ctx, "--version")
+	infoOut, err := run(ctx, "info", "--format", podmanInfoFormat)
 	if err != nil {
+		// Older podman cannot render that template. Fall back to `--version` so a
+		// too-old client still gets the accurate reason, then report the info
+		// failure itself.
+		versionOut, versionErr := run(ctx, "--version")
+		if versionErr != nil {
+			check.Reason = cliFailureReason(ctx, versionErr)
+			check.Detail = versionErr.Error()
+
+			return check
+		}
+
+		check.Detail = strings.TrimSpace(string(versionOut))
+
+		version, parseErr := parsePodmanVersion(string(versionOut))
+		if parseErr != nil {
+			check.Reason = "podman version unknown"
+
+			return check
+		}
+
+		check.Version = version
+
+		if !versionAtLeast(version) {
+			check.Reason = "podman too old"
+
+			return check
+		}
+
 		check.Reason = cliFailureReason(ctx, err)
-		check.Detail = err.Error()
 
 		return check
 	}
 
-	check.Detail = strings.TrimSpace(string(versionOut))
-
-	version, err := parsePodmanVersion(string(versionOut))
-	if err != nil {
+	version, remoteSocket, ok := parsePodmanInfo(string(infoOut))
+	if !ok {
 		check.Reason = "podman version unknown"
+		check.Detail = strings.TrimSpace(string(infoOut))
 
 		return check
 	}
 
 	check.Version = version
+	check.Detail = version
 
 	if !versionAtLeast(version) {
 		check.Reason = "podman too old"
@@ -99,7 +136,7 @@ func detectCLI(
 	}
 
 	if mode != PodsAlways {
-		if reason := checkSharedStore(ctx, socketPath, run); reason != "" {
+		if reason := compareStores(socketPath, remoteSocket); reason != "" {
 			check.Reason = reason
 
 			return check
@@ -117,21 +154,34 @@ func detectCLI(
 	return check
 }
 
-// checkSharedStore proves that the CLI and the socket lazypodman talks to
-// operate on the same store. It returns a reason code when they do not, and an
-// empty string when the store is shared.
-func checkSharedStore(ctx context.Context, socketPath string, run func(context.Context, ...string) ([]byte, error)) string {
+// parsePodmanInfo splits the `{{.Version.Version}}|{{.Host.RemoteSocket.Path}}`
+// output. The socket may be empty (remote client), which is not a parse failure.
+func parsePodmanInfo(out string) (version string, remoteSocket string, ok bool) {
+	line := strings.TrimSpace(out)
+
+	split := strings.SplitN(line, "|", 2)
+	if len(split) != 2 {
+		return "", "", false
+	}
+
+	version = strings.TrimSpace(split[0])
+	if _, ok := parseVersionParts(version); !ok {
+		return "", "", false
+	}
+
+	return version, strings.TrimSpace(split[1]), true
+}
+
+// compareStores proves that the CLI and the socket lazypodman talks to operate on
+// the same store. It returns a reason code when they do not, and an empty string
+// when the store is shared.
+func compareStores(socketPath, remoteSocket string) string {
 	normalizedSocket, comparable := normalizeSocketPath(socketPath)
 	if !comparable {
 		return "socket not comparable"
 	}
 
-	infoOut, err := run(ctx, "info", "--format", "{{.Host.RemoteSocket.Path}}")
-	if err != nil {
-		return cliFailureReason(ctx, err)
-	}
-
-	normalizedInfo, comparable := normalizeSocketPath(string(infoOut))
+	normalizedInfo, comparable := normalizeSocketPath(remoteSocket)
 	if !comparable {
 		return "remote podman CLI"
 	}

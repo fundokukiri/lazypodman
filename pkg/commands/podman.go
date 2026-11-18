@@ -142,6 +142,19 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 		ogLog.Fatal(err)
 	}
 
+	// The CLI check spawns podman (rootless pays a storage init per process), so it
+	// runs concurrently with the compose checks below instead of after them: the
+	// startup wait becomes the slower of the two, not their sum.
+	cliCheck := make(chan *cliPodmanClient, 1)
+	go func() {
+		cliCheck <- newCLIPodmanClient(
+			context.Background(),
+			config.PodmanBinary(),
+			podmanHost,
+			ParsePodsMode(config.UserConfig.Gui.Pods.Enabled),
+		)
+	}()
+
 	podmanCommand := &PodmanCommand{
 		Log:              log,
 		OSCommand:        osCommand,
@@ -154,7 +167,6 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 	}
 
 	podmanCommand.setPodmanComposeCommand(config)
-	podmanCommand.initPodClient(podmanHost)
 
 	err = osCommand.RunCommand(
 		utils.ApplyTemplate(
@@ -167,6 +179,12 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 		log.Warn(err.Error())
 	}
 
+	podmanCommand.SetPodClient(<-cliCheck)
+
+	if !podmanCommand.Pods().Enabled() {
+		log.Debugf("pods disabled: %s", podmanCommand.Pods().Reason())
+	}
+
 	// When the user passes -p outside of a compose directory, treat it as the
 	// local project so the project/services panels still appear and filtering
 	// is applied. Inside a compose dir, LocalProjectName is derived from
@@ -176,23 +194,6 @@ func NewPodmanCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translat
 	}
 
 	return podmanCommand, nil
-}
-
-// initPodClient runs the Podman-native enablement check once, at startup and
-// before any view exists, and logs the reason when it stays off. A disabled
-// client is expected (macOS/Windows podman machine, socket-only containers,
-// missing binary), never an error.
-func (c *PodmanCommand) initPodClient(podmanHost string) {
-	c.podClient = newCLIPodmanClient(
-		context.Background(),
-		c.Config.PodmanBinary(),
-		podmanHost,
-		ParsePodsMode(c.Config.UserConfig.Gui.Pods.Enabled),
-	)
-
-	if !c.podClient.Enabled() {
-		c.Log.Debugf("pods disabled: %s", c.podClient.Reason())
-	}
 }
 
 // Pods returns the Podman-native client. It never returns nil.

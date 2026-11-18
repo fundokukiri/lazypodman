@@ -43,9 +43,9 @@ func (f fakeCLI) run(ctx context.Context, argv ...string) ([]byte, error) {
 
 func healthyFakeCLI(socketPath string) fakeCLI {
 	return fakeCLI{results: map[string]fakeResult{
-		"--version": {"podman version 5.2.2", nil},
-		"info --format {{.Host.RemoteSocket.Path}}": {socketPath + "\n", nil},
-		"pod logs --help": {"--follow\n--names\n--tail int\n", nil},
+		"--version":                         {"podman version 5.2.2", nil},
+		"info --format " + podmanInfoFormat: {"5.2.2|" + socketPath + "\n", nil},
+		"pod logs --help":                   {"--follow\n--names\n--tail int\n", nil},
 	}}
 }
 
@@ -94,8 +94,8 @@ func TestDetectCLIDisabledReasons(t *testing.T) {
 		{
 			name: "remote cli",
 			cli: fakeCLI{results: map[string]fakeResult{
-				"--version": {"podman version 5.2.2", nil},
-				"info --format {{.Host.RemoteSocket.Path}}": {"\n", nil},
+				"--version":                         {"podman version 5.2.2", nil},
+				"info --format " + podmanInfoFormat: {"5.2.2|\n", nil},
 			}},
 			mode: PodsAuto,
 			want: "remote podman CLI",
@@ -103,8 +103,8 @@ func TestDetectCLIDisabledReasons(t *testing.T) {
 		{
 			name: "incomparable socket",
 			cli: fakeCLI{results: map[string]fakeResult{
-				"--version": {"podman version 5.2.2", nil},
-				"info --format {{.Host.RemoteSocket.Path}}": {socket + "\n", nil},
+				"--version":                         {"podman version 5.2.2", nil},
+				"info --format " + podmanInfoFormat: {"5.2.2|" + socket + "\n", nil},
 			}},
 			mode: PodsAuto,
 			want: "socket not comparable",
@@ -112,9 +112,9 @@ func TestDetectCLIDisabledReasons(t *testing.T) {
 		{
 			name: "store mismatch",
 			cli: fakeCLI{results: map[string]fakeResult{
-				"--version": {"podman version 5.2.2", nil},
-				"info --format {{.Host.RemoteSocket.Path}}": {"/run/podman/podman.sock\n", nil},
-				"pod logs --help": {"--names\n", nil},
+				"--version":                         {"podman version 5.2.2", nil},
+				"info --format " + podmanInfoFormat: {"5.2.2|/run/podman/podman.sock\n", nil},
+				"pod logs --help":                   {"--names\n", nil},
 			}},
 			mode: PodsAuto,
 			want: "CLI/socket store mismatch",
@@ -147,7 +147,7 @@ func TestDetectCLIDisabledReasons(t *testing.T) {
 func TestDetectCLIModes(t *testing.T) {
 	socket := "/run/user/1000/podman/podman.sock"
 	mismatching := healthyFakeCLI(socket)
-	mismatching.results["info --format {{.Host.RemoteSocket.Path}}"] = fakeResult{"/run/podman/podman.sock\n", nil}
+	mismatching.results["info --format "+podmanInfoFormat] = fakeResult{"5.2.2|/run/podman/podman.sock\n", nil}
 
 	assert.True(t, detectCLI(context.Background(), socket, PodsAlways, mismatching.run).Enabled)
 	assert.False(t, detectCLI(context.Background(), socket, PodsAuto, mismatching.run).Enabled)
@@ -422,4 +422,59 @@ func TestPodLogsCloseKillsChild(t *testing.T) {
 	start := time.Now()
 	requireNoError(t, stream.Close())
 	assert.Less(t, time.Since(start), 5*time.Second, "Close must not wait for podman to finish on its own")
+}
+
+type countingCLI struct {
+	inner fakeCLI
+	calls []string
+}
+
+func (c *countingCLI) run(ctx context.Context, argv ...string) ([]byte, error) {
+	c.calls = append(c.calls, strings.Join(argv, " "))
+
+	return c.inner.run(ctx, argv...)
+}
+
+// Startup latency is dominated by the number of podman processes: rootless podman
+// pays a storage init per spawn. Version and socket come from one `podman info`.
+func TestDetectCLIUsesTwoProcesses(t *testing.T) {
+	socket := "/run/user/1000/podman/podman.sock"
+	counter := &countingCLI{inner: healthyFakeCLI(socket)}
+
+	check := detectCLI(context.Background(), socket, PodsAuto, counter.run)
+
+	assert.True(t, check.Enabled)
+	assert.Equal(t, []string{"info --format " + podmanInfoFormat, "pod logs --help"}, counter.calls)
+}
+
+func TestDetectCLIInfoFailureFallsBackToVersion(t *testing.T) {
+	// Recent podman whose info template cannot be rendered on this host: pods stay
+	// off, but the version is still reported so the reason is accurate.
+	cli := fakeCLI{results: map[string]fakeResult{
+		"--version": {"podman version 5.2.2", nil},
+	}}
+
+	check := detectCLI(context.Background(), "/run/podman/podman.sock", PodsAuto, cli.run)
+
+	assert.False(t, check.Enabled)
+	assert.Equal(t, "podman CLI failed", check.Reason)
+	assert.Equal(t, "5.2.2", check.Version)
+}
+
+func TestParsePodmanInfo(t *testing.T) {
+	version, socket, ok := parsePodmanInfo("5.2.2|/run/user/1000/podman/podman.sock\n")
+	assert.True(t, ok)
+	assert.Equal(t, "5.2.2", version)
+	assert.Equal(t, "/run/user/1000/podman/podman.sock", socket)
+
+	// A remote client has no local socket; that is not a parse failure.
+	version, socket, ok = parsePodmanInfo("5.2.2|\n")
+	assert.True(t, ok)
+	assert.Equal(t, "5.2.2", version)
+	assert.Empty(t, socket)
+
+	for _, in := range []string{"", "garbage", "|/run/podman/podman.sock"} {
+		_, _, ok := parsePodmanInfo(in)
+		assert.False(t, ok, in)
+	}
 }

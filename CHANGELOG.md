@@ -10,16 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Attach opens in a separate terminal**: `a` (and the `x` menu) now launches
-  `podman attach` in a new terminal window instead of suspending lazypodman.
-  Long output keeps that terminal's own scrollback and the TUI stays usable.
-  The container's existing logs are replayed before the live attach, because
-  `podman attach` alone only shows output produced after it connects. The
-  launcher honours `$TERMINAL` (e.g. `kitty`, `alacritty`, `wezterm`), then
-  tries `xdg-terminal-exec`, x-terminal-emulator, GNOME Terminal, Konsole,
-  Xfce Terminal and the common lightweight terminals. macOS uses Terminal.app
-  and Windows opens a new console window. If no emulator is available, `a`
-  falls back to the current terminal after clearing it and replaying the logs.
-  `A` always uses that current-terminal path.
+  plain `podman attach` in a new terminal window instead of suspending
+  lazypodman. Live output starts immediately at the bottom, with the terminal's
+  own scrollback and the TUI stays usable. The launcher honours `$TERMINAL`
+  (e.g. `kitty`, `alacritty`, `wezterm`), then tries `xdg-terminal-exec`,
+  x-terminal-emulator, GNOME Terminal, Konsole, Xfce Terminal and the common
+  lightweight terminals. macOS uses Terminal.app and Windows opens a new
+  console window. If no emulator is available, `a` falls back to the current
+  terminal. `A` always uses that current-terminal path.
 
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows

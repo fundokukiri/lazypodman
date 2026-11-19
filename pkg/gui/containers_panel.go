@@ -565,15 +565,16 @@ func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	return nil
 }
 
-// attachInCurrentTerminal clears the terminal, replays the logs and attaches
-// while the lazypodman UI is suspended. `A` always uses this path; `a` only uses
-// it as a fallback when no external terminal emulator is available.
+// attachInCurrentTerminal suspends the UI and runs the plain podman attach
+// command, so the live output appears immediately at the bottom of the
+// terminal. `A` always uses this path; `a` only uses it as a fallback when no
+// external terminal emulator is available.
 func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
 	if err := ctr.CanAttach(); err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	argv := commands.CurrentTerminalAttachArgv(gui.Config.PodmanBinary(), ctr.ID)
+	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
 	cmd := gui.OSCommand.NewCmd(argv[0], argv[1:]...)
 
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)

@@ -1,10 +1,8 @@
 package commands
 
-// AttachTerminalArgv is the command run inside the external terminal for `a`.
-// podman attach only streams output produced after the attach starts, so a
-// process that already printed and exited would appear truncated. Replaying
-// the container's logs first keeps the earlier output in the terminal's
-// scrollback, then the live attach continues from that point.
+// AttachTerminalArgv is the command run for `a` in the external terminal and
+// for `A` in the current terminal. It is the plain podman attach command: the
+// live output starts immediately at the bottom instead of replaying history.
 func AttachTerminalArgv(podmanBinary, ref string) []string {
-	return attachTerminalArgv(podmanBinary, ref)
+	return []string{podmanBinary, "attach", "--sig-proxy=false", ref}
 }

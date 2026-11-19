@@ -15,10 +15,11 @@ projects, logs and stats in one window, every common action one keypress away.
   view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
-- Attach to a container in a separate terminal window (or via `TERMINAL`),
-  replaying its existing logs before the live attach; `A` attaches in the
-  current terminal instead, and `a` falls back to it when no emulator exists.
-  Open an in-app PTY shell tab, view its processes (`top`), config and env
+- Attach to a container in a separate terminal window (or via `TERMINAL`)
+  with plain `podman attach`, so live output starts immediately; `A` does the
+  same in the current terminal, and `a` falls back to it when no emulator
+  exists. Use the logs tab for earlier output. Open an in-app PTY shell tab,
+  view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus

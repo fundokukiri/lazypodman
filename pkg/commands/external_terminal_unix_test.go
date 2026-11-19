@@ -4,7 +4,6 @@ package commands
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -62,78 +61,8 @@ func TestOpenExternalTerminalStartsDetachedLauncher(t *testing.T) {
 	}, "\n"), string(got))
 }
 
-func TestAttachTerminalScriptPrintsLogsThenAttaches(t *testing.T) {
-	dir := t.TempDir()
-	fake := filepath.Join(dir, "podman")
-	script := `#!/bin/sh
-case "$1" in
-  logs) echo LOGS-HISTORY ;;
-  attach) echo ATTACH-LIVE ;;
-esac
-`
-	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	argv := AttachTerminalArgv(fake, "abc123")
-	out, err := exec.Command(argv[0], argv[1:]...).CombinedOutput()
-	assert.NoError(t, err)
-	assert.Equal(t, "LOGS-HISTORY\nATTACH-LIVE\n", string(out))
-}
-
-func TestAttachTerminalArgvReplaysLogsBeforeAttach(t *testing.T) {
+func TestAttachTerminalArgvIsPlainPodmanAttach(t *testing.T) {
 	got := AttachTerminalArgv("/usr/bin/podman", "abc123")
 
-	assert.Equal(t, "sh", got[0])
-	assert.Equal(t, "-c", got[1])
-	assert.Equal(t, "lazypodman-attach", got[3])
-	assert.Equal(t, "/usr/bin/podman", got[4])
-	assert.Equal(t, "abc123", got[5])
-
-	script := got[2]
-	assert.Contains(t, script, `"$bin" logs "$ref"`)
-	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
-	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
-}
-
-func TestCurrentTerminalAttachArgvClearsLogsThenAttaches(t *testing.T) {
-	got := CurrentTerminalAttachArgv("/usr/bin/podman", "abc123")
-
-	assert.Equal(t, "sh", got[0])
-	assert.Equal(t, "-c", got[1])
-	assert.Equal(t, "lazypodman-attach", got[3])
-	assert.Equal(t, "/usr/bin/podman", got[4])
-	assert.Equal(t, "abc123", got[5])
-
-	script := got[2]
-	assert.Contains(t, script, `printf '\033[H\033[2J\033[3J'`)
-	assert.Contains(t, script, `"$bin" logs "$ref"`)
-	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
-	assert.Less(t, strings.Index(script, "printf"), strings.Index(script, " logs "))
-	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
-}
-
-func TestCurrentTerminalAttachScriptUsesItsArguments(t *testing.T) {
-	dir := t.TempDir()
-	fake := filepath.Join(dir, "podman")
-	script := `#!/bin/sh
-case "$1" in
-  logs) echo LOGS-HISTORY ;;
-  attach) echo ATTACH-LIVE ;;
-esac
-`
-	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	argv := CurrentTerminalAttachArgv(fake, "abc123")
-	out, err := exec.Command(argv[0], argv[1:]...).CombinedOutput()
-	assert.NoError(t, err)
-	assert.Contains(t, string(out), "LOGS-HISTORY\nATTACH-LIVE\n")
-}
-
-func TestCurrentTerminalAttachArgvSetsShellPositionals(t *testing.T) {
-	argv := CurrentTerminalAttachArgv("/usr/bin/podman", "abc123")
-
-	assert.Contains(t, argv[2], `bin=$1; ref=$2;`)
+	assert.Equal(t, []string{"/usr/bin/podman", "attach", "--sig-proxy=false", "abc123"}, got)
 }

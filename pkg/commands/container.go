@@ -42,6 +42,29 @@ type Container struct {
 	Tr              *i18n.TranslationSet
 
 	StatsMutex deadlock.Mutex
+
+	// Disk usage is fetched with `podman inspect --size` when the Stats tab
+	// opens, not on every stats tick.
+	DiskSizeMutex  deadlock.Mutex
+	DiskSizeRw     int64
+	DiskSizeRootFs int64
+	DiskSizeKnown  bool
+}
+
+func (c *Container) SetDiskSize(rw, rootFs int64) {
+	c.DiskSizeMutex.Lock()
+	defer c.DiskSizeMutex.Unlock()
+
+	c.DiskSizeRw = rw
+	c.DiskSizeRootFs = rootFs
+	c.DiskSizeKnown = true
+}
+
+func (c *Container) DiskSize() (rw int64, rootFs int64, known bool) {
+	c.DiskSizeMutex.Lock()
+	defer c.DiskSizeMutex.Unlock()
+
+	return c.DiskSizeRw, c.DiskSizeRootFs, c.DiskSizeKnown
 }
 
 // Remove removes the container

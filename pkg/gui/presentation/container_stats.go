@@ -34,6 +34,12 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 	}
 
 	pidsCount := fmt.Sprintf("PIDs: %d", stats.ClientStats.PidsStats.Current)
+	uptime := "Uptime: " + containerUptime(container, time.Now())
+	diskUsage := "Disk usage: unavailable"
+	if rw, rootFs, known := container.DiskSize(); known {
+		diskUsage = fmt.Sprintf("Disk usage: %s total (%s writable)",
+			utils.FormatDecimalBytes(int(rootFs)), utils.FormatDecimalBytes(int(rw)))
+	}
 	dataReceived := fmt.Sprintf("Traffic received: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.RxBytes))
 	dataSent := fmt.Sprintf("Traffic sent: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.TxBytes))
 
@@ -42,15 +48,58 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 		return "", err
 	}
 
-	contents := fmt.Sprintf("\n\n%s\n\n%s\n\n%s\n%s\n\n%s",
+	contents := fmt.Sprintf("\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s",
 		utils.ColoredString(strings.Join(graphs, "\n\n"), color.FgGreen),
 		pidsCount,
+		uptime,
+		diskUsage,
 		dataReceived,
 		dataSent,
 		utils.ColoredYamlString(string(originalStats)),
 	)
 
 	return contents, nil
+}
+
+// containerUptime formats how long the container has been running, based on
+// the StartedAt timestamp from its inspect data.
+func containerUptime(container *commands.Container, now time.Time) string {
+	if container.Details.ContainerJSONBase == nil || container.Details.State == nil {
+		return "unavailable"
+	}
+	if !container.Details.State.Running {
+		return "not running"
+	}
+
+	started, err := time.Parse(time.RFC3339Nano, container.Details.State.StartedAt)
+	if err != nil || started.IsZero() {
+		return "unavailable"
+	}
+
+	duration := now.Sub(started)
+	if duration < 0 {
+		duration = 0
+	}
+
+	return formatUptime(duration)
+}
+
+func formatUptime(duration time.Duration) string {
+	days := int(duration.Hours()) / 24
+	hours := int(duration.Hours()) % 24
+	minutes := int(duration.Minutes()) % 60
+	seconds := int(duration.Seconds()) % 60
+
+	switch {
+	case days > 0:
+		return fmt.Sprintf("%dd %dh %dm", days, hours, minutes)
+	case hours > 0:
+		return fmt.Sprintf("%dh %dm", hours, minutes)
+	case minutes > 0:
+		return fmt.Sprintf("%dm %ds", minutes, seconds)
+	default:
+		return fmt.Sprintf("%ds", seconds)
+	}
 }
 
 // plotGraph returns the plotted graph based on the graph spec and the stat history

@@ -13,7 +13,8 @@ projects, logs and stats in one window, every common action one keypress away.
 - View **pods** with their containers, merged logs, container count and ports
 - View and follow logs for a container, a service or a pod, with a bounded live
   view, full-history toggle and jump-to-newest
-- ASCII graphs of container CPU/memory, or of any stat path you configure
+- ASCII graphs of container CPU/memory, disk usage (total and writable layer),
+  uptime, or of any stat path you configure
 - Attach to a container, open an in-app PTY shell tab, view its processes
   (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new

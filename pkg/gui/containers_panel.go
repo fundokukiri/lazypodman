@@ -3,6 +3,8 @@ package gui
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -260,6 +262,33 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 	return output
 }
 
+// refreshContainerSize asks Podman once, when the Stats tab opens, for the
+// container's writable layer and total rootfs size.
+func (gui *Gui) refreshContainerSize(ctx context.Context, container *commands.Container) {
+	command := exec.CommandContext(ctx, gui.Config.PodmanBinary(),
+		"inspect", "--size", "--format", "{{.SizeRw}} {{.SizeRootFs}}", container.ID)
+	output, err := command.Output()
+	if err != nil {
+		gui.Log.Debugf("could not read container size: %v", err)
+		return
+	}
+
+	fields := strings.Fields(string(output))
+	if len(fields) != 2 {
+		return
+	}
+	rw, err := strconv.ParseInt(fields[0], 10, 64)
+	if err != nil {
+		return
+	}
+	rootFs, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil {
+		return
+	}
+
+	container.SetDiskSize(rw, rootFs)
+}
+
 func (gui *Gui) renderContainerStats(container *commands.Container) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
@@ -270,8 +299,11 @@ func (gui *Gui) renderContainerStats(container *commands.Container) tasks.TaskFu
 
 			gui.reRenderStringMain(contents)
 		},
-		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Duration: time.Second,
+		Before: func(ctx context.Context) {
+			gui.clearMainView()
+			gui.refreshContainerSize(ctx, container)
+		},
 		Wrap:       false, // wrapping looks bad here so we're overriding the config value
 		Autoscroll: false,
 	})
@@ -287,8 +319,11 @@ func (gui *Gui) renderContainerTop(container *commands.Container) tasks.TaskFunc
 
 			gui.reRenderStringMain(contents)
 		},
-		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Duration: time.Second,
+		Before: func(ctx context.Context) {
+			gui.clearMainView()
+			gui.refreshContainerSize(ctx, container)
+		},
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})

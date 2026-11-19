@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Container disk usage in Stats**: opening the Stats tab asks `podman
+  inspect --size` once and shows the total rootfs size and the writable layer
+  above the graphs. The Stats tab also shows **Uptime**, derived from the
+  container's `StartedAt`, formatted as seconds/minutes/hours/days and marked
+  `not running` or `unavailable` when it cannot be computed. If the size
+  inspect fails the disk line says "unavailable" instead of blocking the tab.
+
 - **Update an image**: `u` on the Images panel pulls the selected image's
   repository tag again (`podman pull`), refreshing moving tags such as
   `:latest`. The first repo tag is used, then `name:tag`; untagged images show

@@ -114,38 +114,48 @@ func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	assert.Equal(t, 100, len(target.BufferLines())-1)
 }
 
-func TestLogTrimWriterCapsLongLines(t *testing.T) {
+func TestLogTrimWriterWrapsLongLinesWithoutLosingContent(t *testing.T) {
 	target := &fakeLogTarget{height: 10}
 	writer := newLogTrimWriter(target, nil, nil)
 
-	long := strings.Repeat("x", logViewLineMaxBytes*3)
+	long := strings.Repeat("x", logViewFallbackWidth*3)
 	_, err := writer.Write([]byte(long + "\nshort\n"))
 	assert.NoError(t, err)
 
 	lines := target.BufferLines()
-	assert.Equal(t, logViewLineMaxBytes+len(" ..."), len(lines[0]), "one huge line is bounded")
-	assert.Equal(t, "short", lines[1], "the next line is not truncated")
+	assert.Equal(t, "short", lines[len(lines)-2])
+	assert.Equal(t, long, strings.Join(lines[:len(lines)-2], ""), "wrapping keeps every byte")
+	for _, line := range lines[:len(lines)-2] {
+		assert.LessOrEqual(t, len(line), logViewFallbackWidth)
+	}
 }
 
-func TestLogTrimWriterCapsAcrossWrites(t *testing.T) {
+func TestLogTrimWriterWrapsAcrossWrites(t *testing.T) {
 	target := &fakeLogTarget{height: 10}
 	writer := newLogTrimWriter(target, nil, nil)
 
-	_, err := writer.Write([]byte(strings.Repeat("a", logViewLineMaxBytes)))
+	long := strings.Repeat("a", logViewFallbackWidth) + strings.Repeat("b", logViewFallbackWidth)
+	_, err := writer.Write([]byte(long[:logViewFallbackWidth+7]))
 	assert.NoError(t, err)
-	_, err = writer.Write([]byte("b\nnext\n"))
+	_, err = writer.Write([]byte(long[logViewFallbackWidth+7:] + "\nnext\n"))
 	assert.NoError(t, err)
 
 	lines := target.BufferLines()
-	assert.Equal(t, logViewLineMaxBytes+len(" ..."), len(lines[0]))
-	assert.Equal(t, "next", lines[1])
+	assert.Equal(t, long, strings.Join(lines[:len(lines)-2], ""))
+	assert.Equal(t, "next", lines[len(lines)-2])
 }
 
-func TestLogTrimWriterPinsUsingWrappedLineHeight(t *testing.T) {
+func TestLogTrimWriterKeepsUtf8AcrossWrites(t *testing.T) {
 	target := &fakeLogTarget{height: 10}
 	writer := newLogTrimWriter(target, nil, nil)
 
-	_, err := writer.Write([]byte("one\ntwo\nthree\n"))
+	text := strings.Repeat("é", logViewFallbackWidth) + "ok\n"
+	split := len(text) - len("ok\n") - 1
+	_, err := writer.Write([]byte(text[:split]))
 	assert.NoError(t, err)
-	assert.Equal(t, 0, target.originY)
+	_, err = writer.Write([]byte(text[split:]))
+	assert.NoError(t, err)
+
+	assert.Contains(t, target.content, "ok")
+	assert.Equal(t, strings.Count(text, "é"), strings.Count(target.content, "é"))
 }

@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"strings"
 	"sync"
+	"unicode/utf8"
+
+	"github.com/mattn/go-runewidth"
 )
 
 const (
@@ -12,10 +15,8 @@ const (
 	// logViewTrimAt is when a trim happens. Trimming is a full re-render, so it
 	// is done rarely (every 20000 lines) to keep the UI responsive.
 	logViewTrimAt = 20000
-	// logViewLineMaxBytes bounds one logical log line. A minified or horizontal
-	// log can otherwise put megabytes on a single line despite a small tail,
-	// which makes gocui wrap and render for a very long time.
-	logViewLineMaxBytes = 4096
+	// logViewFallbackWidth is used before the view has a usable width.
+	logViewFallbackWidth = 120
 )
 
 // logTrimTarget is the part of *gocui.View the trimmer needs.
@@ -32,14 +33,14 @@ type logTrimTarget interface {
 // but caps the view's line count. A follow stream otherwise keeps every line in
 // memory until the app is closed, which is what made RAM explode on long logs.
 type logTrimWriter struct {
-	mutex         sync.Mutex
-	view          logTrimTarget
-	lines         int
-	lineBytes     int
-	lineTruncated bool
-	buf           []byte
-	shouldPin     func() bool
-	stale         func() bool
+	mutex     sync.Mutex
+	view      logTrimTarget
+	lines     int
+	lineCols  int
+	pending   []byte
+	buf       []byte
+	shouldPin func() bool
+	stale     func() bool
 }
 
 func newLogTrimWriter(view logTrimTarget, shouldPin func() bool, stale func() bool) *logTrimWriter {
@@ -56,7 +57,13 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 		return len(p), nil
 	}
 
-	out := w.capLinesLocked(p)
+	data := p
+	if len(w.pending) > 0 {
+		data = append(append([]byte(nil), w.pending...), p...)
+		w.pending = nil
+	}
+
+	out := w.wrapLinesLocked(data)
 	if _, err := w.view.Write(out); err != nil {
 		return 0, err
 	}
@@ -71,50 +78,90 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// capLinesLocked truncates individual lines to logViewLineMaxBytes before they
-// reach gocui. The stream itself is still consumed, so follow mode continues
-// normally; only the enormous display line is shortened.
-func (w *logTrimWriter) capLinesLocked(p []byte) []byte {
+// wrapLinesLocked inserts newlines at the view width so a single enormous
+// horizontal line does not force gocui to wrap and render megabytes over and
+// over. All bytes are kept: the line is wrapped, not truncated. ANSI escapes
+// are carried across writes and do not count towards the column width.
+func (w *logTrimWriter) wrapLinesLocked(data []byte) []byte {
 	w.buf = w.buf[:0]
 
-	for len(p) > 0 {
-		index := bytes.IndexByte(p, '\n')
-		if index < 0 {
-			w.appendLineSegmentLocked(&w.buf, p)
+	maxX, _ := w.view.Size()
+	if maxX <= 0 {
+		maxX = logViewFallbackWidth
+	}
+
+	for len(data) > 0 {
+		if data[0] == 0x1b {
+			size := ansiSequenceLen(data)
+			if size == 0 {
+				w.pending = append(w.pending, data...)
+				break
+			}
+			w.buf = append(w.buf, data[:size]...)
+			data = data[size:]
+			continue
+		}
+
+		r, size := utf8.DecodeRune(data)
+		if r == utf8.RuneError && size == 1 && !utf8.FullRune(data) {
+			w.pending = append(w.pending, data...)
 			break
 		}
 
-		w.appendLineSegmentLocked(&w.buf, p[:index])
-		if w.lineTruncated {
-			w.buf = append(w.buf, " ..."...)
+		switch r {
+		case '\n':
+			w.buf = append(w.buf, '\n')
+			w.lineCols = 0
+		case '\r':
+			w.buf = append(w.buf, '\r')
+			w.lineCols = 0
+		default:
+			width := runewidth.RuneWidth(r)
+			if width < 1 {
+				width = 1
+			}
+			if w.lineCols > 0 && w.lineCols+width > maxX {
+				w.buf = append(w.buf, '\n')
+				w.lineCols = 0
+			}
+			w.buf = append(w.buf, data[:size]...)
+			w.lineCols += width
 		}
-		w.buf = append(w.buf, '\n')
-		w.lineBytes = 0
-		w.lineTruncated = false
-		p = p[index+1:]
+
+		data = data[size:]
 	}
 
 	return w.buf
 }
 
-func (w *logTrimWriter) appendLineSegmentLocked(out *[]byte, segment []byte) {
-	if w.lineTruncated {
-		return
+// ansiSequenceLen returns the length of the escape sequence at the start of p,
+// or 0 when the sequence is not complete yet.
+func ansiSequenceLen(p []byte) int {
+	if len(p) < 2 || p[0] != 0x1b {
+		return 0
 	}
 
-	remaining := logViewLineMaxBytes - w.lineBytes
-	if len(segment) <= remaining {
-		*out = append(*out, segment...)
-		w.lineBytes += len(segment)
-		return
+	switch p[1] {
+	case '[':
+		for i := 2; i < len(p); i++ {
+			if p[i] >= 0x40 && p[i] <= 0x7e {
+				return i + 1
+			}
+		}
+		return 0
+	case ']':
+		for i := 2; i < len(p); i++ {
+			if p[i] == 0x07 {
+				return i + 1
+			}
+			if p[i] == 0x1b && i+1 < len(p) && p[i+1] == '\\' {
+				return i + 2
+			}
+		}
+		return 0
+	default:
+		return 2
 	}
-
-	if remaining > 0 {
-		*out = append(*out, segment[:remaining]...)
-		w.lineBytes += remaining
-	}
-
-	w.lineTruncated = true
 }
 
 // pinToBottomLocked makes the newest line visible. gocui's Autoscroll does this

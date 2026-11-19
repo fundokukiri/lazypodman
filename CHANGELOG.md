@@ -24,10 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`ctrl+a` attaches with full logs**: a separate explicit key replays the
   whole container history and then attaches, so `a`/`A` stay instant.
 
-- **Huge log lines no longer stall the Logs tab**: each logical line is capped
-  at 4 KiB for display (the rest of the line is skipped, then follow mode
-  continues). A minified log with a very long line can no longer make a small
-  `logs.tail` render for seconds.
+- **Huge log lines no longer stall the Logs tab**: very long horizontal lines
+  are wrapped at the view width before they reach gocui. All bytes are kept,
+  so the full line is still displayed, but gocui no longer wraps and renders a
+  single enormous line on every draw.
 
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows

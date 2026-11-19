@@ -28,11 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapped at the view width, in small batches, so the Logs tab still follows
   the bottom without one huge write blocking rendering. A bare `\r` (progress
   output) starts a new display line instead of overwriting the previous text.
-  A logical line is capped at `logs.maxLineLength` bytes (default 4096) so a
-  20-line tail cannot hide a multi-megabyte line; the cap is marked with `...`
-  and can be disabled with `maxLineLength: 0`. Terminal cursor/erase sequences
-  are stripped (colour changes are kept), so progress output no longer leaves
-  stray control bytes in the text.
+  A logical line is split at `logs.maxLineLength` bytes (default 4096) so a
+  20-line tail cannot hide a multi-megabyte line. Splitting never drops text and
+  follow mode keeps receiving new output; set `maxLineLength: 0` to disable it.
+  Terminal cursor/erase sequences are stripped (colour changes are kept), so
+  progress output no longer leaves stray control bytes in the text.
 
 - **Switching tabs no longer freezes on the Logs tab**: an incomplete UTF-8
   rune or escape sequence at the end of a read chunk was re-queued forever,

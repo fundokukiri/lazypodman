@@ -41,7 +41,6 @@ type logTrimWriter struct {
 	lines        int
 	lineCols     int
 	lineBytes    int
-	truncated    bool
 	maxLineBytes int
 	pending      []byte
 	buf          []byte
@@ -120,13 +119,18 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 // bytes are kept: the line is wrapped, not truncated. A bare carriage return is
 // treated as a newline so progress-style logs do not overwrite each other.
 func (w *logTrimWriter) endLineLocked() {
-	if w.truncated {
-		w.buf = append(w.buf, " ..."...)
-	}
 	w.buf = append(w.buf, '\n')
 	w.lineCols = 0
 	w.lineBytes = 0
-	w.truncated = false
+}
+
+// breakLongLineLocked starts a new display line once a single logical line has
+// reached the configured cap. The text is not dropped; this keeps a container
+// that writes one endless line readable and keeps new output arriving.
+func (w *logTrimWriter) breakLongLineLocked() {
+	w.buf = append(w.buf, '\n')
+	w.lineCols = 0
+	w.lineBytes = 0
 }
 
 func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
@@ -182,9 +186,7 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 			w.skipLF = true
 		default:
 			if w.maxLineBytes > 0 && w.lineBytes >= w.maxLineBytes {
-				w.truncated = true
-				data = data[size:]
-				continue
+				w.breakLongLineLocked()
 			}
 
 			width := runewidth.RuneWidth(r)
@@ -197,9 +199,7 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 			}
 
 			if w.maxLineBytes > 0 && w.lineBytes+size > w.maxLineBytes {
-				w.truncated = true
-				data = data[size:]
-				continue
+				w.breakLongLineLocked()
 			}
 
 			w.buf = append(w.buf, data[:size]...)

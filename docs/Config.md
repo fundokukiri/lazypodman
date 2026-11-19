@@ -66,8 +66,9 @@ logs:
   # tail limits how much history is fetched when a log tab opens (empty = all).
   # Default is '20'; press ctrl+l in the Logs tab to load the whole history.
   tail: '20'
-  # maxLineLength caps one logical line in the Logs tab. Default 4096 prevents a
-  # single horizontal line from making a small tail slow to render. 0 = no cap.
+  # maxLineLength splits one logical line into display segments. Default 4096
+  # prevents a single horizontal line from making a small tail slow to render.
+  # 0 = no split.
   maxLineLength: 4096
 commandTemplates:
   podman: podman # The podman executable used for attach/exec (default: podman)

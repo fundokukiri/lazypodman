@@ -450,7 +450,7 @@ logs:
   timestamps: false
   since: '60m'                # '' = all logs
   tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
-  maxLineLength: 4096         # cap one horizontal line; 0 = keep it whole (slower)
+  maxLineLength: 4096         # split long horizontal lines; 0 = keep whole (slower)
 
 commandTemplates:
   podman: podman               # CLI used for attach/exec (e.g. podman-remote)

@@ -153,7 +153,21 @@ func TestLogTrimWriterCapsConfiguredLineLength(t *testing.T) {
 
 	_, err := writer.Write([]byte("abcdefghijklmnop\nnext\n"))
 	assert.NoError(t, err)
-	assert.Equal(t, "abcdefghij ...\nnext\n", target.content)
+	assert.Equal(t, "abcdefghij\nklmnop\nnext\n", target.content)
+}
+
+func TestLogTrimWriterKeepsStreamingAfterLineCap(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.maxLineBytes = 10
+
+	_, err := writer.Write([]byte(strings.Repeat("a", 25)))
+	assert.NoError(t, err)
+	_, err = writer.Write([]byte("Z\n"))
+	assert.NoError(t, err)
+
+	assert.Equal(t, 25, strings.Count(target.content, "a"))
+	assert.Contains(t, target.content, "Z\n")
 }
 
 func TestLogTrimWriterKeepsFullLinesWhenCapIsZero(t *testing.T) {

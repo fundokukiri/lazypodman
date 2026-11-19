@@ -379,9 +379,10 @@ type LogsConfig struct {
 	Timestamps bool   `yaml:"timestamps,omitempty"`
 	Since      string `yaml:"since,omitempty"`
 	Tail       string `yaml:"tail,omitempty"`
-	// MaxLineLength bounds one logical log line in the Logs tab. A container
-	// that writes one enormous horizontal line can otherwise make a 20-line tail
-	// take a long time to render. 0 disables the cap and keeps the full line.
+	// MaxLineLength splits one logical log line in the Logs tab into display
+	// segments. A container that writes one enormous horizontal line can
+	// otherwise make a 20-line tail take a long time to render. 0 disables the
+	// split and keeps the full line in one piece.
 	MaxLineLength int `yaml:"maxLineLength,omitempty"`
 }
 

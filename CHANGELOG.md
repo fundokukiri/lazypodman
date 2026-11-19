@@ -30,7 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output) starts a new display line instead of overwriting the previous text.
   A logical line is capped at `logs.maxLineLength` bytes (default 4096) so a
   20-line tail cannot hide a multi-megabyte line; the cap is marked with `...`
-  and can be disabled with `maxLineLength: 0`.
+  and can be disabled with `maxLineLength: 0`. Terminal cursor/erase sequences
+  are stripped (colour changes are kept), so progress output no longer leaves
+  stray control bytes in the text.
 
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows

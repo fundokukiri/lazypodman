@@ -165,3 +165,21 @@ func TestLogTrimWriterKeepsFullLinesWhenCapIsZero(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, long, strings.Join(target.BufferLines()[:len(target.BufferLines())-1], ""))
 }
+
+func TestLogTrimWriterDropsTerminalControlSequences(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte("\x1b[2K\x1b[1Gprogress 1\r\x1b[2K\x1b[1Gprogress 2\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "progress 1\nprogress 2\n", target.content)
+}
+
+func TestLogTrimWriterKeepsColorSequences(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte("\x1b[31mred\x1b[0m\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "\x1b[31mred\x1b[0m\n", target.content)
+}

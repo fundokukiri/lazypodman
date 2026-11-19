@@ -131,7 +131,12 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 				w.pending = append(w.pending, data...)
 				break
 			}
-			w.buf = append(w.buf, data[:size]...)
+			// Keep colour changes; drop cursor movement, erase-line and other
+			// terminal control sequences. Progress output otherwise leaves
+			// stray control bytes in the view.
+			if isSGR(data[:size]) {
+				w.buf = append(w.buf, data[:size]...)
+			}
 			data = data[size:]
 			continue
 		}
@@ -140,6 +145,11 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 		if r == utf8.RuneError && size == 1 && !utf8.FullRune(data) {
 			w.pending = append(w.pending, data...)
 			break
+		}
+
+		if (r < 0x20 && r != '\n' && r != '\r' && r != '\t') || r == 0x7f {
+			data = data[size:]
+			continue
 		}
 
 		if w.skipLF && r != '\n' {
@@ -187,6 +197,10 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 	}
 
 	return w.buf
+}
+
+func isSGR(sequence []byte) bool {
+	return len(sequence) >= 3 && sequence[1] == '[' && sequence[len(sequence)-1] == 'm'
 }
 
 // ansiSequenceLen returns the length of the escape sequence at the start of p,

@@ -551,7 +551,7 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 // where the user gets that terminal's own scrollback instead of suspending the
 // lazypodman UI.
 func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
-	argv := []string{gui.Config.PodmanBinary(), "attach", "--sig-proxy=false", ctr.ID}
+	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
 	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
 			return gui.createErrorPanel(gui.Tr.NoExternalTerminal)

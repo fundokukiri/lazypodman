@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Attach opens in a separate terminal**: `a` (and the `x` menu) now launches
   `podman attach` in a new terminal window instead of suspending lazypodman.
   Long output keeps that terminal's own scrollback and the TUI stays usable.
-  The launcher honours `$TERMINAL` (e.g. `kitty`, `alacritty`, `wezterm`), then
+  The container's existing logs are replayed before the live attach, because
+  `podman attach` alone only shows output produced after it connects. The
+  launcher honours `$TERMINAL` (e.g. `kitty`, `alacritty`, `wezterm`), then
   tries `xdg-terminal-exec`, x-terminal-emulator, GNOME Terminal, Konsole,
   Xfce Terminal and the common lightweight terminals. macOS uses Terminal.app
   and Windows opens a new console window.

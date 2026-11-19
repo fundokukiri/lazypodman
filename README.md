@@ -16,7 +16,8 @@ projects, logs and stats in one window, every common action one keypress away.
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
 - Attach to a container in a separate terminal window (or via `TERMINAL`),
-  open an in-app PTY shell tab, view its processes (`top`), config and env
+  replaying its existing logs before the live attach; open an in-app PTY shell
+  tab, view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus

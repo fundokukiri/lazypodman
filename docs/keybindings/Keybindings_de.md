@@ -84,6 +84,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: führe vordefinierten benutzerdefinierten Befehl aus
+  <kbd>u</kbd>: update image
   <kbd>d</kbd>: entferne Image
   <kbd>b</kbd>: view bulk commands
   <kbd>enter</kbd>: fokussieren aufs Hauptpanel

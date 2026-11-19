@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -176,6 +177,51 @@ func (gui *Gui) handleImagesRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 	return gui.Menu(CreateMenuOptions{
 		Title: "",
 		Items: menuItems,
+	})
+}
+
+// imagePullRef returns the repository reference to pull, or "" when the image
+// has no tag Podman could update.
+func imagePullRef(img *commands.Image) string {
+	for _, tag := range img.Image.RepoTags {
+		if tag != "" && !strings.Contains(tag, "<none>") {
+			return tag
+		}
+	}
+
+	if img.Name != "" && img.Name != "none" {
+		if img.Tag != "" {
+			return img.Name + ":" + img.Tag
+		}
+		return img.Name
+	}
+
+	return ""
+}
+
+func (gui *Gui) handleImagesUpdate(g *gocui.Gui, v *gocui.View) error {
+	img, err := gui.Panels.Images.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	ref := imagePullRef(img)
+	if ref == "" {
+		return gui.createErrorPanel(gui.trString(gui.Tr.UpdateImageNoTag, "This image has no repository tag to pull"))
+	}
+
+	command := exec.Command(gui.Config.PodmanBinary(), "pull", ref)
+	return gui.WithWaitingStatus(gui.trString(gui.Tr.UpdatingImageStatus, "updating image"), func() error {
+		output, err := command.CombinedOutput()
+		if err != nil {
+			message := strings.TrimSpace(string(output))
+			if message == "" {
+				message = err.Error()
+			}
+			return fmt.Errorf("%s", message)
+		}
+
+		return gui.reloadImages()
 	})
 }
 

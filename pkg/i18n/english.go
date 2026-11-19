@@ -127,6 +127,9 @@ type TranslationSet struct {
 	RunContainerAuto            string
 	RunContainerLabels          map[string]string
 	BuildImage                  string
+	UpdateImage                 string
+	UpdatingImageStatus         string
+	UpdateImageNoTag            string
 	BuildImageTitle             string
 	BuildImageConfirmTitle      string
 	BuildImageConfirm           string
@@ -513,6 +516,9 @@ func englishSet() TranslationSet {
 		BuildImageConfirmTitle:   "Confirm build",
 		BuildImageConfirm:        "Build this image?",
 		BuildImageRunningStatus:  "Building image",
+		UpdateImage:              "update image",
+		UpdatingImageStatus:      "updating image",
+		UpdateImageNoTag:         "This image has no repository tag to pull",
 		CommitImage:              "commit to image",
 		CommitImageTitle:         "Commit container",
 		CommitImageConfirmTitle:  "Confirm commit",

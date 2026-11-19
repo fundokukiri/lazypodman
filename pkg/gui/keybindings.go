@@ -433,6 +433,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "images",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleImagesUpdate,
+			Description: gui.Tr.UpdateImage,
+		},
+		{
+			ViewName:    "images",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleImagesRemoveMenu,

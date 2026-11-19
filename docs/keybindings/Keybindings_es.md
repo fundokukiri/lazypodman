@@ -84,6 +84,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: ejecutar comando personalizado
+  <kbd>u</kbd>: update image
   <kbd>d</kbd>: limpiar imagen
   <kbd>b</kbd>: ver comandos masivos
   <kbd>enter</kbd>: enfocar panel principal

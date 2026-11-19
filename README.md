@@ -268,8 +268,8 @@ The kube menu keeps manifests in `gui.kubeDir` (default
   assumed; if neither works the corner shows `kube generate off:` / `kube play off:`. 
   `--replace` and `--build` are not passed.
 
-**Images**: `r` run · `d` remove · `c` custom command · `b` bulk commands
-(prune). **Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
+**Images**: `r` run · `u` update · `d` remove · `c` custom command · `b` bulk
+commands (prune). **Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
 commands (prune).
 
 ### Logs
@@ -323,6 +323,16 @@ commands (prune).
 - Before anything runs, the full `podman run` command is shown in a confirmation
   panel. Arguments are passed as an argv slice (never through a shell), and a
   failure shows Podman's own output. Success refreshes containers and services.
+
+### Update an image
+
+- Press `u` on an image to pull its tag again with `podman pull <tag>`, so a
+  moving tag such as `:latest` is refreshed. The first repository tag is used,
+  falling back to `name:tag`; an untagged image shows an error instead of
+  guessing a registry.
+- The pull runs with a status line. Podman's own error output is shown on
+  failure; success reloads the image list. Existing containers keep running on
+  the old image until they are recreated.
 
 ### Commit a container to an image
 

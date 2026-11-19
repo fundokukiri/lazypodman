@@ -84,6 +84,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: önceden tanımlanmış özel komutu çalıştır
+  <kbd>u</kbd>: update image
   <kbd>d</kbd>: imajı kaldır
   <kbd>b</kbd>: view bulk commands
   <kbd>enter</kbd>: ana panele odaklan

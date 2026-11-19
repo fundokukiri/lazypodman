@@ -16,8 +16,9 @@ projects, logs and stats in one window, every common action one keypress away.
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
 - Attach to a container in a separate terminal window (or via `TERMINAL`),
-  replaying its existing logs before the live attach; open an in-app PTY shell
-  tab, view its processes (`top`), config and env
+  replaying its existing logs before the live attach; `A` attaches in the
+  current terminal instead, and `a` falls back to it when no emulator exists.
+  Open an in-app PTY shell tab, view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus
@@ -232,8 +233,9 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach · `m` logs · `t` run healthcheck · `C` commit to an
-image · `ctrl+x` open/close the in-app shell tab ·
+`r` restart · `a` attach in a new terminal · `A` attach in this terminal ·
+`m` logs · `t` run healthcheck · `C` commit to an image ·
+`ctrl+x` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
@@ -245,7 +247,8 @@ not an error. The run is recorded by Podman: it appends to the health log, can
 change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
-stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach · `m` logs ·
+stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
+terminal · `A` attach in this terminal · `m` logs ·
 `ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove

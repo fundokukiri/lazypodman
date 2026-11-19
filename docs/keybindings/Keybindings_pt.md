@@ -40,6 +40,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: reiniciar
   <kbd>C</kbd>: commit to image
   <kbd>a</kbd>: anexar
+  <kbd>A</kbd>: attach in this terminal
   <kbd>m</kbd>: ver logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
@@ -65,6 +66,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: reiniciar
   <kbd>S</kbd>: iniciar
   <kbd>a</kbd>: anexar
+  <kbd>A</kbd>: attach in this terminal
   <kbd>m</kbd>: ver logs
   <kbd>U</kbd>: subir projeto
   <kbd>D</kbd>: derrubar projeto

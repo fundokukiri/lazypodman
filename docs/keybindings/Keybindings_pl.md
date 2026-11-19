@@ -40,6 +40,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: restartuj
   <kbd>C</kbd>: commit to image
   <kbd>a</kbd>: przyczep
+  <kbd>A</kbd>: attach in this terminal
   <kbd>m</kbd>: pokaż logi
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
@@ -65,6 +66,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: restartuj
   <kbd>S</kbd>: start
   <kbd>a</kbd>: przyczep
+  <kbd>A</kbd>: attach in this terminal
   <kbd>m</kbd>: pokaż logi
   <kbd>U</kbd>: up project
   <kbd>D</kbd>: down project

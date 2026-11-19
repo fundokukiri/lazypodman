@@ -152,6 +152,25 @@ func TestSpaceBindingsUseKeySpace(t *testing.T) {
 	}
 }
 
+func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	for _, view := range []string{"containers", "services"} {
+		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "A" {
+				continue
+			}
+
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.AttachCurrentTerminal, binding.Description)
+		}
+
+		assert.True(t, found, "%s must bind uppercase A", view)
+	}
+}
+
 // E opens the in-app terminal and stays visible in the x options menu; x itself
 // must keep opening that menu (the global binding), not a panel-specific one.
 func TestExecShellOpensTerminalTab(t *testing.T) {

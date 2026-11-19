@@ -95,3 +95,20 @@ func TestAttachTerminalArgvReplaysLogsBeforeAttach(t *testing.T) {
 	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
 	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
 }
+
+func TestCurrentTerminalAttachArgvClearsLogsThenAttaches(t *testing.T) {
+	got := CurrentTerminalAttachArgv("/usr/bin/podman", "abc123")
+
+	assert.Equal(t, "sh", got[0])
+	assert.Equal(t, "-c", got[1])
+	assert.Equal(t, "lazypodman-attach", got[3])
+	assert.Equal(t, "/usr/bin/podman", got[4])
+	assert.Equal(t, "abc123", got[5])
+
+	script := got[2]
+	assert.Contains(t, script, `printf '\033[H\033[2J\033[3J'`)
+	assert.Contains(t, script, `"$bin" logs "$ref"`)
+	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
+	assert.Less(t, strings.Index(script, "printf"), strings.Index(script, " logs "))
+	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
+}

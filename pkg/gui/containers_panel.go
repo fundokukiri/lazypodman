@@ -549,12 +549,13 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 
 // openContainerAttachTerminal runs podman attach in a separate terminal window,
 // where the user gets that terminal's own scrollback instead of suspending the
-// lazypodman UI.
+// lazypodman UI. Without a terminal emulator it falls back to the current
+// terminal instead of failing.
 func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
 	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
-			return gui.createErrorPanel(gui.Tr.NoExternalTerminal)
+			return gui.attachInCurrentTerminal(ctr)
 		}
 		return gui.createErrorPanel(err.Error())
 	}
@@ -562,6 +563,29 @@ func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
 
 	return nil
+}
+
+// attachInCurrentTerminal clears the terminal, replays the logs and attaches
+// while the lazypodman UI is suspended. `A` always uses this path; `a` only uses
+// it as a fallback when no external terminal emulator is available.
+func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	argv := commands.CurrentTerminalAttachArgv(gui.Config.PodmanBinary(), ctr.ID)
+	cmd := gui.OSCommand.NewCmd(argv[0], argv[1:]...)
+
+	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)
+}
+
+func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.attachInCurrentTerminal(ctr)
 }
 
 func (gui *Gui) handlePruneContainers() error {

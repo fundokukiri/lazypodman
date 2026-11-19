@@ -256,6 +256,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         'A',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerAttachCurrentTerminal,
+			Description: gui.Tr.AttachCurrentTerminal,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'm',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerViewLogs,
@@ -360,6 +367,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceAttach,
 			Description: gui.Tr.Attach,
+		},
+		{
+			ViewName:    "services",
+			Key:         'A',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceAttachCurrentTerminal,
+			Description: gui.Tr.AttachCurrentTerminal,
 		},
 		{
 			ViewName:    "services",

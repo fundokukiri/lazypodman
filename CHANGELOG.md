@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`ctrl+a` attaches with full logs**: a separate explicit key replays the
   whole container history and then attaches, so `a`/`A` stay instant.
 
+- **Horizontal logs wrap instead of garbling**: lines without a newline are
+  wrapped at the view width, in small batches, so the Logs tab still follows
+  the bottom without one huge write blocking rendering. A bare `\r` (progress
+  output) starts a new display line instead of overwriting the previous text.
+  A logical line is capped at `logs.maxLineLength` bytes (default 4096) so a
+  20-line tail cannot hide a multi-megabyte line; the cap is marked with `...`
+  and can be disabled with `maxLineLength: 0`.
+
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows
   memory without bound. Set `logs.tail` to also limit the initial fetch.

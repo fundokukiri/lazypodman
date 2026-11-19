@@ -109,3 +109,59 @@ func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 100, len(target.BufferLines())-1)
 }
+
+func TestLogTrimWriterWrapsHorizontalLines(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	long := strings.Repeat("x", 200)
+	_, err := writer.Write([]byte(long + "\nnext\n"))
+	assert.NoError(t, err)
+
+	lines := target.BufferLines()
+	assert.Equal(t, "next", lines[len(lines)-2])
+	assert.Equal(t, long, strings.Join(lines[:len(lines)-2], ""), "wrapping keeps every byte")
+	for _, line := range lines[:len(lines)-2] {
+		assert.LessOrEqual(t, len(line), 80)
+	}
+}
+
+func TestLogTrimWriterTurnsCarriageReturnsIntoSeparateLines(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte("progress 1\rprogress 2\r\nfinal\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "progress 1\nprogress 2\nfinal\n", target.content)
+}
+
+func TestLogTrimWriterReturnsTheOriginalLength(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	long := strings.Repeat("x", logWriteBatch*2)
+	n, err := writer.Write([]byte(long))
+	assert.NoError(t, err)
+	assert.Equal(t, len(long), n)
+}
+
+func TestLogTrimWriterCapsConfiguredLineLength(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.maxLineBytes = 10
+
+	_, err := writer.Write([]byte("abcdefghijklmnop\nnext\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "abcdefghij ...\nnext\n", target.content)
+}
+
+func TestLogTrimWriterKeepsFullLinesWhenCapIsZero(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.maxLineBytes = 0
+
+	long := strings.Repeat("x", 5000)
+	_, err := writer.Write([]byte(long + "\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, long, strings.Join(target.BufferLines()[:len(target.BufferLines())-1], ""))
+}

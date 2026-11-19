@@ -53,3 +53,7 @@ func TestLogsOptionsOfferFullHistoryToggle(t *testing.T) {
 func TestDefaultLogsTailIsBounded(t *testing.T) {
 	assert.Equal(t, "20", config.GetDefaultConfig().Logs.Tail)
 }
+
+func TestDefaultLogsLineCapIsBounded(t *testing.T) {
+	assert.Equal(t, 4096, config.GetDefaultConfig().Logs.MaxLineLength)
+}

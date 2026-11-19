@@ -379,6 +379,10 @@ type LogsConfig struct {
 	Timestamps bool   `yaml:"timestamps,omitempty"`
 	Since      string `yaml:"since,omitempty"`
 	Tail       string `yaml:"tail,omitempty"`
+	// MaxLineLength bounds one logical log line in the Logs tab. A container
+	// that writes one enormous horizontal line can otherwise make a 20-line tail
+	// take a long time to render. 0 disables the cap and keeps the full line.
+	MaxLineLength int `yaml:"maxLineLength,omitempty"`
 }
 
 // GetDefaultConfig returns the application default configuration NOTE (to
@@ -421,7 +425,8 @@ func GetDefaultConfig() UserConfig {
 			Since:      "60m",
 			// 20 keeps the log tab cheap; ctrl+l loads the full history for the
 			// selected container. "all"/"" still means everything.
-			Tail: "20",
+			Tail:          "20",
+			MaxLineLength: 4096,
 		},
 		CommandTemplates: CommandTemplatesConfig{
 			Podman:             "podman",

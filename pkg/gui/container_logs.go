@@ -162,7 +162,9 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
-	if err := gui.writeContainerLogs(container, ctx, newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })); err != nil {
+	logWriter := newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })
+	logWriter.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
+	if err := gui.writeContainerLogs(container, ctx, logWriter); err != nil {
 		gui.Log.Error(err)
 	}
 

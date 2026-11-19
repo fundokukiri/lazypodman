@@ -22,7 +22,10 @@ jobs:
       - name: Delete existing release for this tag
         # GoReleaser cannot overwrite assets from an earlier failed attempt,
         # so make re-running the same tag idempotent. The git tag itself stays.
-        run: gh release delete "$GITHUB_REF_NAME" --yes || true
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release delete "$GITHUB_REF_NAME" --yes
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run goreleaser

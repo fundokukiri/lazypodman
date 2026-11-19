@@ -10,3 +10,5 @@ profile.out
 # local agent packages (Superpowers/Ponytail), installed by scripts/install-agent-packages.sh
 .pi/
 .agents/
+
+dist/

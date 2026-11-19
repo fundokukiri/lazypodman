@@ -26,12 +26,12 @@ builds:
 archives:
   - builds:
       - binary
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: x86
-      amd64: x86_64
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}x86
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip

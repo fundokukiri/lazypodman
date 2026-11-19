@@ -331,8 +331,10 @@ commands (prune).
   falling back to `name:tag`; an untagged image shows an error instead of
   guessing a registry.
 - The pull runs with a status line. Podman's own error output is shown on
-  failure; success reloads the image list. Existing containers keep running on
-  the old image until they are recreated.
+  failure. Afterwards the image ID is compared with the previous one, and the
+  status line says either **image already up to date: `<ref>`** or **image
+  updated: `<ref>`**. Existing containers keep running on the old image until
+  they are recreated.
 
 ### Commit a container to an image
 

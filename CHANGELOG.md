@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Update an image**: `u` on the Images panel pulls the selected image's
   repository tag again (`podman pull`), refreshing moving tags such as
   `:latest`. The first repo tag is used, then `name:tag`; untagged images show
-  an error instead of guessing. Podman's output is shown on failure and the
-  list reloads on success.
+  an error instead of guessing. After the pull the image ID is compared with
+  the old one, so the status line reports either "already up to date" or
+  "updated". Podman's output is shown on failure and the list reloads.
 
 - **Commit a container to an image**: `C` on the Containers panel opens a
   menu for the image tag, author, message and `--change` instructions, with

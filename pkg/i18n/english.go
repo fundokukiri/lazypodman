@@ -130,6 +130,8 @@ type TranslationSet struct {
 	UpdateImage                 string
 	UpdatingImageStatus         string
 	UpdateImageNoTag            string
+	ImageAlreadyUpToDate        string
+	ImageUpdated                string
 	BuildImageTitle             string
 	BuildImageConfirmTitle      string
 	BuildImageConfirm           string
@@ -519,6 +521,8 @@ func englishSet() TranslationSet {
 		UpdateImage:              "update image",
 		UpdatingImageStatus:      "updating image",
 		UpdateImageNoTag:         "This image has no repository tag to pull",
+		ImageAlreadyUpToDate:     "image already up to date: %s",
+		ImageUpdated:             "image updated: %s",
 		CommitImage:              "commit to image",
 		CommitImageTitle:         "Commit container",
 		CommitImageConfirmTitle:  "Confirm commit",

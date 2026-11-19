@@ -199,6 +199,22 @@ func imagePullRef(img *commands.Image) string {
 	return ""
 }
 
+// findImageByRef finds the image that now owns ref after a pull.
+func findImageByRef(images []*commands.Image, ref string) *commands.Image {
+	for _, img := range images {
+		for _, tag := range img.Image.RepoTags {
+			if tag == ref {
+				return img
+			}
+		}
+		if img.Name == ref || (img.Tag != "" && img.Name+":"+img.Tag == ref) {
+			return img
+		}
+	}
+
+	return nil
+}
+
 func (gui *Gui) handleImagesUpdate(g *gocui.Gui, v *gocui.View) error {
 	img, err := gui.Panels.Images.GetSelectedItem()
 	if err != nil {
@@ -209,6 +225,7 @@ func (gui *Gui) handleImagesUpdate(g *gocui.Gui, v *gocui.View) error {
 	if ref == "" {
 		return gui.createErrorPanel(gui.trString(gui.Tr.UpdateImageNoTag, "This image has no repository tag to pull"))
 	}
+	oldID := img.ID
 
 	command := exec.Command(gui.Config.PodmanBinary(), "pull", ref)
 	return gui.WithWaitingStatus(gui.trString(gui.Tr.UpdatingImageStatus, "updating image"), func() error {
@@ -221,7 +238,18 @@ func (gui *Gui) handleImagesUpdate(g *gocui.Gui, v *gocui.View) error {
 			return fmt.Errorf("%s", message)
 		}
 
-		return gui.reloadImages()
+		if err := gui.reloadImages(); err != nil {
+			return err
+		}
+
+		updated := findImageByRef(gui.Panels.Images.List.GetAllItems(), ref)
+		if updated != nil && updated.ID == oldID {
+			gui.flashStatus(fmt.Sprintf(gui.trString(gui.Tr.ImageAlreadyUpToDate, "image already up to date: %s"), ref))
+		} else {
+			gui.flashStatus(fmt.Sprintf(gui.trString(gui.Tr.ImageUpdated, "image updated: %s"), ref))
+		}
+
+		return nil
 	})
 }
 

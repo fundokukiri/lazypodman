@@ -46,3 +46,22 @@ func TestImagesUpdateBindingIsAvailable(t *testing.T) {
 
 	assert.True(t, found, "images panel should bind u to update an image")
 }
+
+func TestFindImageByRefUsesRepoTag(t *testing.T) {
+	img := &commands.Image{Name: "nginx", Tag: "latest", ID: "sha256:new"}
+	img.Image.RepoTags = []string{"docker.io/library/nginx:latest"}
+
+	found := findImageByRef([]*commands.Image{{Name: "other"}, img}, "docker.io/library/nginx:latest")
+
+	assert.Same(t, img, found)
+}
+
+func TestFindImageByRefFallsBackToNameAndTag(t *testing.T) {
+	img := &commands.Image{Name: "nginx", Tag: "latest", ID: "sha256:new"}
+
+	assert.Same(t, img, findImageByRef([]*commands.Image{img}, "nginx:latest"))
+}
+
+func TestFindImageByRefReturnsNilWhenMissing(t *testing.T) {
+	assert.Nil(t, findImageByRef(nil, "nginx:latest"))
+}

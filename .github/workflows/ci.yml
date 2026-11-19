@@ -6,9 +6,10 @@ env:
 on:
   push:
     branches:
-      - main
       - master
   pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:

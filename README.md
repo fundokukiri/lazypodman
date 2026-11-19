@@ -18,8 +18,8 @@ projects, logs and stats in one window, every common action one keypress away.
 - Attach to a container in a separate terminal window (or via `TERMINAL`)
   with plain `podman attach`, so live output starts immediately; `A` does the
   same in the current terminal, and `a` falls back to it when no emulator
-  exists. Use the logs tab for earlier output. Open an in-app PTY shell tab,
-  view its processes (`top`), config and env
+  exists. `ctrl+a` replays the full logs before attaching. Open an in-app PTY
+  shell tab, view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus
@@ -235,8 +235,8 @@ numbers (`1`…`6`).
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
 `r` restart · `a` attach in a new terminal · `A` attach in this terminal ·
-`m` logs · `t` run healthcheck · `C` commit to an image ·
-`ctrl+x` open/close the in-app shell tab ·
+`ctrl+a` attach with full logs · `m` logs · `t` run healthcheck ·
+`C` commit to an image · `ctrl+x` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 

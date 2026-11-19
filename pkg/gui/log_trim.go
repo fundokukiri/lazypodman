@@ -12,6 +12,10 @@ const (
 	// logViewTrimAt is when a trim happens. Trimming is a full re-render, so it
 	// is done rarely (every 20000 lines) to keep the UI responsive.
 	logViewTrimAt = 20000
+	// logViewLineMaxBytes bounds one logical log line. A minified or horizontal
+	// log can otherwise put megabytes on a single line despite a small tail,
+	// which makes gocui wrap and render for a very long time.
+	logViewLineMaxBytes = 4096
 )
 
 // logTrimTarget is the part of *gocui.View the trimmer needs.
@@ -20,6 +24,7 @@ type logTrimTarget interface {
 	SetContent(string)
 	BufferLines() []string
 	Size() (int, int)
+	ViewLinesHeight() int
 	SetOriginY(int) error
 }
 
@@ -27,11 +32,14 @@ type logTrimTarget interface {
 // but caps the view's line count. A follow stream otherwise keeps every line in
 // memory until the app is closed, which is what made RAM explode on long logs.
 type logTrimWriter struct {
-	mutex     sync.Mutex
-	view      logTrimTarget
-	lines     int
-	shouldPin func() bool
-	stale     func() bool
+	mutex         sync.Mutex
+	view          logTrimTarget
+	lines         int
+	lineBytes     int
+	lineTruncated bool
+	buf           []byte
+	shouldPin     func() bool
+	stale         func() bool
 }
 
 func newLogTrimWriter(view logTrimTarget, shouldPin func() bool, stale func() bool) *logTrimWriter {
@@ -48,16 +56,65 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 		return len(p), nil
 	}
 
-	n, err := w.view.Write(p)
+	out := w.capLinesLocked(p)
+	if _, err := w.view.Write(out); err != nil {
+		return 0, err
+	}
 
-	w.lines += bytes.Count(p[:n], []byte("\n"))
+	w.lines += bytes.Count(out, []byte("\n"))
 	if w.lines > logViewTrimAt {
 		w.trimLocked()
 	}
 
 	w.pinToBottomLocked()
 
-	return n, err
+	return len(p), nil
+}
+
+// capLinesLocked truncates individual lines to logViewLineMaxBytes before they
+// reach gocui. The stream itself is still consumed, so follow mode continues
+// normally; only the enormous display line is shortened.
+func (w *logTrimWriter) capLinesLocked(p []byte) []byte {
+	w.buf = w.buf[:0]
+
+	for len(p) > 0 {
+		index := bytes.IndexByte(p, '\n')
+		if index < 0 {
+			w.appendLineSegmentLocked(&w.buf, p)
+			break
+		}
+
+		w.appendLineSegmentLocked(&w.buf, p[:index])
+		if w.lineTruncated {
+			w.buf = append(w.buf, " ..."...)
+		}
+		w.buf = append(w.buf, '\n')
+		w.lineBytes = 0
+		w.lineTruncated = false
+		p = p[index+1:]
+	}
+
+	return w.buf
+}
+
+func (w *logTrimWriter) appendLineSegmentLocked(out *[]byte, segment []byte) {
+	if w.lineTruncated {
+		return
+	}
+
+	remaining := logViewLineMaxBytes - w.lineBytes
+	if len(segment) <= remaining {
+		*out = append(*out, segment...)
+		w.lineBytes += len(segment)
+		return
+	}
+
+	if remaining > 0 {
+		*out = append(*out, segment[:remaining]...)
+		w.lineBytes += remaining
+	}
+
+	w.lineTruncated = true
 }
 
 // pinToBottomLocked makes the newest line visible. gocui's Autoscroll does this
@@ -73,7 +130,7 @@ func (w *logTrimWriter) pinToBottomLocked() {
 		return
 	}
 
-	origin := w.lines - height
+	origin := w.view.ViewLinesHeight() - height
 	if origin < 0 {
 		origin = 0
 	}

@@ -41,6 +41,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>C</kbd>: commit to image
   <kbd>a</kbd>: verbinden
   <kbd>A</kbd>: attach in this terminal
+  <kbd>ctrl+a</kbd>: attach with full logs
   <kbd>m</kbd>: bekijk logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container

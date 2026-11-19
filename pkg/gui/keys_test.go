@@ -152,6 +152,21 @@ func TestSpaceBindingsUseKeySpace(t *testing.T) {
 	}
 }
 
+func TestAttachFullLogsKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	found := false
+	for _, binding := range gui.staticKeybindings() {
+		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+a" {
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.AttachFullLogs, binding.Description)
+		}
+	}
+
+	assert.True(t, found, "containers must bind ctrl+a")
+}
+
 func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 

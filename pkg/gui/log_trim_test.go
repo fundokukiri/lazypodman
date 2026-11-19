@@ -34,6 +34,10 @@ func (f *fakeLogTarget) SetOriginY(y int) error {
 	return nil
 }
 
+func (f *fakeLogTarget) ViewLinesHeight() int {
+	return strings.Count(f.content, "\n")
+}
+
 func (f *fakeLogTarget) BufferLines() []string {
 	if f.content == "" {
 		return nil
@@ -108,4 +112,40 @@ func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	_, err := writer.Write([]byte(strings.Repeat("line\n", 100)))
 	assert.NoError(t, err)
 	assert.Equal(t, 100, len(target.BufferLines())-1)
+}
+
+func TestLogTrimWriterCapsLongLines(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	long := strings.Repeat("x", logViewLineMaxBytes*3)
+	_, err := writer.Write([]byte(long + "\nshort\n"))
+	assert.NoError(t, err)
+
+	lines := target.BufferLines()
+	assert.Equal(t, logViewLineMaxBytes+len(" ..."), len(lines[0]), "one huge line is bounded")
+	assert.Equal(t, "short", lines[1], "the next line is not truncated")
+}
+
+func TestLogTrimWriterCapsAcrossWrites(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte(strings.Repeat("a", logViewLineMaxBytes)))
+	assert.NoError(t, err)
+	_, err = writer.Write([]byte("b\nnext\n"))
+	assert.NoError(t, err)
+
+	lines := target.BufferLines()
+	assert.Equal(t, logViewLineMaxBytes+len(" ..."), len(lines[0]))
+	assert.Equal(t, "next", lines[1])
+}
+
+func TestLogTrimWriterPinsUsingWrappedLineHeight(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte("one\ntwo\nthree\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, 0, target.originY)
 }

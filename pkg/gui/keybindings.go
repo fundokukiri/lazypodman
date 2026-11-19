@@ -263,6 +263,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         gocui.KeyCtrlA,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerAttachFullLogs,
+			Description: gui.Tr.AttachFullLogs,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'm',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerViewLogs,

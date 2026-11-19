@@ -17,7 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   x-terminal-emulator, GNOME Terminal, Konsole, Xfce Terminal and the common
   lightweight terminals. macOS uses Terminal.app and Windows opens a new
   console window. If no emulator is available, `a` falls back to the current
-  terminal. `A` always uses that current-terminal path.
+  terminal. `A` always uses that current-terminal path. The attach process
+  sends itself `SIGWINCH` shortly after starting, so containers that only draw
+  after a resize no longer leave a black screen until a key is pressed.
+
+- **`ctrl+a` attaches with full logs**: a separate explicit key replays the
+  whole container history and then attaches, so `a`/`A` stay instant.
+
+- **Huge log lines no longer stall the Logs tab**: each logical line is capped
+  at 4 KiB for display (the rest of the line is skipped, then follow mode
+  continues). A minified log with a very long line can no longer make a small
+  `logs.tail` render for seconds.
 
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows

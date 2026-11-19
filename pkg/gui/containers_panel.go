@@ -574,7 +574,10 @@ func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	return gui.runAttachCommand(commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
+}
+
+func (gui *Gui) runAttachCommand(argv []string) error {
 	cmd := gui.OSCommand.NewCmd(argv[0], argv[1:]...)
 
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)
@@ -587,6 +590,31 @@ func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View
 	}
 
 	return gui.attachInCurrentTerminal(ctr)
+}
+
+// handleContainerAttachFullLogs is the explicit ctrl+a path: it may replay the
+// whole history, so it lives apart from the instant a/A attach.
+func (gui *Gui) handleContainerAttachFullLogs(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	argv := commands.AttachFullLogsTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.runAttachCommand(argv)
+		}
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
+
+	return nil
 }
 
 func (gui *Gui) handlePruneContainers() error {

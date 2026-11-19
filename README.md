@@ -15,8 +15,8 @@ projects, logs and stats in one window, every common action one keypress away.
   view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
-- Attach to a container, open an in-app PTY shell tab, view its processes
-  (`top`), config and env
+- Attach to a container in a separate terminal window (or via `TERMINAL`),
+  open an in-app PTY shell tab, view its processes (`top`), config and env
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus
@@ -491,7 +491,7 @@ bulkCommands:
 ```
 
 Environment variables: `PODMAN_HOST`, `CONTAINER_HOST`, `DOCKER_HOST`,
-`CONFIG_DIR`, and `DEBUG=TRUE`.
+`CONFIG_DIR`, `TERMINAL` (attach terminal emulator) and `DEBUG=TRUE`.
 
 ---
 

@@ -114,19 +114,28 @@ func (c *Container) Restart() error {
 	return c.Client.ContainerRestart(context.Background(), c.ID, container.StopOptions{})
 }
 
-// Attach attaches the container
-func (c *Container) Attach() (*exec.Cmd, error) {
+// CanAttach reports why a container cannot be attached to, or nil when it can.
+func (c *Container) CanAttach() error {
 	if !c.DetailsLoaded() {
-		return nil, errors.New(c.Tr.WaitingForContainerInfo)
+		return errors.New(c.Tr.WaitingForContainerInfo)
 	}
 
 	// verify that we can in fact attach to this container
 	if !c.Details.Config.OpenStdin {
-		return nil, errors.New(c.Tr.UnattachableContainerError)
+		return errors.New(c.Tr.UnattachableContainerError)
 	}
 
 	if c.Container.State == "exited" {
-		return nil, errors.New(c.Tr.CannotAttachStoppedContainerError)
+		return errors.New(c.Tr.CannotAttachStoppedContainerError)
+	}
+
+	return nil
+}
+
+// Attach attaches the container
+func (c *Container) Attach() (*exec.Cmd, error) {
+	if err := c.CanAttach(); err != nil {
+		return nil, err
 	}
 
 	c.Log.Warn(fmt.Sprintf("attaching to container %s", c.Name))

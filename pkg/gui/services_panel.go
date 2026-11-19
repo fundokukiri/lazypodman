@@ -311,12 +311,11 @@ func (gui *Gui) handleServiceAttach(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.NoContainers)
 	}
 
-	c, err := service.Attach()
-	if err != nil {
+	if err := service.Container.CanAttach(); err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	return gui.runSubprocess(c)
+	return gui.openContainerAttachTerminal(service.Container)
 }
 
 func (gui *Gui) handleServiceRenderLogsToMain(g *gocui.Gui, v *gocui.View) error {

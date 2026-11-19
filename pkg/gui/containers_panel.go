@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -539,12 +540,28 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	c, err := ctr.Attach()
-	if err != nil {
+	if err := ctr.CanAttach(); err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	return gui.runSubprocessWithMessage(c, gui.Tr.DetachFromContainerShortCut)
+	return gui.openContainerAttachTerminal(ctr)
+}
+
+// openContainerAttachTerminal runs podman attach in a separate terminal window,
+// where the user gets that terminal's own scrollback instead of suspending the
+// lazypodman UI.
+func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
+	argv := []string{gui.Config.PodmanBinary(), "attach", "--sig-proxy=false", ctr.ID}
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.createErrorPanel(gui.Tr.NoExternalTerminal)
+		}
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
+
+	return nil
 }
 
 func (gui *Gui) handlePruneContainers() error {

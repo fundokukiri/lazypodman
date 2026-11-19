@@ -63,6 +63,8 @@ type TranslationSet struct {
 	PreviousContext             string
 	NextContext                 string
 	Attach                      string
+	AttachOpenedInTerminal      string
+	NoExternalTerminal          string
 	ViewLogs                    string
 	UpProject                   string
 	DownProject                 string
@@ -321,6 +323,8 @@ func englishSet() TranslationSet {
 		PreviousContext:             "previous tab",
 		NextContext:                 "next tab",
 		Attach:                      "attach",
+		AttachOpenedInTerminal:      "attach opened in a separate terminal",
+		NoExternalTerminal:          "no terminal emulator found; set the TERMINAL environment variable or install xterm, kitty, alacritty, wezterm, foot, konsole or gnome-terminal",
 		ViewLogs:                    "view logs",
 		UpProject:                   "up project",
 		DownProject:                 "down project",

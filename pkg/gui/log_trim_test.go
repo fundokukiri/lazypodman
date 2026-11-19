@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -182,4 +183,44 @@ func TestLogTrimWriterKeepsColorSequences(t *testing.T) {
 	_, err := writer.Write([]byte("\x1b[31mred\x1b[0m\n"))
 	assert.NoError(t, err)
 	assert.Equal(t, "\x1b[31mred\x1b[0m\n", target.content)
+}
+
+func TestLogTrimWriterDoesNotSpinOnIncompleteUtf8(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte{0xc3})
+	assert.NoError(t, err)
+	_, err = writer.Write([]byte{0xa9, '\n'})
+	assert.NoError(t, err)
+	assert.Equal(t, "é\n", target.content)
+}
+
+func TestLogTrimWriterDoesNotSpinOnIncompleteAnsi(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	_, err := writer.Write([]byte("\x1b[31"))
+	assert.NoError(t, err)
+	_, err = writer.Write([]byte("mred\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "\x1b[31mred\n", target.content)
+}
+
+func TestLogTrimWriterDoesNotSpinOnLongMalformedEscape(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+
+	malformed := append([]byte("\x1b["), strings.Repeat("1", logWriteBatch*2)...)
+	done := make(chan struct{})
+	go func() {
+		_, _ = writer.Write(malformed)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Write did not return for a malformed escape sequence")
+	}
 }

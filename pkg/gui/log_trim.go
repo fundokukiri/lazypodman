@@ -76,6 +76,11 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 	}
 
 	for len(p) > 0 {
+		// A tab switch must not wait for a multi-batch log chunk to finish.
+		if w.stale != nil && w.stale() {
+			return originalLen, nil
+		}
+
 		batch := p
 		if len(batch) > logWriteBatch {
 			// Prefer a newline boundary so a batch does not end in the middle of
@@ -98,7 +103,10 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 		w.pinToBottomLocked()
 
 		p = p[len(batch):]
-		if len(w.pending) > 0 {
+		// Only carry pending bytes into the next batch when there is more input.
+		// Otherwise an incomplete UTF-8 rune or escape sequence at the end of the
+		// stream would be re-queued forever.
+		if len(p) > 0 && len(w.pending) > 0 {
 			p = append(append([]byte(nil), w.pending...), p...)
 			w.pending = nil
 		}
@@ -128,6 +136,12 @@ func (w *logTrimWriter) wrapLocked(data []byte, maxX int) []byte {
 		if data[0] == 0x1b {
 			size := ansiSequenceLen(data)
 			if size == 0 {
+				// Escape sequences are short. Do not let a malformed one (or a
+				// binary log that happens to contain ESC) sit in pending forever.
+				if len(data) > 64 {
+					data = data[1:]
+					continue
+				}
 				w.pending = append(w.pending, data...)
 				break
 			}

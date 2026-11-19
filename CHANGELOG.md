@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are stripped (colour changes are kept), so progress output no longer leaves
   stray control bytes in the text.
 
+- **Switching tabs no longer freezes on the Logs tab**: an incomplete UTF-8
+  rune or escape sequence at the end of a read chunk was re-queued forever,
+  spinning the old log task. A malformed long escape could do the same. The
+  writer now also checks cancellation between batches, so leaving the tab does
+  not wait for the whole log chunk to be rendered.
+
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows
   memory without bound. Set `logs.tail` to also limit the initial fetch.

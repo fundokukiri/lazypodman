@@ -112,3 +112,28 @@ func TestCurrentTerminalAttachArgvClearsLogsThenAttaches(t *testing.T) {
 	assert.Less(t, strings.Index(script, "printf"), strings.Index(script, " logs "))
 	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
 }
+
+func TestCurrentTerminalAttachScriptUsesItsArguments(t *testing.T) {
+	dir := t.TempDir()
+	fake := filepath.Join(dir, "podman")
+	script := `#!/bin/sh
+case "$1" in
+  logs) echo LOGS-HISTORY ;;
+  attach) echo ATTACH-LIVE ;;
+esac
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	argv := CurrentTerminalAttachArgv(fake, "abc123")
+	out, err := exec.Command(argv[0], argv[1:]...).CombinedOutput()
+	assert.NoError(t, err)
+	assert.Contains(t, string(out), "LOGS-HISTORY\nATTACH-LIVE\n")
+}
+
+func TestCurrentTerminalAttachArgvSetsShellPositionals(t *testing.T) {
+	argv := CurrentTerminalAttachArgv("/usr/bin/podman", "abc123")
+
+	assert.Contains(t, argv[2], `bin=$1; ref=$2;`)
+}

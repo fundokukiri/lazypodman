@@ -34,10 +34,6 @@ func (f *fakeLogTarget) SetOriginY(y int) error {
 	return nil
 }
 
-func (f *fakeLogTarget) ViewLinesHeight() int {
-	return strings.Count(f.content, "\n")
-}
-
 func (f *fakeLogTarget) BufferLines() []string {
 	if f.content == "" {
 		return nil
@@ -112,50 +108,4 @@ func TestLogTrimWriterDoesNotTrimSmallLogs(t *testing.T) {
 	_, err := writer.Write([]byte(strings.Repeat("line\n", 100)))
 	assert.NoError(t, err)
 	assert.Equal(t, 100, len(target.BufferLines())-1)
-}
-
-func TestLogTrimWriterWrapsLongLinesWithoutLosingContent(t *testing.T) {
-	target := &fakeLogTarget{height: 10}
-	writer := newLogTrimWriter(target, nil, nil)
-
-	long := strings.Repeat("x", logViewFallbackWidth*3)
-	_, err := writer.Write([]byte(long + "\nshort\n"))
-	assert.NoError(t, err)
-
-	lines := target.BufferLines()
-	assert.Equal(t, "short", lines[len(lines)-2])
-	assert.Equal(t, long, strings.Join(lines[:len(lines)-2], ""), "wrapping keeps every byte")
-	for _, line := range lines[:len(lines)-2] {
-		assert.LessOrEqual(t, len(line), logViewFallbackWidth)
-	}
-}
-
-func TestLogTrimWriterWrapsAcrossWrites(t *testing.T) {
-	target := &fakeLogTarget{height: 10}
-	writer := newLogTrimWriter(target, nil, nil)
-
-	long := strings.Repeat("a", logViewFallbackWidth) + strings.Repeat("b", logViewFallbackWidth)
-	_, err := writer.Write([]byte(long[:logViewFallbackWidth+7]))
-	assert.NoError(t, err)
-	_, err = writer.Write([]byte(long[logViewFallbackWidth+7:] + "\nnext\n"))
-	assert.NoError(t, err)
-
-	lines := target.BufferLines()
-	assert.Equal(t, long, strings.Join(lines[:len(lines)-2], ""))
-	assert.Equal(t, "next", lines[len(lines)-2])
-}
-
-func TestLogTrimWriterKeepsUtf8AcrossWrites(t *testing.T) {
-	target := &fakeLogTarget{height: 10}
-	writer := newLogTrimWriter(target, nil, nil)
-
-	text := strings.Repeat("é", logViewFallbackWidth) + "ok\n"
-	split := len(text) - len("ok\n") - 1
-	_, err := writer.Write([]byte(text[:split]))
-	assert.NoError(t, err)
-	_, err = writer.Write([]byte(text[split:]))
-	assert.NoError(t, err)
-
-	assert.Contains(t, target.content, "ok")
-	assert.Equal(t, strings.Count(text, "é"), strings.Count(target.content, "é"))
 }

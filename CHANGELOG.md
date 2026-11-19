@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inspect --size` once and shows the total rootfs size and the writable layer
   above the graphs. The Stats tab also shows **Uptime**, derived from the
   container's `StartedAt`, formatted as seconds/minutes/hours/days and marked
-  `not running` or `unavailable` when it cannot be computed. If the size
+  `not running` or `unavailable` when it cannot be computed. It also shows
+  **RAM usage** as used bytes, plus used/limit and percentage when a memory
+  limit is set. If the size
   inspect fails the disk line says "unavailable" instead of blocking the tab.
 
 - **Update an image**: `u` on the Images panel pulls the selected image's

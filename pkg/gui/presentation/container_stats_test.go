@@ -35,3 +35,18 @@ func TestContainerUptimeForStoppedContainer(t *testing.T) {
 
 	assert.Equal(t, "not running", containerUptime(ctr, time.Now()))
 }
+
+func TestFormatRAMUsageShowsUsedAndLimit(t *testing.T) {
+	stats := &commands.ContainerStats{}
+	stats.MemoryStats.Usage = 500_000_000
+	stats.MemoryStats.Limit = 1_000_000_000
+
+	assert.Equal(t, "RAM usage: 500.00MB / 1000.00MB (50.0%)", formatRAMUsage(*stats))
+}
+
+func TestFormatRAMUsageWithoutLimit(t *testing.T) {
+	stats := &commands.ContainerStats{}
+	stats.MemoryStats.Usage = 123_000_000
+
+	assert.Equal(t, "RAM usage: 123.00MB", formatRAMUsage(*stats))
+}

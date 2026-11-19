@@ -34,6 +34,7 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 	}
 
 	pidsCount := fmt.Sprintf("PIDs: %d", stats.ClientStats.PidsStats.Current)
+	ramUsage := formatRAMUsage(stats.ClientStats)
 	uptime := "Uptime: " + containerUptime(container, time.Now())
 	diskUsage := "Disk usage: unavailable"
 	if rw, rootFs, known := container.DiskSize(); known {
@@ -48,9 +49,10 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 		return "", err
 	}
 
-	contents := fmt.Sprintf("\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s",
+	contents := fmt.Sprintf("\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s",
 		utils.ColoredString(strings.Join(graphs, "\n\n"), color.FgGreen),
 		pidsCount,
+		ramUsage,
 		uptime,
 		diskUsage,
 		dataReceived,
@@ -59,6 +61,19 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 	)
 
 	return contents, nil
+}
+
+// formatRAMUsage shows the current memory usage and, when a limit is set, what
+// percentage of it the container is using.
+func formatRAMUsage(stats commands.ContainerStats) string {
+	used := utils.FormatDecimalBytes(stats.MemoryStats.Usage)
+	if stats.MemoryStats.Limit <= 0 {
+		return fmt.Sprintf("RAM usage: %s", used)
+	}
+
+	percentage := float64(stats.MemoryStats.Usage) * 100 / float64(stats.MemoryStats.Limit)
+	return fmt.Sprintf("RAM usage: %s / %s (%.1f%%)",
+		used, utils.FormatDecimalBytes(int(stats.MemoryStats.Limit)), percentage)
 }
 
 // containerUptime formats how long the container has been running, based on

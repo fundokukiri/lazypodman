@@ -302,7 +302,10 @@ func (gui *Gui) renderContainerStats(container *commands.Container) tasks.TaskFu
 		Duration: time.Second,
 		Before: func(ctx context.Context) {
 			gui.clearMainView()
-			gui.refreshContainerSize(ctx, container)
+			// `podman inspect --size` can take seconds on a large rootfs, so it
+			// must not delay the first stats render. The next tick picks the
+			// values up once this finishes (or the line stays unavailable).
+			go gui.refreshContainerSize(ctx, container)
 		},
 		Wrap:       false, // wrapping looks bad here so we're overriding the config value
 		Autoscroll: false,
@@ -322,7 +325,10 @@ func (gui *Gui) renderContainerTop(container *commands.Container) tasks.TaskFunc
 		Duration: time.Second,
 		Before: func(ctx context.Context) {
 			gui.clearMainView()
-			gui.refreshContainerSize(ctx, container)
+			// `podman inspect --size` can take seconds on a large rootfs, so it
+			// must not delay the first stats render. The next tick picks the
+			// values up once this finishes (or the line stays unavailable).
+			go gui.refreshContainerSize(ctx, container)
 		},
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,

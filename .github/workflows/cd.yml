@@ -19,6 +19,12 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+      - name: Delete existing release for this tag
+        # GoReleaser cannot overwrite assets from an earlier failed attempt,
+        # so make re-running the same tag idempotent. The git tag itself stays.
+        run: gh release delete "$GITHUB_REF_NAME" --yes || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:

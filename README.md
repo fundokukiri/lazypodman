@@ -312,8 +312,11 @@ commands (prune).
   bound. `ctrl+l` (full history) raises both budgets tenfold, so the history you
   asked for stays scrollable; while you are scrolled up the view stops trimming
   for the same reason and keeps its place when it eventually has to.
-- `ctrl+l` reloads the current logs with the **full history**, and `ctrl+l` again
-  goes back to the default tail. The choice is remembered per container.
+- `ctrl+l` reloads the current logs with the **full history**, capped at
+  `logs.fullTail` lines (50 000 by default — a whole log file can take minutes to
+  stream and scrolls away before you read it; set 0 for everything), and
+  `ctrl+l` again goes back to the default tail. The choice is remembered per
+  container.
 - `ctrl+t` switches the Logs tab between plain text and a **transcript view**.
   Transcript mode replays the stream through a terminal emulator and shows the
   final screen, which keeps the layout of full-screen programs readable instead
@@ -322,11 +325,11 @@ commands (prune).
   screen, clearing the screen, or repainting with cursor moves; a progress bar
   that only erases a line does not count); `ctrl+t` toggles it back, and that
   choice is remembered per container.
-- Transcript mode replays `logs.transcriptTail` lines (500 by default) instead
-  of the 20-line tail, because the last 20 lines are usually only the final
-  prompt. Setting it to 0 replays only `tail`. Replaying thousands of lines
-  makes the Podman service scan a large log file, which is where a memory
-  spike on a busy container comes from.
+- Transcript mode replays `logs.transcriptTail` lines (500 by default) and never
+  more, whatever `tail` or `ctrl+l` says: the emulator only shows the final
+  screen, so replaying the whole history costs time and changes nothing.
+  Replaying thousands of lines also makes the Podman service scan a large log
+  file, which is where a memory spike on a busy container comes from.
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
 - `m` opens logs for the selected container or service; closing the in-app
@@ -532,7 +535,8 @@ logs:
   tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
   maxLineLength: 4096         # split long horizontal lines; 0 = keep whole (slower)
   maxBytes: 1048576           # rendered log kept in the Logs tab; 0 = no byte cap
-  transcriptTail: 500         # lines replayed in the transcript view; 0 = use tail
+  fullTail: 50000             # ctrl+l line cap; 0 = whole history
+  transcriptTail: 500         # lines replayed in the transcript view
 
 commandTemplates:
   podman: podman               # CLI used for attach/exec (e.g. podman-remote)

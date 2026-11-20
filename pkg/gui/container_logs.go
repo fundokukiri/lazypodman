@@ -26,10 +26,22 @@ func (gui *Gui) containerLogTail(container *commands.Container) string {
 	defer gui.fullLogsMutex.Unlock()
 
 	if gui.fullLogs[container.ID] {
-		return ""
+		return gui.fullLogTail()
 	}
 
 	return gui.Config.UserConfig.Logs.Tail
+}
+
+// fullLogTail caps what ctrl+l asks for. Streaming an unbounded history takes
+// minutes on a busy container and scrolls the old lines out of the view before
+// they can be read, so the full-history view has a line budget too
+// (logs.fullTail, 50000 by default).
+func (gui *Gui) fullLogTail() string {
+	if lines := gui.Config.UserConfig.Logs.FullTail; lines > 0 {
+		return strconv.Itoa(lines)
+	}
+
+	return ""
 }
 
 func (gui *Gui) transcriptLogsFor(container *commands.Container) bool {
@@ -102,24 +114,16 @@ func (gui *Gui) enableTranscriptLogsAutomatically(container *commands.Container)
 	})
 }
 
-// transcriptLogTail gives the terminal replay enough history to rebuild the
-// current screen. The regular 20-line tail is usually only the last prompt and
-// leaves a TUI looking scrambled, while replaying thousands of lines asks the
-// Podman service to scan a large log file: that is where the memory goes when
-// the Logs tab is opened on a chatty container. Logs.TranscriptTail bounds it.
-func (gui *Gui) transcriptLogTail(container *commands.Container) string {
-	tail := gui.containerLogTail(container)
-	if tail == "" {
-		return ""
-	}
-
+// transcriptLogTail bounds how much history the terminal replay reads. It is
+// deliberately independent of logs.tail and of the ctrl+l full-history toggle:
+// the emulator only shows the final screen, so replaying more than a few hundred
+// lines costs time and cannot change what is displayed. logs.transcriptTail
+// overrides it; 0 or less keeps the default instead of replaying everything,
+// which is what used to make ctrl+t look like it never finished.
+func (gui *Gui) transcriptLogTail() string {
 	replay := gui.Config.UserConfig.Logs.TranscriptTail
 	if replay <= 0 {
-		return tail
-	}
-
-	if n, err := strconv.Atoi(tail); err == nil && n >= replay {
-		return tail
+		replay = defaultTranscriptTail
 	}
 
 	return strconv.Itoa(replay)
@@ -389,7 +393,7 @@ func (gui *Gui) renderContainerTranscriptToMain(container *commands.Container, c
 	transcript := commands.NewLogTranscript(cols, rows)
 	done := make(chan error, 1)
 	go func() {
-		done <- gui.writeContainerLogs(container, ctx, transcript, gui.transcriptLogTail(container), "")
+		done <- gui.writeContainerLogs(container, ctx, transcript, gui.transcriptLogTail(), "")
 	}()
 
 	// Redrawing the whole view every tick allocates a copy of the screen even

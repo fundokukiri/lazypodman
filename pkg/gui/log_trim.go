@@ -33,6 +33,10 @@ const (
 	// up: keeping the window still beats keeping it small, but memory still has
 	// a ceiling.
 	logViewPausedScale = 4
+	// defaultTranscriptTail is the replay budget used when logs.transcriptTail is
+	// unset: a screen is at most a few dozen rows, and a full-screen program
+	// redraws well within this many lines.
+	defaultTranscriptTail = 500
 	// logViewFullHistoryScale multiplies both budgets when the user asked for
 	// the whole history with ctrl+l. Keeping only the newest megabyte of a
 	// multi-megabyte history makes scrolling back through it pointless.

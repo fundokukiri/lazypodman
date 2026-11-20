@@ -387,6 +387,10 @@ type LogsConfig struct {
 	// MaxBytes bounds the rendered text kept in the Logs view. It keeps the
 	// newest bytes and trims whole old lines. 0 disables the byte budget.
 	MaxBytes int `yaml:"maxBytes,omitempty"`
+	// FullTail caps the history ctrl+l asks for. An unbounded history is a whole
+	// log file streamed into the view, which can take minutes on a busy
+	// container. 0 means everything.
+	FullTail int `yaml:"fullTail,omitempty"`
 	// TranscriptTail is how many lines the transcript view replays to rebuild
 	// the current screen. Tail alone is usually the last prompt, which leaves a
 	// full-screen program looking scrambled, while replaying thousands of lines
@@ -438,6 +442,7 @@ func GetDefaultConfig() UserConfig {
 			Tail:           "20",
 			MaxLineLength:  4096,
 			MaxBytes:       1024 * 1024,
+			FullTail:       50000,
 			TranscriptTail: 500,
 		},
 		CommandTemplates: CommandTemplatesConfig{

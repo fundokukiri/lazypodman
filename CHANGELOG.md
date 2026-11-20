@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every update with an erase-line and cursor-up), and an idle transcript no
   longer redraws the whole view 7 times a second.
 
+- **`ctrl+l` and `ctrl+t` have a line budget**: the full-history view asks for
+  at most `logs.fullTail` lines (50 000 by default, 0 for everything) instead of
+  the whole log file, and the transcript view replays at most
+  `logs.transcriptTail` lines (500) no matter what `tail` or `ctrl+l` say —
+  switching to transcript with the whole history on used to stream every line
+  through the terminal emulator and never finish.
+
 - **Full history can be scrolled**: `ctrl+l` used to fetch the whole log and then
   keep only the newest megabyte, so scrolling back stopped almost immediately.
   The full-history view keeps ten times more, stops trimming while you are

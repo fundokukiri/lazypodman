@@ -37,7 +37,7 @@ func TestContainerLogTailSwitchToAllAndBack(t *testing.T) {
 	gui.toggleFullLogs(container)
 
 	assert.True(t, gui.logsFullFor(container))
-	assert.Equal(t, "", gui.containerLogTail(container), "empty tail means the whole history")
+	assert.Equal(t, "50000", gui.containerLogTail(container), "full history is capped, not unbounded")
 
 	gui.toggleFullLogs(container)
 
@@ -72,26 +72,46 @@ func TestTranscriptLogsToggleIsPerContainer(t *testing.T) {
 
 func TestTranscriptLogTailKeepsEnoughHistoryToRebuildAScreen(t *testing.T) {
 	gui := logsGuiWithTail("20")
-	container := &commands.Container{ID: "abc"}
 
-	assert.Equal(t, "500", gui.transcriptLogTail(container), "the default replay budget, not the 20-line tail")
+	assert.Equal(t, "500", gui.transcriptLogTail(), "the default replay budget, not the 20-line tail")
 
 	gui.Config.UserConfig.Logs.Tail = "9000"
-	assert.Equal(t, "9000", gui.transcriptLogTail(container), "a larger configured tail wins")
+	assert.Equal(t, "500", gui.transcriptLogTail(), "the tail does not inflate the replay")
 
 	gui.Config.UserConfig.Logs.Tail = ""
-	assert.Equal(t, "", gui.transcriptLogTail(container), "an empty tail still means everything")
+	assert.Equal(t, "500", gui.transcriptLogTail(), "an unbounded tail does not replay everything")
+}
+
+func TestTranscriptLogTailIgnoresFullHistory(t *testing.T) {
+	gui := logsGuiWithTail("20")
+	gui.fullLogs = map[string]bool{"abc": true}
+
+	assert.Equal(t, "500", gui.transcriptLogTail(), "ctrl+l must not make the emulator replay the whole log")
 }
 
 func TestTranscriptLogTailFollowsTheReplayBudget(t *testing.T) {
 	gui := logsGuiWithTail("20")
 	gui.Config.UserConfig.Logs.TranscriptTail = 0
-	container := &commands.Container{ID: "abc"}
 
-	assert.Equal(t, "20", gui.transcriptLogTail(container), "0 replays only the configured tail")
+	assert.Equal(t, "500", gui.transcriptLogTail(), "0 keeps the default instead of replaying everything")
 
 	gui.Config.UserConfig.Logs.TranscriptTail = 1200
-	assert.Equal(t, "1200", gui.transcriptLogTail(container))
+	assert.Equal(t, "1200", gui.transcriptLogTail())
+}
+
+func TestFullHistoryTailIsBounded(t *testing.T) {
+	gui := logsGuiWithTail("20")
+	container := &commands.Container{ID: "abc"}
+	gui.fullLogs = map[string]bool{container.ID: true}
+
+	assert.Equal(t, "50000", gui.containerLogTail(container))
+
+	gui.Config.UserConfig.Logs.FullTail = 0
+	assert.Equal(t, "", gui.containerLogTail(container), "0 keeps the unbounded behaviour")
+}
+
+func TestDefaultFullTailIsBounded(t *testing.T) {
+	assert.Equal(t, 50000, config.GetDefaultConfig().Logs.FullTail)
 }
 
 func TestDefaultTranscriptReplayIsBounded(t *testing.T) {
@@ -139,7 +159,7 @@ func TestContainerLogSinceIsEmptyForFullLogs(t *testing.T) {
 	container := &commands.Container{ID: "abc"}
 	gui.fullLogs = map[string]bool{container.ID: true}
 
-	assert.Equal(t, "", gui.containerLogSince(container))
+	assert.Equal(t, "", gui.containerLogSince(container), "the tail budget bounds it instead")
 }
 
 func TestContainerLogSinceIgnoresAgeForExitedSummary(t *testing.T) {

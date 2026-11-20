@@ -36,12 +36,12 @@ func (gui *Gui) diagnosisContents(ctr *commands.Container) string {
 // current state. It is a pure function so the wording and exit-code mapping can
 // be tested without a terminal.
 func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string {
-	if !ctr.DetailsLoaded() || ctr.Details.State == nil {
+	if !ctr.DetailsLoaded() || ctr.DetailsSnapshot().State == nil {
 		return tr.DiagnoseNoDetails
 	}
 
-	state := ctr.Details.State
-	policy := ctr.Details.HostConfig.RestartPolicy
+	state := ctr.DetailsSnapshot().State
+	policy := ctr.DetailsSnapshot().HostConfig.RestartPolicy
 
 	var b strings.Builder
 
@@ -56,7 +56,7 @@ func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string
 		field(tr.DiagnoseExitCode, fmt.Sprintf("%d", state.ExitCode))
 	}
 	field(tr.DiagnoseOOMKilled, yesNo(state.OOMKilled))
-	field(tr.DiagnoseRestarts, fmt.Sprintf("%d", ctr.Details.RestartCount))
+	field(tr.DiagnoseRestarts, fmt.Sprintf("%d", ctr.DetailsSnapshot().RestartCount))
 
 	policyName := string(policy.Name)
 	if policyName == "" {
@@ -77,8 +77,8 @@ func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string
 	if state.Error != "" {
 		field(tr.ErrorTitle, state.Error)
 	}
-	if ctr.Details.HostConfig.Memory > 0 {
-		field(tr.DiagnoseMemoryLimit, utils.FormatDecimalBytes(int(ctr.Details.HostConfig.Memory)))
+	if ctr.DetailsSnapshot().HostConfig.Memory > 0 {
+		field(tr.DiagnoseMemoryLimit, utils.FormatDecimalBytes(int(ctr.DetailsSnapshot().HostConfig.Memory)))
 	}
 	if health := state.Health; health != nil && health.Status != "" && health.Status != container.NoHealthcheck {
 		value := health.Status
@@ -91,12 +91,12 @@ func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string
 		field(tr.HealthTitle, value)
 	}
 
-	command := strings.TrimSpace(strings.Join(append([]string{ctr.Details.Path}, ctr.Details.Args...), " "))
+	command := strings.TrimSpace(strings.Join(append([]string{ctr.DetailsSnapshot().Path}, ctr.DetailsSnapshot().Args...), " "))
 	if command != "" {
 		field(tr.DiagnoseCommand, command)
 	}
-	if ctr.Details.Config != nil && ctr.Details.Config.Image != "" {
-		field(tr.DiagnoseImage, ctr.Details.Config.Image)
+	if ctr.DetailsSnapshot().Config != nil && ctr.DetailsSnapshot().Config.Image != "" {
+		field(tr.DiagnoseImage, ctr.DetailsSnapshot().Config.Image)
 	}
 
 	b.WriteString("\n")
@@ -108,7 +108,7 @@ func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string
 }
 
 func diagnosisCause(tr *i18n.TranslationSet, ctr *commands.Container) string {
-	state := ctr.Details.State
+	state := ctr.DetailsSnapshot().State
 	if state == nil {
 		return tr.DiagnoseNoDetails
 	}

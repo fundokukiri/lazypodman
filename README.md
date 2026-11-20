@@ -443,8 +443,9 @@ commands (prune).
   is shown first; the file goes to `gui.quadletDir` (default
   `<user config dir>/containers/systemd`, where Podman looks for user units) as
   `0600` after a confirmation naming the full path. The unit contains
-  `Image=`, `ContainerName=`, `Environment=` (plaintext!), `Exec=`,
-  `PublishPort=`, `Volume=`, `Network=` and a `[Service]`/`[Install]` section.
+  `Image=`, `ContainerName=`, `Environment=` (plaintext, quoted, newlines
+  flattened), `Exec=`, `PublishPort=`, `Volume=` (named volumes keep their name),
+  `Network=` and a `[Service]`/`[Install]` section.
   It is a readable starting point, not a complete translation of every inspect
   field; the generator does not run `systemctl` or enable anything.
 - The command palette's **Podman connections** entry lists

@@ -118,6 +118,12 @@ func TestScrolledOffLinesDetectsScrolling(t *testing.T) {
 	assert.Nil(t, scrolledOffLines(oldRows, []string{"x", "y", "z", "w"}))
 }
 
+func TestScrolledOffLinesHandlesFewerNewRows(t *testing.T) {
+	oldRows := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"}
+
+	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", "g", "h"}, scrolledOffLines(oldRows, []string{"i", "j"}))
+}
+
 func TestTerminalScrollbarTracksOffset(t *testing.T) {
 	start, size, ok := terminalScrollbar(100, 20, 0)
 	assert.True(t, ok)

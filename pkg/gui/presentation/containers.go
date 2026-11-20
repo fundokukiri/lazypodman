@@ -106,7 +106,7 @@ func getContainerDisplaySubstatus(guiConfig *config.GuiConfig, c *commands.Conta
 	switch c.Container.State {
 	case "exited":
 		return utils.ColoredString(
-			fmt.Sprintf("(%s)", strconv.Itoa(c.Details.State.ExitCode)), getContainerColor(c),
+			fmt.Sprintf("(%s)", strconv.Itoa(c.DetailsSnapshot().State.ExitCode)), getContainerColor(c),
 		)
 	case "running":
 		return getHealthStatus(guiConfig, c)
@@ -126,7 +126,7 @@ func getHealthStatus(guiConfig *config.GuiConfig, c *commands.Container) string 
 		"starting":  color.FgYellow,
 	}
 
-	if c.Details.State.Health == nil {
+	if c.DetailsSnapshot().State.Health == nil {
 		return ""
 	}
 
@@ -145,16 +145,16 @@ func getHealthStatus(guiConfig *config.GuiConfig, c *commands.Container) string 
 	var healthStatus string
 	switch guiConfig.ContainerStatusHealthStyle {
 	case "short":
-		healthStatus = shortHealthStatusMap[c.Details.State.Health.Status]
+		healthStatus = shortHealthStatusMap[c.DetailsSnapshot().State.Health.Status]
 	case "icon":
-		healthStatus = string(iconHealthStatusMap[c.Details.State.Health.Status])
+		healthStatus = string(iconHealthStatusMap[c.DetailsSnapshot().State.Health.Status])
 	case "long":
 		fallthrough
 	default:
-		healthStatus = c.Details.State.Health.Status
+		healthStatus = c.DetailsSnapshot().State.Health.Status
 	}
 
-	if healthStatusColor, ok := healthStatusColorMap[c.Details.State.Health.Status]; ok {
+	if healthStatusColor, ok := healthStatusColorMap[c.DetailsSnapshot().State.Health.Status]; ok {
 		return utils.ColoredString(fmt.Sprintf("(%s)", healthStatus), healthStatusColor)
 	}
 	return ""
@@ -188,7 +188,7 @@ func getContainerColor(c *commands.Container) color.Attribute {
 	case "exited":
 		// This means the colour may be briefly yellow and then switch to red upon starting
 		// Not sure what a better alternative is.
-		if !c.DetailsLoaded() || c.Details.State.ExitCode == 0 {
+		if !c.DetailsLoaded() || c.DetailsSnapshot().State.ExitCode == 0 {
 			return color.FgYellow
 		}
 		return color.FgRed

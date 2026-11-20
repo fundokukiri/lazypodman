@@ -50,12 +50,13 @@ func collectPublishedPorts(containers []*commands.Container) []publishedPort {
 		}
 	}
 
-	owners := map[string]int{}
-	for _, port := range ports {
-		owners[portKey(port)]++
-	}
 	for i := range ports {
-		ports[i].Conflict = owners[portKey(ports[i])] > 1
+		for j := range ports {
+			if i != j && portsConflict(ports[i], ports[j]) {
+				ports[i].Conflict = true
+				break
+			}
+		}
 	}
 
 	sort.Slice(ports, func(i, j int) bool {
@@ -72,17 +73,38 @@ func collectPublishedPorts(containers []*commands.Container) []publishedPort {
 	return ports
 }
 
-func portKey(port publishedPort) string {
-	return fmt.Sprintf("%s|%d|%s", port.HostIP, port.HostPort, port.Protocol)
+func portsConflict(a, b publishedPort) bool {
+	return a.HostPort == b.HostPort &&
+		a.Protocol == b.Protocol &&
+		hostIPsConflict(a.HostIP, b.HostIP)
+}
+
+// hostIPsConflict treats an empty address, 0.0.0.0 and :: as "all interfaces".
+// Binding any of them on a port conflicts with every other address on that port.
+func hostIPsConflict(a, b string) bool {
+	if isWildcardHostIP(a) || isWildcardHostIP(b) {
+		return true
+	}
+
+	return strings.Trim(a, "[]") == strings.Trim(b, "[]")
+}
+
+func isWildcardHostIP(ip string) bool {
+	switch strings.Trim(strings.ToLower(ip), "[]") {
+	case "", "0.0.0.0", "::", "0:0:0:0:0:0:0:0":
+		return true
+	default:
+		return false
+	}
 }
 
 func primaryContainerNetwork(ctr *commands.Container) string {
-	if !ctr.DetailsLoaded() || ctr.Details.NetworkSettings == nil {
+	if !ctr.DetailsLoaded() || ctr.DetailsSnapshot().NetworkSettings == nil {
 		return "-"
 	}
 
-	names := make([]string, 0, len(ctr.Details.NetworkSettings.Networks))
-	for name := range ctr.Details.NetworkSettings.Networks {
+	names := make([]string, 0, len(ctr.DetailsSnapshot().NetworkSettings.Networks))
+	for name := range ctr.DetailsSnapshot().NetworkSettings.Networks {
 		names = append(names, name)
 	}
 	if len(names) == 0 {
@@ -129,4 +151,3 @@ func renderPublishedPorts(tr *i18n.TranslationSet, ports []publishedPort, contai
 }
 
 // keep strings imported for the host-IP normalisation used by future filters.
-var _ = strings.TrimSpace

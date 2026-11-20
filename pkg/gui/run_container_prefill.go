@@ -143,11 +143,11 @@ func joinRunArgs(args []string) string {
 // name is intentionally not copied: reusing it would collide with the source
 // container unless the user asks for --replace.
 func applyRunLikeContainer(state *runContainerState, ctr *commands.Container) {
-	if !ctr.DetailsLoaded() || ctr.Details.Config == nil {
+	if !ctr.DetailsLoaded() || ctr.DetailsSnapshot().Config == nil {
 		return
 	}
 
-	config := ctr.Details.Config
+	config := ctr.DetailsSnapshot().Config
 	imageConfig := &dockerspec.DockerOCIImageConfig{ImageConfig: ocispecImageConfig(config)}
 	if config.Healthcheck != nil {
 		imageConfig.Healthcheck = &dockerspec.HealthcheckConfig{Test: config.Healthcheck.Test}
@@ -163,14 +163,14 @@ func applyRunLikeContainer(state *runContainerState, ctr *commands.Container) {
 	if config.OpenStdin {
 		state.toggles["interactive"] = true
 	}
-	if ctr.Details.HostConfig != nil {
-		if ctr.Details.HostConfig.AutoRemove {
+	if ctr.DetailsSnapshot().HostConfig != nil {
+		if ctr.DetailsSnapshot().HostConfig.AutoRemove {
 			state.toggles["rm"] = true
 		}
-		if name := string(ctr.Details.HostConfig.RestartPolicy.Name); name != "" && name != "no" {
+		if name := string(ctr.DetailsSnapshot().HostConfig.RestartPolicy.Name); name != "" && name != "no" {
 			state.text["restart"] = name
 		}
-		if network := string(ctr.Details.HostConfig.NetworkMode); network != "" && network != "default" && network != "bridge" {
+		if network := string(ctr.DetailsSnapshot().HostConfig.NetworkMode); network != "" && network != "default" && network != "bridge" {
 			state.text["network"] = network
 		}
 	}
@@ -208,12 +208,12 @@ func mapToRunList(values map[string]string) []string {
 }
 
 func portBindingsToRunList(ctr *commands.Container) []string {
-	if ctr.Details.HostConfig == nil {
+	if ctr.DetailsSnapshot().HostConfig == nil {
 		return nil
 	}
 
 	ports := make([]string, 0)
-	for port, bindings := range ctr.Details.HostConfig.PortBindings {
+	for port, bindings := range ctr.DetailsSnapshot().HostConfig.PortBindings {
 		for _, binding := range bindings {
 			if binding.HostPort == "" {
 				continue
@@ -231,8 +231,8 @@ func portBindingsToRunList(ctr *commands.Container) []string {
 }
 
 func mountsToRunList(ctr *commands.Container) []string {
-	mounts := make([]string, 0, len(ctr.Details.Mounts))
-	for _, mount := range ctr.Details.Mounts {
+	mounts := make([]string, 0, len(ctr.DetailsSnapshot().Mounts))
+	for _, mount := range ctr.DetailsSnapshot().Mounts {
 		source := mount.Source
 		if mount.Type == "volume" && mount.Name != "" {
 			source = mount.Name
@@ -259,9 +259,15 @@ type runIssue struct {
 func validateRunState(state *runContainerState, containers []*commands.Container) []runIssue {
 	issues := make([]runIssue, 0)
 
-	published := map[string]bool{}
+	type requestedPort struct {
+		hostPort int
+		hostIP   string
+		proto    string
+	}
+
+	requested := make([]requestedPort, 0, len(state.lists["ports"]))
 	for _, spec := range state.lists["ports"] {
-		hostPort, proto, err := parseRunHostPort(spec)
+		hostPort, hostIP, proto, err := parseRunHostPort(spec)
 		if err != nil {
 			issues = append(issues, runIssue{Message: fmt.Sprintf("port %q: %v", spec, err), Blocking: true})
 			continue
@@ -269,15 +275,22 @@ func validateRunState(state *runContainerState, containers []*commands.Container
 		if hostPort == 0 {
 			continue
 		}
-		key := fmt.Sprintf("%d/%s", hostPort, proto)
-		if published[key] {
-			issues = append(issues, runIssue{Message: fmt.Sprintf("host port %d/%s is used twice in this run", hostPort, proto), Blocking: true})
+
+		for _, previous := range requested {
+			if previous.hostPort == hostPort && previous.proto == proto && hostIPsConflict(previous.hostIP, hostIP) {
+				issues = append(issues, runIssue{Message: fmt.Sprintf("host port %d/%s is used twice in this run", hostPort, proto), Blocking: true})
+				break
+			}
 		}
-		published[key] = true
+		requested = append(requested, requestedPort{hostPort: hostPort, hostIP: hostIP, proto: proto})
 
 		for _, ctr := range containers {
+			// A paused container still owns its published ports.
+			if ctr.Container.State != "running" && ctr.Container.State != "paused" {
+				continue
+			}
 			for _, binding := range ctr.Container.Ports {
-				if int(binding.PublicPort) == hostPort && binding.Type == proto {
+				if int(binding.PublicPort) == hostPort && binding.Type == proto && hostIPsConflict(hostIP, binding.IP) {
 					issues = append(issues, runIssue{Message: fmt.Sprintf("host port %d/%s is already published by %s", hostPort, proto, ctr.Name), Blocking: true})
 					break
 				}
@@ -321,33 +334,36 @@ func validateRunState(state *runContainerState, containers []*commands.Container
 	return issues
 }
 
-func parseRunHostPort(spec string) (int, string, error) {
+func parseRunHostPort(spec string) (int, string, string, error) {
 	proto := "tcp"
 	if index := strings.LastIndexByte(spec, '/'); index >= 0 {
 		proto = spec[index+1:]
 		spec = spec[:index]
 	}
 	if proto != "tcp" && proto != "udp" && proto != "sctp" {
-		return 0, proto, fmt.Errorf("unsupported protocol %q", proto)
+		return 0, "", proto, fmt.Errorf("unsupported protocol %q", proto)
 	}
 
 	parts := strings.Split(spec, ":")
 	containerPart := parts[len(parts)-1]
 	containerPort, err := strconv.Atoi(containerPart)
 	if err != nil || containerPort < 1 || containerPort > 65535 {
-		return 0, proto, fmt.Errorf("invalid container port %q", containerPart)
+		return 0, "", proto, fmt.Errorf("invalid container port %q", containerPart)
 	}
 	if len(parts) == 1 {
-		return 0, proto, nil
+		return 0, "", proto, nil
 	}
 
 	hostPart := parts[len(parts)-2]
 	hostPort, err := strconv.Atoi(hostPart)
 	if err != nil || hostPort < 1 || hostPort > 65535 {
-		return 0, proto, fmt.Errorf("invalid host port %q", hostPart)
+		return 0, "", proto, fmt.Errorf("invalid host port %q", hostPart)
 	}
 
-	return hostPort, proto, nil
+	hostIP := strings.Join(parts[:len(parts)-2], ":")
+	hostIP = strings.Trim(hostIP, "[]")
+
+	return hostPort, hostIP, proto, nil
 }
 
 func validationSummary(issues []runIssue) string {

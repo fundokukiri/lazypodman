@@ -13,8 +13,8 @@ func TestTranscriptDetectorRecognisesAFullScreenProgram(t *testing.T) {
 	assert.True(t, looksLikeTranscript([]byte("\x1b[2K\x1b[1A\x1b[K")))
 }
 
-func TestTranscriptDetectorRecognisesCursorHiding(t *testing.T) {
-	assert.True(t, looksLikeTranscript([]byte("\x1b[?25lhello")))
+func TestTranscriptDetectorIgnoresCursorHidingOnly(t *testing.T) {
+	assert.False(t, looksLikeTranscript([]byte("\x1b[?25lhello")))
 	assert.True(t, looksLikeTranscript([]byte("\x1b[?2004hhello")))
 }
 

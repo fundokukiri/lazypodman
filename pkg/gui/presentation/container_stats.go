@@ -79,14 +79,14 @@ func formatRAMUsage(stats commands.ContainerStats) string {
 // containerUptime formats how long the container has been running, based on
 // the StartedAt timestamp from its inspect data.
 func containerUptime(container *commands.Container, now time.Time) string {
-	if container.Details.ContainerJSONBase == nil || container.Details.State == nil {
+	if container.DetailsSnapshot().ContainerJSONBase == nil || container.DetailsSnapshot().State == nil {
 		return "unavailable"
 	}
-	if !container.Details.State.Running {
+	if !container.DetailsSnapshot().State.Running {
 		return "not running"
 	}
 
-	started, err := time.Parse(time.RFC3339Nano, container.Details.State.StartedAt)
+	started, err := time.Parse(time.RFC3339Nano, container.DetailsSnapshot().State.StartedAt)
 	if err != nil || started.IsZero() {
 		return "unavailable"
 	}

@@ -2,7 +2,6 @@ package gui
 
 import (
 	"context"
-	"sync"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/tasks"
@@ -25,7 +24,8 @@ func (gui *Gui) eventsUnavailable() string {
 
 // renderContainerEvents streams `podman events` verbatim into the main panel.
 // The stream is bound to the task context, so switching tab or panel kills the
-// child instead of leaving an orphan process.
+// child instead of leaving an orphan process. The trim writer bounds a tab that
+// can stay open for hours instead of keeping every event in memory.
 func (gui *Gui) renderContainerEvents(_ *commands.Container) tasks.TaskFunc {
 	return func(ctx context.Context) {
 		if gui.PodmanCommand == nil || gui.PodmanCommand.Pods() == nil {
@@ -41,42 +41,24 @@ func (gui *Gui) renderContainerEvents(_ *commands.Container) tasks.TaskFunc {
 			return
 		}
 
-		var mu sync.Mutex
-
-		lines := []string{eventsHeader, ""}
-
 		gui.clearMainView()
-		gui.reRenderStringMain(eventsHeader)
+
+		mainView := gui.Views.Main
+		mainView.Autoscroll = true
+		writer := newLogTrimWriter(mainView, func() bool { return true }, func() bool { return ctx.Err() != nil })
+		if gui.Config != nil {
+			writer.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
+			writer.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
+		}
+		defer writer.Close()
+
+		_, _ = writer.Write([]byte(eventsHeader + "\n\n"))
 
 		err := gui.PodmanCommand.Pods().StreamPodman(ctx, []string{"events"}, func(line string) {
-			mu.Lock()
-			lines = append(lines, line)
-			contents := joinLines(lines)
-			mu.Unlock()
-
-			gui.reRenderStringMain(contents)
+			_, _ = writer.Write([]byte(line + "\n"))
 		})
 		if err != nil && ctx.Err() == nil {
-			mu.Lock()
-			lines = append(lines, "", err.Error())
-			contents := joinLines(lines)
-			mu.Unlock()
-
-			gui.reRenderStringMain(contents)
+			_, _ = writer.Write([]byte("\n" + err.Error() + "\n"))
 		}
 	}
-}
-
-func joinLines(lines []string) string {
-	out := ""
-
-	for i, line := range lines {
-		if i != 0 {
-			out += "\n"
-		}
-
-		out += line
-	}
-
-	return out
 }

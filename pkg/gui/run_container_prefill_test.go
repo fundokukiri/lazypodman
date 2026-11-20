@@ -115,6 +115,7 @@ func TestValidateRunStateBlocksNameAndPortConflicts(t *testing.T) {
 	containers := []*commands.Container{{
 		Name: "web",
 		Container: container.Summary{
+			State: "running",
 			Ports: []container.Port{{PublicPort: 8080, Type: "tcp"}},
 		},
 	}}
@@ -124,6 +125,66 @@ func TestValidateRunStateBlocksNameAndPortConflicts(t *testing.T) {
 	assert.Len(t, issues, 2)
 	assert.True(t, issues[0].Blocking)
 	assert.True(t, issues[1].Blocking)
+}
+
+func TestValidateRunStateAllowsSamePortOnDifferentHostIPs(t *testing.T) {
+	state := newRunContainerState("alpine")
+	state.lists["ports"] = []string{"127.0.0.1:8080:80", "127.0.0.2:8080:81"}
+
+	assert.Empty(t, validateRunState(state, nil))
+}
+
+func TestValidateRunStateDetectsDuplicateHostPort(t *testing.T) {
+	state := newRunContainerState("alpine")
+	state.lists["ports"] = []string{"8080:80", "8080:81"}
+
+	issues := validateRunState(state, nil)
+
+	assert.Len(t, issues, 1)
+	assert.True(t, issues[0].Blocking)
+}
+
+func TestValidateRunStateDetectsPausedContainerPorts(t *testing.T) {
+	state := newRunContainerState("alpine")
+	state.lists["ports"] = []string{"8080:80"}
+	containers := []*commands.Container{{
+		Name: "paused",
+		Container: container.Summary{
+			State: "paused",
+			Ports: []container.Port{{PublicPort: 8080, Type: "tcp"}},
+		},
+	}}
+
+	issues := validateRunState(state, containers)
+
+	assert.Len(t, issues, 1)
+	assert.True(t, issues[0].Blocking)
+}
+
+func TestValidateRunStateIgnoresStoppedContainerPorts(t *testing.T) {
+	state := newRunContainerState("alpine")
+	state.lists["ports"] = []string{"8080:80"}
+	containers := []*commands.Container{{
+		Name: "old",
+		Container: container.Summary{
+			State: "exited",
+			Ports: []container.Port{{PublicPort: 8080, Type: "tcp"}},
+		},
+	}}
+
+	assert.Empty(t, validateRunState(state, containers))
+}
+
+func TestParseRunHostPortReadsWildcardAndIPv6(t *testing.T) {
+	port, host, proto, err := parseRunHostPort("[::1]:8080:80/udp")
+	assert.NoError(t, err)
+	assert.Equal(t, 8080, port)
+	assert.Equal(t, "::1", host)
+	assert.Equal(t, "udp", proto)
+
+	_, host, _, err = parseRunHostPort("8080:80")
+	assert.NoError(t, err)
+	assert.Empty(t, host)
 }
 
 func TestValidateRunStateAcceptsReplaceForNameConflict(t *testing.T) {

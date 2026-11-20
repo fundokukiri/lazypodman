@@ -108,10 +108,6 @@ func (fakeEnabledPodClient) OpenTerminal(context.Context, string, int, int) (*co
 	return nil, nil
 }
 
-func (fakeEnabledPodClient) OpenAttachTerminal(context.Context, string, int, int) (*commands.Terminal, error) {
-	return nil, nil
-}
-
 func TestGetKeyRendersControlKeys(t *testing.T) {
 	cases := map[interface{}]string{
 		gocui.KeyCtrlP: "ctrl+p",

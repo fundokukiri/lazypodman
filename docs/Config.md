@@ -255,7 +255,8 @@ gui:
 file up. lazypodman itself never calls `systemctl`.
 
 The generated file contains `Image=`, `ContainerName=`, `Environment=` (values are
-plaintext, the prompt warns about it), `Exec=`, `PublishPort=`, `Volume=`,
+plaintext, the prompt warns about it; each value is quoted and newlines are
+flattened), `Exec=`, `PublishPort=`, `Volume=` (named volumes keep their name),
 `Network=` plus `[Service]` and `[Install]` sections. It is a readable starting
 point, not a full translation of every inspect field.
 

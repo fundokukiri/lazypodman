@@ -3,6 +3,7 @@ package gui
 import (
 	"testing"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,6 +39,18 @@ func TestLogViewCacheMissesAfterStateChange(t *testing.T) {
 	restored, _ := gui.restoreLogView(ctr, target)
 	assert.False(t, restored)
 	assert.Equal(t, "stats\n", target.content)
+}
+
+func TestLogViewCacheMissesAfterRestart(t *testing.T) {
+	gui := &Gui{}
+	ctr := cachedContainer()
+	ctr.Details.ContainerJSONBase = &container.ContainerJSONBase{}
+	ctr.Details.State = &container.State{StartedAt: "2026-01-01T00:00:00Z"}
+	gui.cacheLogView(ctr, &fakeLogTarget{content: "old run\n"}, gui.logCacheGeneration())
+
+	ctr.Details.State.StartedAt = "2026-01-01T00:01:00Z"
+	restored, _ := gui.restoreLogView(ctr, &fakeLogTarget{})
+	assert.False(t, restored)
 }
 
 func TestLogViewCacheCanBeInvalidated(t *testing.T) {

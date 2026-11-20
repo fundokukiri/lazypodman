@@ -65,17 +65,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Attach opens in a separate terminal**: `a` (and the `x` menu) now launches
-  plain `podman attach` in a new terminal window instead of suspending
-  lazypodman. Live output starts immediately at the bottom, with the terminal's
-  own scrollback and the TUI stays usable. The launcher honours `$TERMINAL`
-  (e.g. `kitty`, `alacritty`, `wezterm`), then tries `xdg-terminal-exec`,
-  x-terminal-emulator, GNOME Terminal, Konsole, Xfce Terminal and the common
-  lightweight terminals. macOS uses Terminal.app and Windows opens a new
-  console window. If no emulator is available, `a` falls back to the current
-  terminal. `A` always uses that current-terminal path. The attach process
-  sends itself `SIGWINCH` shortly after starting, so containers that only draw
-  after a resize no longer leave a black screen until a key is pressed.
+- **Shell scrollback no longer panics when the screen shrinks**: the
+  scrolled-off-line detector now only compares overlapping rows instead of
+  slicing past the new screen.
+
+- **CPU percentages count the online CPUs and ignore counter resets**: a
+  container using a full core is no longer reported as a fraction of one core
+  on multi-core hosts, and a restarted stats stream cannot produce a negative
+  percentage.
+
+- **Leaving the log view no longer leaks a signal goroutine**: the interrupt
+  watcher exits with the log view context.
+
+- **Container downloads cannot default to the host root**: a container path
+  like `/` now suggests `container-root` instead of `/`, and the host root is
+  rejected as a copy destination.
+
+- **Pause no longer panics before inspect data loads**: the key shows the
+  waiting message instead of dereferencing a nil state.
+
+- **Run checks handle host IPs and paused containers**: the same host port on
+  different IPs is allowed, while ports held by paused containers are reported
+  as conflicts.
+
+- **Slow Podman calls no longer hold the container lock**: details refresh does
+  not take the global lock, and container listing has a timeout.
+
+- **Auto-update output is bounded**: it streams through the same capped log
+  writer as Events instead of rebuilding the full output for every line.
+  Container stats accept frames larger than 64 KiB.
+
+- **Socket discovery only accepts real sockets**, and the rootless fallback
+  path is absolute even when `XDG_RUNTIME_DIR` is unset.
+
+- **Concurrent inspect refreshes no longer race the UI**: container details are
+  published through a lock and read as a snapshot, so a background refresh
+  cannot expose a half-assigned inspect struct while Logs, Diagnose or the
+  shell header renders. Inspect calls now have a timeout instead of hanging a
+  refresh forever.
+
+- **Slow Podman no longer freezes the UI**: opening Run Container, the Podman
+  connection list and the Quadlet export now run their Podman work in a
+  background status task and open the menu/prompt when it finishes. A stuck
+  socket no longer blocks the gocui event loop.
+
+- **Events stays bounded**: the Events tab streams through the same bounded log
+  writer as Logs instead of rebuilding and re-rendering the full event list on
+  every line. A long-running Events tab no longer grows without limit.
+
+- **Port conflicts handle wildcard addresses**: `0.0.0.0`, `::` and an empty
+  address conflict with the same port on any interface, and Run validation
+  ignores ports from containers that are already stopped.
+
+- **Transcript detection ignores cursor hiding alone**: progress bars that only
+  hide the cursor no longer switch the Logs tab to a mostly empty terminal
+  replay. Alternate-screen and multiple cursor/erase sequences still trigger it.
+
+- **Log cache resets across a container restart**: the cached Logs view is tied
+  to the container's start time, so a restart no longer appends the new run to
+  the previous run's output.
+
+- **Long lines in streamed Podman output are read completely**: `podman events`
+  and `auto-update` output no longer deadlock when one line is larger than the
+  old 1 MiB scanner limit.
+
+- **Large container file copies are not cut off at 30 seconds**: `podman cp`
+  runs without the short command timeout used for `ls`/`diff`, so a large
+  download or upload can finish.
+
+- **Quadlet export quotes values and keeps named volumes named**: newlines in
+  env/command values cannot inject unit directives, and `Volume=` uses the
+  volume name rather than Podman's internal host path.
+
+- **Shell shortcuts open a separate terminal**: `a` starts a new `podman
+  exec` shell in a new terminal window, and `A` starts one in the current
+  terminal. The launcher honours `$TERMINAL` (e.g. `kitty`, `alacritty`,
+  `wezterm`), then tries `xdg-terminal-exec`, x-terminal-emulator, GNOME
+  Terminal, Konsole, Xfce Terminal and the common lightweight terminals. macOS
+  uses Terminal.app and Windows opens a new console window. If no emulator is
+  available, `a` falls back to the current terminal.
 
 - **`ctrl+a` attaches with full logs**: a separate explicit key replays the
   whole container history and then attaches, so `a`/`A` stay instant.

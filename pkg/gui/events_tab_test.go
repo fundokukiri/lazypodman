@@ -16,8 +16,3 @@ func TestEventsUnavailableExplainsWhy(t *testing.T) {
 
 	assert.Equal(t, "cli off: podman CLI not found", gui.eventsUnavailable())
 }
-
-func TestJoinLines(t *testing.T) {
-	assert.Equal(t, "", joinLines(nil))
-	assert.Equal(t, "a\nb", joinLines([]string{"a", "b"}))
-}

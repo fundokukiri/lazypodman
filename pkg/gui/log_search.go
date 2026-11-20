@@ -101,7 +101,7 @@ func (gui *Gui) searchContainerLogs(ctx context.Context, ctr *commands.Container
 	var buf bytes.Buffer
 	limited := io.LimitReader(readCloser, logSearchReadLimit)
 
-	if ctr.DetailsLoaded() && ctr.Details.Config != nil && ctr.Details.Config.Tty {
+	if ctr.DetailsLoaded() && ctr.DetailsSnapshot().Config != nil && ctr.DetailsSnapshot().Config.Tty {
 		_, err = io.Copy(&buf, limited)
 	} else {
 		_, err = stdcopy.StdCopy(&buf, &buf, limited)

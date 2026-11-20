@@ -33,13 +33,14 @@ func TestBuildQuadletContainer(t *testing.T) {
 	unit := BuildQuadletContainer(quadletFixture())
 
 	assert.Contains(t, unit, "[Container]")
-	assert.Contains(t, unit, "Image=docker.io/library/nginx:latest")
-	assert.Contains(t, unit, "ContainerName=web")
-	assert.Contains(t, unit, "Environment=A=1 B=2", "env is sorted so the file is stable")
-	assert.Contains(t, unit, "Exec=nginx -g daemon off;")
-	assert.Contains(t, unit, "PublishPort=8080:80")
-	assert.Contains(t, unit, "Volume=/srv/www:/usr/share/nginx/html")
-	assert.Contains(t, unit, "Network=bridge")
+	assert.Contains(t, unit, `Image="docker.io/library/nginx:latest"`)
+	assert.Contains(t, unit, `ContainerName="web"`)
+	assert.Contains(t, unit, `Environment="A=1"`)
+	assert.Contains(t, unit, `Environment="B=2"`, "env is sorted so the file is stable")
+	assert.Contains(t, unit, `Exec="nginx" "-g" "daemon off;"`)
+	assert.Contains(t, unit, `PublishPort="8080":80`)
+	assert.Contains(t, unit, `Volume="/srv/www:/usr/share/nginx/html"`)
+	assert.Contains(t, unit, `Network="bridge"`)
 	assert.Contains(t, unit, "[Service]")
 	assert.Contains(t, unit, "[Install]")
 }
@@ -47,4 +48,29 @@ func TestBuildQuadletContainer(t *testing.T) {
 func TestBuildQuadletContainerRequiresInspect(t *testing.T) {
 	assert.Empty(t, BuildQuadletContainer(nil))
 	assert.Empty(t, BuildQuadletContainer(&Container{Name: "web"}))
+}
+
+func TestBuildQuadletContainerEscapesNewlines(t *testing.T) {
+	ctr := quadletFixture()
+	ctr.Details.Config.Env = []string{"A=1\n[Service]\nExecStartPre=/bin/true"}
+
+	unit := BuildQuadletContainer(ctr)
+
+	assert.Contains(t, unit, `Environment="A=1 [Service] ExecStartPre=/bin/true"`)
+	assert.NotContains(t, unit, "\n[Service]\nExecStartPre=")
+}
+
+func TestBuildQuadletContainerUsesVolumeName(t *testing.T) {
+	ctr := quadletFixture()
+	ctr.Details.Mounts = []container.MountPoint{{
+		Type:        "volume",
+		Name:        "data",
+		Source:      "/var/lib/containers/storage/volumes/data/_data",
+		Destination: "/data",
+	}}
+
+	unit := BuildQuadletContainer(ctr)
+
+	assert.Contains(t, unit, `Volume="data:/data"`)
+	assert.NotContains(t, unit, "/var/lib/containers/storage")
 }

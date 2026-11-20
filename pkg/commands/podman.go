@@ -244,19 +244,19 @@ func (c *PodmanCommand) Close() error {
 }
 
 func (c *PodmanCommand) CreateClientStatMonitor(container *Container) {
-	container.MonitoringStats = true
 	stream, err := c.Client.ContainerStats(context.Background(), container.ID, true)
 	if err != nil {
 		// not creating error panel because if we've disconnected from podman we'll
 		// have already created an error panel
 		c.Log.Error(err)
-		container.MonitoringStats = false
+		container.MonitoringStats.Store(false)
 		return
 	}
 
 	defer stream.Body.Close()
 
 	scanner := bufio.NewScanner(stream.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	for scanner.Scan() {
 		data := scanner.Bytes()
 		var stats ContainerStats
@@ -274,7 +274,7 @@ func (c *PodmanCommand) CreateClientStatMonitor(container *Container) {
 		container.appendStats(recordedStats, c.Config.UserConfig.Stats.MaxDuration)
 	}
 
-	container.MonitoringStats = false
+	container.MonitoringStats.Store(false)
 }
 
 func (c *PodmanCommand) RefreshContainersAndServices(currentContainers []*Container) ([]*Container, []*Service, error) {
@@ -429,7 +429,10 @@ func (c *PodmanCommand) GetContainers(existingContainers []*Container) ([]*Conta
 	c.ContainerMutex.Lock()
 	defer c.ContainerMutex.Unlock()
 
-	containers, err := c.Client.ContainerList(context.Background(), container.ListOptions{All: true})
+	ctx, cancel := context.WithTimeout(context.Background(), containerAPITimeout)
+	defer cancel()
+
+	containers, err := c.Client.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		return nil, err
 	}
@@ -531,10 +534,9 @@ func (c *PodmanCommand) GetServices() ([]*Service, error) {
 	return services, nil
 }
 
-func (c *PodmanCommand) RefreshContainerDetails(containers []*Container) error {
-	c.ContainerMutex.Lock()
-	defer c.ContainerMutex.Unlock()
+const containerAPITimeout = 10 * time.Second
 
+func (c *PodmanCommand) RefreshContainerDetails(containers []*Container) error {
 	c.SetContainerDetails(containers)
 
 	return nil
@@ -548,11 +550,13 @@ func (c *PodmanCommand) SetContainerDetails(containers []*Container) {
 		ctr := ctr
 		wg.Add(1)
 		go func() {
-			details, err := c.Client.ContainerInspect(context.Background(), ctr.ID)
+			ctx, cancel := context.WithTimeout(context.Background(), containerAPITimeout)
+			details, err := c.Client.ContainerInspect(ctx, ctr.ID)
+			cancel()
 			if err != nil {
 				c.Log.Error(err)
 			} else {
-				ctr.Details = details
+				ctr.SetDetails(details)
 			}
 			wg.Done()
 		}()

@@ -547,7 +547,10 @@ func (gui *Gui) monitorContainerStats(ctx context.Context) {
 			return
 		case <-ticker.C:
 			for _, container := range gui.Panels.Containers.List.GetAllItems() {
-				if !container.MonitoringStats {
+				if container.Container.State != "running" {
+					continue
+				}
+				if container.MonitoringStats.CompareAndSwap(false, true) {
 					go gui.PodmanCommand.CreateClientStatMonitor(container)
 				}
 			}

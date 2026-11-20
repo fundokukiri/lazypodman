@@ -27,7 +27,6 @@ type terminalState struct {
 	terminal    *commands.Terminal
 	mutex       sync.Mutex
 	cols, rows  int
-	attach      bool
 
 	// history keeps lines that scrolled off the screen so the user can page back
 	// through shell output, like the Logs tab.
@@ -116,22 +115,12 @@ func (gui *Gui) terminalTabFor(container *commands.Container) bool {
 }
 
 func (gui *Gui) startContainerTerminal(container *commands.Container) error {
-	return gui.startTerminalTab(container, false)
-}
-
-func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) error {
 	if container == nil {
 		return nil
 	}
 
-	if state := gui.terminalFor(container.ID); state != nil {
-		if state.attach == attach {
-			return gui.focusTerminalView()
-		}
-
-		if err := gui.closeContainerTerminal(); err != nil {
-			return err
-		}
+	if gui.terminalFor(container.ID) != nil {
+		return gui.focusTerminalView()
 	}
 
 	if capability := gui.PodmanCommand.Capabilities().CLI; capability.State == commands.CapabilityUnavailable {
@@ -140,12 +129,6 @@ func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) err
 
 	if !containerIsRunning(container) {
 		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
-	}
-
-	if attach {
-		if err := container.CanAttach(); err != nil {
-			return gui.createErrorPanel(err.Error())
-		}
 	}
 
 	client := gui.PodmanCommand.Pods()
@@ -159,16 +142,12 @@ func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) err
 		terminal *commands.Terminal
 		err      error
 	)
-	if attach {
-		terminal, err = client.OpenAttachTerminal(context.Background(), container.ID, cols, rows)
-	} else {
-		terminal, err = client.OpenTerminal(context.Background(), container.ID, cols, rows)
-	}
+	terminal, err = client.OpenTerminal(context.Background(), container.ID, cols, rows)
 	if err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	state := &terminalState{containerID: container.ID, terminal: terminal, attach: attach, cols: cols, rows: rows}
+	state := &terminalState{containerID: container.ID, terminal: terminal, cols: cols, rows: rows}
 	gui.addTerminal(state)
 
 	if err := gui.selectShellTab(); err != nil {
@@ -179,11 +158,7 @@ func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) err
 		return err
 	}
 
-	hint := gui.Tr.ShellCloseHint
-	if attach {
-		hint = gui.Tr.DetachFromContainerShortCut
-	}
-	gui.flashStatus(hint)
+	gui.flashStatus(gui.Tr.ShellCloseHint)
 
 	go gui.watchTerminal(terminal)
 
@@ -397,9 +372,10 @@ func terminalHeader(container *commands.Container, tr *i18n.TranslationSet) stri
 	image := container.Container.Image
 	status := container.Container.Status
 
-	if container.DetailsLoaded() {
-		image = container.Details.Config.Image
-		status = container.Details.State.Status
+	details := container.DetailsSnapshot()
+	if details.ContainerJSONBase != nil && details.Config != nil && details.State != nil {
+		image = details.Config.Image
+		status = details.State.Status
 	}
 
 	id := container.ID
@@ -774,7 +750,12 @@ func (gui *Gui) scrollTerminal(delta int) error {
 // scrolledOffLines returns the lines that left the top of the screen between two
 // snapshots (used to build the scrollback history).
 func scrolledOffLines(oldRows, newRows []string) []string {
-	for k := 1; k < len(oldRows) && k <= len(newRows); k++ {
+	start := len(oldRows) - len(newRows)
+	if start < 1 {
+		start = 1
+	}
+
+	for k := start; k < len(oldRows); k++ {
 		if slicesEqual(oldRows[k:], newRows[:len(oldRows)-k]) {
 			return oldRows[:k]
 		}

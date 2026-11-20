@@ -17,9 +17,19 @@ func (gui *Gui) handleImagesRunContainer(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	state := gui.imageRunState(image)
+	return gui.WithWaitingStatus(gui.trString(gui.Tr.RunContainerLoadingStatus, "Loading image defaults"), func() error {
+		state := gui.imageRunState(image)
 
-	return gui.showRunContainerMenu(state, 0)
+		gui.g.Update(func(*gocui.Gui) error {
+			if err := gui.showRunContainerMenu(state, 0); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+
+			return nil
+		})
+
+		return nil
+	})
 }
 
 func runImageRef(image *commands.Image) string {

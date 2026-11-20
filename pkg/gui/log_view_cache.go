@@ -30,7 +30,12 @@ type logViewBuffer interface {
 }
 
 func (gui *Gui) logCacheKey(container *commands.Container) string {
-	return container.ID + "-" + container.Container.State
+	key := container.ID + "-" + container.Container.State
+	if details := container.DetailsSnapshot(); details.ContainerJSONBase != nil && details.State != nil && details.State.StartedAt != "" {
+		key += "-" + details.State.StartedAt
+	}
+
+	return key
 }
 
 func (gui *Gui) logCacheGeneration() int {

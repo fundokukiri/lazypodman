@@ -60,15 +60,6 @@ func (c *cliPodmanClient) OpenTerminal(ctx context.Context, ref string, cols, ro
 	})
 }
 
-// OpenAttachTerminal attaches to the container's main process in a PTY. It is
-// the in-app equivalent of the external `a`/`A` attach, but keeps the session in
-// the Shell tab.
-func (c *cliPodmanClient) OpenAttachTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error) {
-	return c.openTerminal(ctx, ref, cols, rows, []string{
-		"attach", "--sig-proxy=false", ref,
-	})
-}
-
 func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, rows int, args []string) (*Terminal, error) {
 	if err := validatePodRef(ref); err != nil {
 		return nil, err

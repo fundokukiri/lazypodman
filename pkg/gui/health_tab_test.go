@@ -290,10 +290,6 @@ func (f *fakeHealthPodClient) OpenTerminal(_ context.Context, _ string, _, _ int
 	return nil, nil
 }
 
-func (f *fakeHealthPodClient) OpenAttachTerminal(_ context.Context, _ string, _, _ int) (*commands.Terminal, error) {
-	return nil, nil
-}
-
 func (f *fakeHealthPodClient) StreamPodman(_ context.Context, argv []string, onLine func(string)) error {
 	f.streamKubeCalls++
 

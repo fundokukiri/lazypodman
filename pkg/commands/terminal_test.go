@@ -90,28 +90,6 @@ func TestShellTerminalArgvRunsThePreferredShell(t *testing.T) {
 	assert.Contains(t, interactiveShellCommand, "exec bash")
 }
 
-func TestOpenAttachTerminalRunsPlainAttach(t *testing.T) {
-	binary, argvFile := writeInteractiveFakePodman(t)
-
-	client := &cliPodmanClient{binary: binary}
-	terminal, err := client.OpenAttachTerminal(context.Background(), "abc123", 60, 10)
-	requireNoError(t, err)
-	defer func() { _ = terminal.Close() }()
-
-	want := "[attach]\n[--sig-proxy=false]\n[abc123]\n"
-	deadline := time.Now().Add(5 * time.Second)
-	for time.Now().Before(deadline) {
-		data, err := os.ReadFile(argvFile)
-		if err == nil && strings.Contains(string(data), want) {
-			return
-		}
-
-		time.Sleep(20 * time.Millisecond)
-	}
-
-	assert.Contains(t, readRecordedArgv(t, argvFile), want)
-}
-
 func TestOpenTerminalResizeKeepsWorking(t *testing.T) {
 	binary, _ := writeInteractiveFakePodman(t)
 

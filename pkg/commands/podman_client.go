@@ -45,10 +45,6 @@ type PodmanClient interface {
 
 	// OpenTerminal starts a real PTY shell (`podman exec -it ...`) for the Shell tab.
 	OpenTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error)
-
-	// OpenAttachTerminal attaches to the container's main process in a PTY for
-	// the Shell tab, instead of opening an external terminal.
-	OpenAttachTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error)
 }
 
 // PodStatsRow is the pod-level CPU/memory figure shown in the pod stats tab.

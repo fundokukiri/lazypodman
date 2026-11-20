@@ -16,6 +16,27 @@ func TestCalculateContainerCPUPercentage(t *testing.T) {
 	assert.EqualValues(t, 62.5, container.CalculateContainerCPUPercentage())
 }
 
+func TestCalculateContainerCPUPercentageUsesOnlineCPUs(t *testing.T) {
+	container := &ContainerStats{}
+	container.CPUStats.CPUUsage.TotalUsage = 10
+	container.CPUStats.SystemCPUUsage = 10
+	container.PrecpuStats.CPUUsage.TotalUsage = 5
+	container.PrecpuStats.SystemCPUUsage = 2
+	container.CPUStats.OnlineCpus = 4
+
+	assert.EqualValues(t, 250, container.CalculateContainerCPUPercentage())
+}
+
+func TestCalculateContainerCPUPercentageIgnoresNegativeDelta(t *testing.T) {
+	container := &ContainerStats{}
+	container.CPUStats.CPUUsage.TotalUsage = 5
+	container.CPUStats.SystemCPUUsage = 10
+	container.PrecpuStats.CPUUsage.TotalUsage = 10
+	container.PrecpuStats.SystemCPUUsage = 2
+
+	assert.EqualValues(t, 0, container.CalculateContainerCPUPercentage())
+}
+
 func TestCalculateContainerCPUPercentageWithZeroSystemDelta(t *testing.T) {
 	// Podman may not report system_cpu_usage in its first stats frame.
 	container := &ContainerStats{}

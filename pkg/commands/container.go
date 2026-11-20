@@ -3,8 +3,9 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -30,18 +31,21 @@ type Container struct {
 
 	// PodName is the pod this container belongs to, filled from the podman CLI
 	// snapshot. Empty for standalone containers and whenever pods are disabled.
-	PodName         string
-	Container       container.Summary
-	Client          *client.Client
-	OSCommand       *OSCommand
-	Log             *logrus.Entry
-	StatHistory     []*RecordedStats
+	PodName     string
+	Container   container.Summary
+	Client      *client.Client
+	OSCommand   *OSCommand
+	Log         *logrus.Entry
+	StatHistory []*RecordedStats
+	// Details is written by the background inspect refresh. Read it through
+	// DetailsSnapshot so the UI never sees a partly assigned struct.
 	Details         container.InspectResponse
-	MonitoringStats bool
+	MonitoringStats atomic.Bool
 	PodmanCommand   LimitedPodmanCommand
 	Tr              *i18n.TranslationSet
 
-	StatsMutex deadlock.Mutex
+	detailsMutex sync.RWMutex
+	StatsMutex   deadlock.Mutex
 
 	// Disk usage is fetched with `podman inspect --size` when the Stats tab
 	// opens, not on every stats tick.
@@ -49,6 +53,21 @@ type Container struct {
 	DiskSizeRw     int64
 	DiskSizeRootFs int64
 	DiskSizeKnown  bool
+}
+
+// DetailsSnapshot returns a consistent copy of the last inspect response.
+func (c *Container) DetailsSnapshot() container.InspectResponse {
+	c.detailsMutex.RLock()
+	defer c.detailsMutex.RUnlock()
+
+	return c.Details
+}
+
+func (c *Container) SetDetails(details container.InspectResponse) {
+	c.detailsMutex.Lock()
+	defer c.detailsMutex.Unlock()
+
+	c.Details = details
 }
 
 func (c *Container) SetDiskSize(rw, rootFs int64) {
@@ -116,12 +135,16 @@ func (c *Container) Restart() error {
 
 // CanAttach reports why a container cannot be attached to, or nil when it can.
 func (c *Container) CanAttach() error {
-	if !c.DetailsLoaded() {
+	details := c.DetailsSnapshot()
+	if details.ContainerJSONBase == nil {
+		return errors.New(c.Tr.WaitingForContainerInfo)
+	}
+	if details.Config == nil {
 		return errors.New(c.Tr.WaitingForContainerInfo)
 	}
 
 	// verify that we can in fact attach to this container
-	if !c.Details.Config.OpenStdin {
+	if !details.Config.OpenStdin {
 		return errors.New(c.Tr.UnattachableContainerError)
 	}
 
@@ -130,18 +153,6 @@ func (c *Container) CanAttach() error {
 	}
 
 	return nil
-}
-
-// Attach attaches the container
-func (c *Container) Attach() (*exec.Cmd, error) {
-	if err := c.CanAttach(); err != nil {
-		return nil, err
-	}
-
-	c.Log.Warn(fmt.Sprintf("attaching to container %s", c.Name))
-	// TODO: use SDK
-	cmd := c.OSCommand.NewCmd(c.OSCommand.Config.PodmanBinary(), "attach", "--sig-proxy=false", c.ID)
-	return cmd, nil
 }
 
 // Top returns process information
@@ -184,5 +195,5 @@ func (c *Container) RenderTop(ctx context.Context) (string, error) {
 // Sometimes it takes some time for a container to have its details loaded
 // after it starts.
 func (c *Container) DetailsLoaded() bool {
-	return c.Details.ContainerJSONBase != nil
+	return c.DetailsSnapshot().ContainerJSONBase != nil
 }

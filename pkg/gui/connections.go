@@ -21,35 +21,45 @@ type podmanConnection struct {
 // leave every existing panel and stream pointing at the old store, so a restart
 // is the only correct switch.
 func (gui *Gui) handleConnectionsMenu(_ *gocui.Gui, _ *gocui.View) error {
-	output, err := gui.runPodmanOutput("system", "connection", "ls", "--format", "json")
-	if err != nil {
-		return gui.createErrorPanel(strings.TrimSpace(output + "\n" + err.Error()))
-	}
+	return gui.WithWaitingStatus(gui.trString(gui.Tr.ConnectionsLoadingStatus, "Loading podman connections"), func() error {
+		output, err := gui.runPodmanOutput("system", "connection", "ls", "--format", "json")
+		if err != nil {
+			return fmt.Errorf("%s", strings.TrimSpace(output+"\n"+err.Error()))
+		}
 
-	connections, err := parsePodmanConnections([]byte(output))
-	if err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
-	if len(connections) == 0 {
-		gui.flashStatus(gui.Tr.ConnectionsNone)
+		connections, err := parsePodmanConnections([]byte(output))
+		if err != nil {
+			return err
+		}
+		if len(connections) == 0 {
+			gui.flashStatus(gui.Tr.ConnectionsNone)
+
+			return nil
+		}
+
+		items := make([]*types.MenuItem, 0, len(connections))
+		for _, connection := range connections {
+			connection := connection
+			label := connection.Name
+			if connection.Default {
+				label += " (default)"
+			}
+			items = append(items, &types.MenuItem{
+				LabelColumns: []string{label, color.New(color.FgYellow).Sprint(connection.URI)},
+				OnPress:      func() error { return gui.confirmRestartConnection(connection) },
+			})
+		}
+
+		gui.g.Update(func(*gocui.Gui) error {
+			if err := gui.Menu(CreateMenuOptions{Title: gui.Tr.ConnectionsTitle, Items: items}); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+
+			return nil
+		})
 
 		return nil
-	}
-
-	items := make([]*types.MenuItem, 0, len(connections))
-	for _, connection := range connections {
-		connection := connection
-		label := connection.Name
-		if connection.Default {
-			label += " (default)"
-		}
-		items = append(items, &types.MenuItem{
-			LabelColumns: []string{label, color.New(color.FgYellow).Sprint(connection.URI)},
-			OnPress:      func() error { return gui.confirmRestartConnection(connection) },
-		})
-	}
-
-	return gui.Menu(CreateMenuOptions{Title: gui.Tr.ConnectionsTitle, Items: items})
+	})
 }
 
 func parsePodmanConnections(data []byte) ([]podmanConnection, error) {

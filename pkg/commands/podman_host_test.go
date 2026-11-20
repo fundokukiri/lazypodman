@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -75,7 +76,9 @@ func TestDiscoverRootlessPodmanSocket(t *testing.T) {
 
 	socketPath := filepath.Join(xdgRuntimeDir, "podman", "podman.sock")
 	assert.NoError(t, os.MkdirAll(filepath.Dir(socketPath), 0o755))
-	assert.NoError(t, os.WriteFile(socketPath, []byte{}, 0o600))
+	listener, err := net.Listen("unix", socketPath)
+	assert.NoError(t, err)
+	defer listener.Close()
 
 	t.Setenv("PODMAN_HOST", "")
 	t.Setenv("CONTAINER_HOST", "")
@@ -83,6 +86,13 @@ func TestDiscoverRootlessPodmanSocket(t *testing.T) {
 
 	host := determinePodmanHost()
 	assert.Equal(t, "unix://"+socketPath, host)
+}
+
+func TestSocketExistsRejectsRegularFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "podman.sock")
+	assert.NoError(t, os.WriteFile(path, []byte{}, 0o600))
+
+	assert.False(t, socketExists(path))
 }
 
 func TestIsPodmanInfraContainer(t *testing.T) {

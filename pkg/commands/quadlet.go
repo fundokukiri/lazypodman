@@ -12,50 +12,77 @@ import (
 // container's inspect data. It is deliberately a small, readable file rather than
 // a full mapping of every option: what is emitted is documented and stable.
 func BuildQuadletContainer(ctr *Container) string {
-	if ctr == nil || ctr.Details.ContainerJSONBase == nil || ctr.Details.Config == nil {
+	if ctr == nil {
 		return ""
 	}
 
-	config := ctr.Details.Config
+	details := ctr.DetailsSnapshot()
+	if details.ContainerJSONBase == nil || details.Config == nil {
+		return ""
+	}
+
+	config := details.Config
 	var builder strings.Builder
 
-	builder.WriteString("[Unit]\nDescription=lazypodman export of " + ctr.Name + "\n\n")
+	builder.WriteString("[Unit]\nDescription=lazypodman export of " + quadletValue(ctr.Name) + "\n\n")
 	builder.WriteString("[Container]\n")
 
 	image := config.Image
 	if image == "" {
 		image = ctr.Container.Image
 	}
-	builder.WriteString("Image=" + image + "\n")
-	builder.WriteString("ContainerName=" + ctr.Name + "\n")
+	builder.WriteString("Image=" + quadletValue(image) + "\n")
+	builder.WriteString("ContainerName=" + quadletValue(ctr.Name) + "\n")
 
 	if len(config.Env) > 0 {
 		env := append([]string{}, config.Env...)
 		sort.Strings(env)
-		builder.WriteString("Environment=" + strings.Join(env, " ") + "\n")
-	}
-
-	if len(config.Cmd) > 0 {
-		builder.WriteString("Exec=" + strings.Join(config.Cmd, " ") + "\n")
-	}
-
-	if ctr.Details.HostConfig != nil {
-		builder.WriteString(quadletPorts(ctr.Details.HostConfig.PortBindings))
-	}
-
-	for _, mount := range ctr.Details.Mounts {
-		if mount.Source != "" && mount.Destination != "" {
-			builder.WriteString("Volume=" + mount.Source + ":" + mount.Destination + "\n")
+		for _, value := range env {
+			builder.WriteString("Environment=" + quadletValue(value) + "\n")
 		}
 	}
 
-	if ctr.Details.HostConfig != nil && ctr.Details.HostConfig.NetworkMode != "" {
-		builder.WriteString("Network=" + string(ctr.Details.HostConfig.NetworkMode) + "\n")
+	if len(config.Cmd) > 0 {
+		args := make([]string, 0, len(config.Cmd))
+		for _, arg := range config.Cmd {
+			args = append(args, quadletValue(arg))
+		}
+		builder.WriteString("Exec=" + strings.Join(args, " ") + "\n")
+	}
+
+	if details.HostConfig != nil {
+		builder.WriteString(quadletPorts(details.HostConfig.PortBindings))
+	}
+
+	for _, mount := range details.Mounts {
+		if mount.Source == "" || mount.Destination == "" {
+			continue
+		}
+
+		source := mount.Source
+		if mount.Type == "volume" && mount.Name != "" {
+			source = mount.Name
+		}
+		builder.WriteString("Volume=" + quadletValue(source+":"+mount.Destination) + "\n")
+	}
+
+	if details.HostConfig != nil && details.HostConfig.NetworkMode != "" {
+		builder.WriteString("Network=" + quadletValue(string(details.HostConfig.NetworkMode)) + "\n")
 	}
 
 	builder.WriteString("\n[Service]\nRestart=always\n\n[Install]\nWantedBy=default.target\n")
 
 	return builder.String()
+}
+
+// quadletValue keeps a value on one line and quotes it for systemd's unit-file
+// parser, so a newline in a container env value cannot inject a new directive.
+func quadletValue(value string) string {
+	value = strings.ReplaceAll(value, "\r", " ")
+	value = strings.ReplaceAll(value, "\n", " ")
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	value = strings.ReplaceAll(value, "\"", "\\\"")
+	return "\"" + value + "\""
 }
 
 func quadletPorts(bindings nat.PortMap) string {
@@ -67,7 +94,7 @@ func quadletPorts(bindings nat.PortMap) string {
 
 	for containerPort, hosts := range bindings {
 		for _, host := range hosts {
-			ports = append(ports, fmt.Sprintf("PublishPort=%s:%s", host.HostPort, containerPort.Port()))
+			ports = append(ports, fmt.Sprintf("PublishPort=%s:%s", quadletValue(host.HostPort), containerPort.Port()))
 		}
 	}
 

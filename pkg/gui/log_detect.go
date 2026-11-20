@@ -48,7 +48,6 @@ func looksLikeTranscript(data []byte) bool {
 		[]byte("\x1b[?1047h"),
 		[]byte("\x1b[?47h"),
 		[]byte("\x1b[?2026h"),
-		[]byte("\x1b[?25l"),
 		[]byte("\x1b[?2004h"),
 		[]byte("\x1b[?1000h"),
 		[]byte("\x1b[?7l"),

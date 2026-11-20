@@ -131,6 +131,7 @@ type TranslationSet struct {
 	RunContainerConfirmTitle    string
 	RunContainerConfirm         string
 	RunContainerRunningStatus   string
+	RunContainerLoadingStatus   string
 	RunContainerOn              string
 	RunContainerOff             string
 	RunContainerImage           string
@@ -164,6 +165,7 @@ type TranslationSet struct {
 	FilesDiff                   string
 	FilesContainerPath          string
 	FilesHostPath               string
+	FilesRootDestination        string
 	FilesCopying                string
 	FilesCopied                 string
 	FilesOverwrite              string
@@ -286,6 +288,7 @@ type TranslationSet struct {
 	PaletteTitle             string
 	ConnectionsTitle         string
 	ConnectionsNone          string
+	ConnectionsLoadingStatus string
 	ConnectionsRestartPrompt string
 	AutoUpdateContainers     string
 	ConfirmAutoUpdate        string
@@ -306,6 +309,7 @@ type TranslationSet struct {
 	QuadletSavedStatus       string
 	QuadletPlaintextWarning  string
 	QuadletNeedsDetails      string
+	QuadletExportingStatus   string
 	QuadletTitle             string
 
 	ToggleMark             string
@@ -442,6 +446,7 @@ func englishSet() TranslationSet {
 		RunContainerConfirmTitle:    "Confirm",
 		RunContainerConfirm:         "Run this container?",
 		RunContainerRunningStatus:   "Starting container",
+		RunContainerLoadingStatus:   "Loading image defaults",
 		RunContainerOn:              "on",
 		RunContainerOff:             "off",
 		RunContainerImage:           "Image",
@@ -607,6 +612,7 @@ func englishSet() TranslationSet {
 		PaletteTitle:             "Command palette",
 		ConnectionsTitle:         "Podman connections",
 		ConnectionsNone:          "No podman system connections configured.",
+		ConnectionsLoadingStatus: "Loading podman connections",
 		ConnectionsRestartPrompt: "Restart lazypodman connected to %s (%s)?\n\nThe current view and running shells will close.",
 		AutoUpdateContainers:     "Auto-update containers (podman auto-update)",
 		ConfirmAutoUpdate:        "Run podman auto-update?",
@@ -627,6 +633,7 @@ func englishSet() TranslationSet {
 		QuadletSavedStatus:       "Saved %s",
 		QuadletPlaintextWarning:  "This unit contains environment variables in plaintext.",
 		QuadletNeedsDetails:      "Container details are not loaded yet",
+		QuadletExportingStatus:   "Exporting Quadlet unit",
 		QuadletTitle:             "Quadlet",
 		ToggleMark:               "mark/unmark container",
 		ContainerShellTitle:      "container shell",
@@ -686,6 +693,7 @@ func englishSet() TranslationSet {
 		FilesDiff:                "Show changed files (podman diff)",
 		FilesContainerPath:       "Container path",
 		FilesHostPath:            "Host path",
+		FilesRootDestination:     "Refusing to copy into the host root. Choose a file path.",
 		FilesCopying:             "copying files",
 		FilesCopied:              "copied %s to %s",
 		FilesOverwrite:           "Overwrite file",

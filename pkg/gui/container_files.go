@@ -78,15 +78,18 @@ func (gui *Gui) promptContainerDownload(ctr *commands.Container) error {
 			return nil
 		}
 
-		return gui.createPromptPanelWithInitial(gui.Tr.FilesHostPath, filepath.Base(source), func(g *gocui.Gui, v *gocui.View) error {
+		return gui.createPromptPanelWithInitial(gui.Tr.FilesHostPath, defaultDownloadName(source), func(g *gocui.Gui, v *gocui.View) error {
 			destination := strings.TrimSpace(gui.trimmedContent(v))
 			if destination == "" {
 				return nil
 			}
+			if filepath.Clean(destination) == "/" {
+				return gui.createErrorPanel(gui.Tr.FilesRootDestination)
+			}
 
 			run := func() error {
 				return gui.WithWaitingStatus(gui.Tr.FilesCopying, func() error {
-					output, err := gui.runPodmanOutput("cp", ctr.ID+":"+source, destination)
+					output, err := gui.runPodmanCopy("cp", ctr.ID+":"+source, destination)
 					if err != nil {
 						return gui.createErrorPanel(strings.TrimSpace(output + "\n" + err.Error()))
 					}
@@ -103,6 +106,17 @@ func (gui *Gui) promptContainerDownload(ctr *commands.Container) error {
 			return run()
 		})
 	})
+}
+
+// defaultDownloadName never offers the host root as the destination for a
+// container path like "/" or ".".
+func defaultDownloadName(source string) string {
+	name := filepath.Base(strings.TrimRight(source, "/"))
+	if name == "" || name == "." || name == ".." || name == string(filepath.Separator) {
+		return "container-root"
+	}
+
+	return name
 }
 
 func (gui *Gui) promptContainerUpload(ctr *commands.Container) error {
@@ -123,7 +137,7 @@ func (gui *Gui) promptContainerUpload(ctr *commands.Container) error {
 
 			return gui.createConfirmationPanel(gui.Tr.FilesUpload, fmt.Sprintf(gui.Tr.FilesUploadPrompt, source, ctr.Name+":"+destination), func(g *gocui.Gui, v *gocui.View) error {
 				return gui.WithWaitingStatus(gui.Tr.FilesCopying, func() error {
-					output, err := gui.runPodmanOutput("cp", source, ctr.ID+":"+destination)
+					output, err := gui.runPodmanCopy("cp", source, ctr.ID+":"+destination)
 					if err != nil {
 						return gui.createErrorPanel(strings.TrimSpace(output + "\n" + err.Error()))
 					}
@@ -151,6 +165,16 @@ func (gui *Gui) showContainerDiff(ctr *commands.Container) error {
 			return utils.ColoredString("# podman diff "+ctr.Name, color.FgYellow) + "\n\n" + output
 		},
 	}))
+}
+
+// runPodmanCopy has no timeout: copying a large file can legitimately take
+// longer than the quick ls/diff commands. It runs inside a waiting-status task,
+// so it does not block the UI.
+func (gui *Gui) runPodmanCopy(args ...string) (string, error) {
+	cmd := exec.Command(gui.Config.PodmanBinary(), args...)
+	output, err := cmd.CombinedOutput()
+
+	return string(output), err
 }
 
 func (gui *Gui) runPodmanOutput(args ...string) (string, error) {

@@ -26,11 +26,12 @@ type healthcheckOutcome struct {
 // containerHealth returns the container's health struct, if the inspect data has
 // been loaded and declares one.
 func containerHealth(ctr *commands.Container) *container.Health {
-	if ctr.Details.State == nil {
+	details := ctr.DetailsSnapshot()
+	if details.ContainerJSONBase == nil || details.State == nil {
 		return nil
 	}
 
-	return ctr.Details.State.Health
+	return details.State.Health
 }
 
 // hasHealthcheck tells whether a healthcheck is configured. "none" is what the
@@ -43,8 +44,8 @@ func hasHealthcheck(health *container.Health) bool {
 // health data and are what the probe acts on. Before details load, the list state
 // is the only answer.
 func containerIsRunning(ctr *commands.Container) bool {
-	if ctr.DetailsLoaded() && ctr.Details.State != nil {
-		return ctr.Details.State.Running
+	if ctr.DetailsLoaded() && ctr.DetailsSnapshot().State != nil {
+		return ctr.DetailsSnapshot().State.Running
 	}
 
 	return strings.EqualFold(ctr.Container.State, "running")

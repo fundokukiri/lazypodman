@@ -141,11 +141,19 @@ func (s *ContainerStats) CalculateContainerCPUPercentage() float64 {
 
 	// Podman on cgroup v2 can omit system_cpu_usage (and therefore the delta is
 	// zero) in the first sample it sends, which would give us +/-Inf.
-	if cpuTotalUsageDelta <= 0 {
+	if cpuUsageDelta <= 0 || cpuTotalUsageDelta <= 0 {
 		return 0
 	}
 
-	value := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
+	cpus := s.CPUStats.OnlineCpus
+	if cpus < 1 {
+		cpus = len(s.CPUStats.CPUUsage.PercpuUsage)
+	}
+	if cpus < 1 {
+		cpus = 1
+	}
+
+	value := float64(cpuUsageDelta) * 100 / float64(cpuTotalUsageDelta) * float64(cpus)
 	if math.IsNaN(value) || math.IsInf(value, 0) {
 		return 0
 	}

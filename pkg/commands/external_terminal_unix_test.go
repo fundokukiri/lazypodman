@@ -61,24 +61,6 @@ func TestOpenExternalTerminalStartsDetachedLauncher(t *testing.T) {
 	}, "\n"), string(got))
 }
 
-func TestAttachTerminalArgvRunsPlainAttachAndNudgesSize(t *testing.T) {
-	got := AttachTerminalArgv("/usr/bin/podman", "abc123")
-
-	assert.Equal(t, "sh", got[0])
-	assert.Equal(t, "-c", got[1])
-	assert.Equal(t, "lazypodman-attach", got[3])
-	assert.Equal(t, "/usr/bin/podman", got[4])
-	assert.Equal(t, "abc123", got[5])
-
-	script := got[2]
-	assert.Contains(t, script, `bin=$1; ref=$2;`)
-	assert.Contains(t, script, `kill -WINCH $$`)
-	assert.Contains(t, script, `sleep 0.5`)
-	assert.Contains(t, script, `sleep 4`)
-	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
-	assert.NotContains(t, script, ` logs `, "a/A must not replay logs")
-}
-
 func TestAttachFullLogsArgvReplaysLogsBeforeAttach(t *testing.T) {
 	got := AttachFullLogsTerminalArgv("/usr/bin/podman", "abc123")
 

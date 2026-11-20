@@ -188,11 +188,11 @@ func (gui *Gui) containerEnv(container *commands.Container) string {
 		return gui.Tr.WaitingForContainerInfo
 	}
 
-	if len(container.Details.Config.Env) == 0 {
+	if len(container.DetailsSnapshot().Config.Env) == 0 {
 		return gui.Tr.NothingToDisplay
 	}
 
-	envVarsList := lo.Map(container.Details.Config.Env, func(envVar string, _ int) []string {
+	envVarsList := lo.Map(container.DetailsSnapshot().Config.Env, func(envVar string, _ int) []string {
 		splitEnv := strings.SplitN(envVar, "=", 2)
 		key := splitEnv[0]
 		value := ""
@@ -227,15 +227,15 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 	output := ""
 	output += utils.WithPadding("ID: ", padding) + container.ID + "\n"
 	output += utils.WithPadding("Name: ", padding) + container.Name + "\n"
-	output += utils.WithPadding("Image: ", padding) + container.Details.Config.Image + "\n"
-	output += utils.WithPadding("Command: ", padding) + strings.Join(append([]string{container.Details.Path}, container.Details.Args...), " ") + "\n"
-	output += utils.WithPadding("Labels: ", padding) + utils.FormatMap(padding, container.Details.Config.Labels)
+	output += utils.WithPadding("Image: ", padding) + container.DetailsSnapshot().Config.Image + "\n"
+	output += utils.WithPadding("Command: ", padding) + strings.Join(append([]string{container.DetailsSnapshot().Path}, container.DetailsSnapshot().Args...), " ") + "\n"
+	output += utils.WithPadding("Labels: ", padding) + utils.FormatMap(padding, container.DetailsSnapshot().Config.Labels)
 	output += "\n"
 
 	output += utils.WithPadding("Mounts: ", padding)
-	if len(container.Details.Mounts) > 0 {
+	if len(container.DetailsSnapshot().Mounts) > 0 {
 		output += "\n"
-		for _, mount := range container.Details.Mounts {
+		for _, mount := range container.DetailsSnapshot().Mounts {
 			if mount.Type == "volume" {
 				output += fmt.Sprintf("%s%s %s\n", strings.Repeat(" ", padding), utils.ColoredString(string(mount.Type)+":", color.FgYellow), mount.Name)
 			} else {
@@ -247,9 +247,9 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 	}
 
 	output += utils.WithPadding("Ports: ", padding)
-	if len(container.Details.NetworkSettings.Ports) > 0 {
+	if len(container.DetailsSnapshot().NetworkSettings.Ports) > 0 {
 		output += "\n"
-		for k, v := range container.Details.NetworkSettings.Ports {
+		for k, v := range container.DetailsSnapshot().NetworkSettings.Ports {
 			for _, host := range v {
 				output += fmt.Sprintf("%s%s %s\n", strings.Repeat(" ", padding), utils.ColoredString(host.HostPort+":", color.FgYellow), k)
 			}
@@ -258,7 +258,8 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 		output += "none\n"
 	}
 
-	data, err := utils.MarshalIntoYaml(&container.Details)
+	details := container.DetailsSnapshot()
+	data, err := utils.MarshalIntoYaml(&details)
 	if err != nil {
 		return fmt.Sprintf("Error marshalling container details: %v", err)
 	}
@@ -472,8 +473,13 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) PauseContainer(container *commands.Container) error {
+	details := container.DetailsSnapshot()
+	if details.State == nil {
+		return gui.createErrorPanel(gui.Tr.WaitingForContainerInfo)
+	}
+
 	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() (err error) {
-		if container.Details.State.Paused {
+		if details.State.Paused {
 			err = container.Unpause()
 		} else {
 			err = container.Pause()
@@ -500,7 +506,7 @@ func (gui *Gui) handleContainerPause(g *gocui.Gui, v *gocui.View) error {
 	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() error {
 		for _, ctr := range targets {
 			var err error
-			if ctr.Details.State != nil && ctr.Details.State.Paused {
+			if ctr.DetailsSnapshot().State != nil && ctr.DetailsSnapshot().State.Paused {
 				err = ctr.Unpause()
 			} else {
 				err = ctr.Pause()

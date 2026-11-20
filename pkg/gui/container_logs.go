@@ -415,14 +415,19 @@ func (gui *Gui) waitForContainerRunning(ctx context.Context, container *commands
 }
 
 func (gui *Gui) renderLogsToStdout(container *commands.Container) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
 	defer signal.Stop(stop)
 
-	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		signal.Notify(stop, os.Interrupt)
-		<-stop
-		cancel()
+		select {
+		case <-stop:
+			cancel()
+		case <-ctx.Done():
+		}
 	}()
 
 	if err := gui.g.Suspend(); err != nil {
@@ -466,7 +471,7 @@ func (gui *Gui) containerLogSince(ctr *commands.Container) string {
 	if ctr.Container.State == "exited" || ctr.Container.State == "stopped" || ctr.Container.State == "dead" {
 		return ""
 	}
-	if ctr.DetailsLoaded() && ctr.Details.State != nil && !ctr.Details.State.Running {
+	if ctr.DetailsLoaded() && ctr.DetailsSnapshot().State != nil && !ctr.DetailsSnapshot().State.Running {
 		return ""
 	}
 
@@ -522,7 +527,8 @@ func (gui *Gui) writeContainerLogs(ctr *commands.Container, ctx context.Context,
 		}
 	}
 
-	if ctr.Details.Config.Tty {
+	details := ctr.DetailsSnapshot()
+	if details.Config != nil && details.Config.Tty {
 		_, err = io.Copy(writer, readCloser)
 		if err != nil {
 			return err

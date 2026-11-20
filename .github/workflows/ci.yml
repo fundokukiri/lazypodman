@@ -88,8 +88,18 @@ jobs:
           podman --version
           podman info --format '{{.Host.OCIRuntime.Name}}' || true
       - name: Test against Podman
+        # The socket tests need a running API service, and a background process
+        # started in an earlier step is not guaranteed to survive to this one, so
+        # start the service and run the tests in the same step. CONTAINER_HOST is
+        # what the app and the CLI both honour.
         run: |
-          go test -tags integration ./pkg/commands/
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for _ in $(seq 1 30); do
+            [ -S /tmp/podman.sock ] && break
+            sleep 1
+          done
+          test -S /tmp/podman.sock || { echo "the Podman API socket never appeared"; exit 1; }
+          CONTAINER_HOST=unix:///tmp/podman.sock go test -tags integration ./pkg/commands/
   check-codebase:
     runs-on: ubuntu-latest
     env:

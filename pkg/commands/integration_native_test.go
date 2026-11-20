@@ -5,6 +5,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -247,6 +248,20 @@ func TestIntegrationSocketAndPodRefresh(t *testing.T) {
 
 	if caps := command.Capabilities(); caps.CLI.State != CapabilityAvailable {
 		t.Fatalf("CLI not available: %v", caps.CLI)
+	}
+
+	// A machine can have the Podman CLI without a running API service (no
+	// `podman.socket`), so skip instead of failing when nothing is listening.
+	// An explicitly configured endpoint is a promise, though: the CI job sets
+	// CONTAINER_HOST and must fail loudly if the service is not there.
+	if _, err := command.Client.Ping(ctx); err != nil {
+		for _, key := range podmanHostEnvKeys {
+			if os.Getenv(key) != "" {
+				t.Fatalf("%s points at an unreachable Podman service: %v", key, err)
+			}
+		}
+
+		t.Skipf("no reachable Podman service socket: %v", err)
 	}
 
 	listed, err := command.Client.ContainerList(ctx, container.ListOptions{All: true})

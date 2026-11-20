@@ -87,12 +87,21 @@ func (c *OSCommand) RunExecutable(cmd *exec.Cmd) error {
 // ExecutableFromString takes a string like `podman ps -a` and returns an executable command for it
 func (c *OSCommand) ExecutableFromString(commandStr string) *exec.Cmd {
 	splitCmd := str.ToArgv(commandStr)
+	if len(splitCmd) == 0 {
+		// An empty command (an empty config value) must fail, not panic.
+		return c.NewCmd("")
+	}
+
 	return c.NewCmd(splitCmd[0], splitCmd[1:]...)
 }
 
 // Same as ExecutableFromString but cancellable via a context
 func (c *OSCommand) ExecutableFromStringContext(ctx context.Context, commandStr string) *exec.Cmd {
 	splitCmd := str.ToArgv(commandStr)
+	if len(splitCmd) == 0 {
+		return exec.CommandContext(ctx, "")
+	}
+
 	return exec.CommandContext(ctx, splitCmd[0], splitCmd[1:]...)
 }
 
@@ -193,7 +202,14 @@ func (c *OSCommand) EditFile(filename string) (*exec.Cmd, error) {
 		return nil, errors.New("No editor defined in $VISUAL or $EDITOR")
 	}
 
-	return c.NewCmd(editor, filename), nil
+	// $EDITOR often carries arguments ("code --wait", "vim -u NONE"). Split it
+	// the same way every other command in this package is split.
+	editorParts := str.ToArgv(editor)
+	if len(editorParts) == 0 {
+		return nil, errors.New("No editor defined in $VISUAL or $EDITOR")
+	}
+
+	return c.NewCmd(editorParts[0], append(editorParts[1:], filename)...), nil
 }
 
 // Quote wraps a message in platform-specific quotation marks
@@ -221,41 +237,6 @@ func (c *OSCommand) Quote(message string) string {
 // this is needed for removing quotes from staged filenames with spaces
 func (c *OSCommand) Unquote(message string) string {
 	return strings.Replace(message, `"`, "", -1)
-}
-
-// AppendLineToFile adds a new line in file
-func (c *OSCommand) AppendLineToFile(filename, line string) error {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
-	if err != nil {
-		return WrapError(err)
-	}
-	defer f.Close()
-
-	_, err = f.WriteString("\n" + line)
-	if err != nil {
-		return WrapError(err)
-	}
-	return nil
-}
-
-// CreateTempFile writes a string to a new temp file and returns the file's name
-func (c *OSCommand) CreateTempFile(filename, content string) (string, error) {
-	tmpfile, err := os.CreateTemp("", filename)
-	if err != nil {
-		c.Log.Error(err)
-		return "", WrapError(err)
-	}
-
-	if _, err := tmpfile.WriteString(content); err != nil {
-		c.Log.Error(err)
-		return "", WrapError(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		c.Log.Error(err)
-		return "", WrapError(err)
-	}
-
-	return tmpfile.Name(), nil
 }
 
 // Remove removes a file or directory at the specified path

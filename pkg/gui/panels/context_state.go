@@ -12,6 +12,11 @@ import (
 type ContextState[T any] struct {
 	// index of the currently selected tab in the main view.
 	mainTabIdx int
+	// lastItemKey is used to detect that the side panel moved to another item,
+	// so each item starts on its first tab instead of inheriting the previous
+	// item's tab.
+	lastItemKey    string
+	hasLastItemKey bool
 	// this function returns the tabs that we can display for an item (the tabs
 	// are shown on the main view)
 	GetMainTabs func() []MainTab[T]
@@ -28,6 +33,18 @@ type MainTab[T any] struct {
 	Title string
 	// function to render the content of the tab
 	Render func(item T) tasks.TaskFunc
+}
+
+// SyncItem resets the main tab when the selected item changes. Without this,
+// opening Env on one container and then selecting another would show Env for
+// the new container instead of its first tab (Stats).
+func (self *ContextState[T]) SyncItem(item T) {
+	key := self.GetItemContextCacheKey(item)
+	if self.hasLastItemKey && key != self.lastItemKey {
+		self.mainTabIdx = 0
+	}
+	self.lastItemKey = key
+	self.hasLastItemKey = true
 }
 
 func (self *ContextState[T]) GetMainTabTitles() []string {

@@ -2,7 +2,6 @@ package gui
 
 import (
 	"context"
-	"sync"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/jesseduffield/gocui"
@@ -21,28 +20,25 @@ func (gui *Gui) handleAutoUpdate() error {
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.ConfirmAutoUpdate, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.QueueTask(func(ctx context.Context) {
-			var mu sync.Mutex
-
-			lines := []string{gui.Tr.AutoUpdateHeader, ""}
-
 			gui.clearMainView()
-			gui.reRenderStringMain(gui.Tr.AutoUpdateHeader)
+
+			mainView := gui.Views.Main
+			mainView.Autoscroll = true
+
+			writer := newLogTrimWriter(mainView, func() bool { return true }, func() bool { return ctx.Err() != nil })
+			if gui.Config != nil {
+				writer.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
+				writer.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
+			}
+			defer writer.Close()
+
+			_, _ = writer.Write([]byte(gui.Tr.AutoUpdateHeader + "\n\n"))
 
 			err := gui.PodmanCommand.Pods().StreamPodman(ctx, []string{"auto-update"}, func(line string) {
-				mu.Lock()
-				lines = append(lines, line)
-				contents := joinLines(lines)
-				mu.Unlock()
-
-				gui.reRenderStringMain(contents)
+				_, _ = writer.Write([]byte(line + "\n"))
 			})
 			if err != nil && ctx.Err() == nil {
-				mu.Lock()
-				lines = append(lines, "", err.Error())
-				contents := joinLines(lines)
-				mu.Unlock()
-
-				gui.reRenderStringMain(contents)
+				_, _ = writer.Write([]byte("\n" + err.Error() + "\n"))
 			}
 
 			if refreshErr := gui.refreshContainersAndServices(); refreshErr != nil {

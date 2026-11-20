@@ -104,6 +104,10 @@ func (fakeEnabledPodClient) StreamPodman(context.Context, []string, func(string)
 	return nil
 }
 
+func (fakeEnabledPodClient) OpenAttachTerminal(context.Context, string, int, int) (*commands.Terminal, error) {
+	return nil, nil
+}
+
 func (fakeEnabledPodClient) OpenTerminal(context.Context, string, int, int) (*commands.Terminal, error) {
 	return nil, nil
 }
@@ -149,6 +153,78 @@ func TestSpaceBindingsUseKeySpace(t *testing.T) {
 
 	if found != 2 {
 		t.Errorf("expected the menu and containers space bindings, found %d", found)
+	}
+}
+
+func TestGetKeyRendersCtrlShift(t *testing.T) {
+	binding := &Binding{Key: gocui.KeyCtrlA, Modifier: modCtrlShift}
+
+	assert.Equal(t, "ctrl+shift+a", binding.GetKey())
+}
+
+func TestAttachShellTabKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	found := map[string]bool{}
+	for _, binding := range gui.staticKeybindings() {
+		if binding.GetKey() == "F2" && binding.Modifier == gocui.ModNone {
+			found[binding.ViewName] = true
+		}
+	}
+
+	assert.True(t, found["containers"])
+	assert.True(t, found["services"])
+}
+
+func TestTranscriptLogsKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	for _, view := range []string{"main", "containers"} {
+		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "ctrl+t" {
+				continue
+			}
+
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.TranscriptLogs, binding.Description)
+		}
+		assert.True(t, found, "%s must bind ctrl+t", view)
+	}
+}
+
+func TestAttachFullLogsKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	found := false
+	for _, binding := range gui.staticKeybindings() {
+		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+a" {
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.AttachFullLogs, binding.Description)
+		}
+	}
+
+	assert.True(t, found, "containers must bind ctrl+a")
+}
+
+func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	for _, view := range []string{"containers", "services"} {
+		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "A" {
+				continue
+			}
+
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.AttachCurrentTerminal, binding.Description)
+		}
+
+		assert.True(t, found, "%s must bind uppercase A", view)
 	}
 }
 

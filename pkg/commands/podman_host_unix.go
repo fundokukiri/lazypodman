@@ -19,7 +19,7 @@ var defaultPodmanHost = func() string {
 		if xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR"); xdgRuntimeDir != "" {
 			return "unix://" + filepath.Join(xdgRuntimeDir, "podman", "podman.sock")
 		}
-		return "unix://" + filepath.Join("run", "user", strconv.Itoa(uid), "podman", "podman.sock")
+		return "unix://" + filepath.Join("/run", "user", strconv.Itoa(uid), "podman", "podman.sock")
 	}
 
 	return "unix://" + rootfulPodmanSocket

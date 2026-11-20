@@ -175,7 +175,7 @@ func AggregatePodStats(containers []*Container) PodStatsRow {
 		}
 
 		row.CPU += stats.DerivedStats.CPUPercentage
-		row.MemUsage += int64(stats.ClientStats.MemoryStats.Usage)
+		row.MemUsage += stats.ClientStats.MemoryStats.Usage
 		row.MemLimit += stats.ClientStats.MemoryStats.Limit
 	}
 

@@ -379,6 +379,14 @@ type LogsConfig struct {
 	Timestamps bool   `yaml:"timestamps,omitempty"`
 	Since      string `yaml:"since,omitempty"`
 	Tail       string `yaml:"tail,omitempty"`
+	// MaxLineLength splits one logical log line in the Logs tab into display
+	// segments. A container that writes one enormous horizontal line can
+	// otherwise make a 20-line tail take a long time to render. 0 disables the
+	// split and keeps the full line in one piece.
+	MaxLineLength int `yaml:"maxLineLength,omitempty"`
+	// MaxBytes bounds the rendered text kept in the Logs view. It keeps the
+	// newest bytes and trims whole old lines. 0 disables the byte budget.
+	MaxBytes int `yaml:"maxBytes,omitempty"`
 }
 
 // GetDefaultConfig returns the application default configuration NOTE (to
@@ -421,7 +429,9 @@ func GetDefaultConfig() UserConfig {
 			Since:      "60m",
 			// 20 keeps the log tab cheap; ctrl+l loads the full history for the
 			// selected container. "all"/"" still means everything.
-			Tail: "20",
+			Tail:          "20",
+			MaxLineLength: 4096,
+			MaxBytes:      1024 * 1024,
 		},
 		CommandTemplates: CommandTemplatesConfig{
 			Podman:             "podman",
@@ -622,29 +632,6 @@ func loadUserConfig(configDir string, base *UserConfig) (*UserConfig, error) {
 	return base, nil
 }
 
-// WriteToUserConfig allows you to set a value on the user config to be saved
-// note that if you set a zero-value, it may be ignored e.g. a false or 0 or
-// empty string this is because we are using the omitempty yaml directive so
-// that we don't write a heap of zero values to the user's config.yml
-func (c *AppConfig) WriteToUserConfig(updateConfig func(*UserConfig) error) error {
-	userConfig, err := loadUserConfig(c.ConfigDir, &UserConfig{})
-	if err != nil {
-		return err
-	}
-
-	if err := updateConfig(userConfig); err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(c.ConfigFilename(), os.O_WRONLY|os.O_CREATE, 0o666)
-	if err != nil {
-		return err
-	}
-
-	return yaml.NewEncoder(file).Encode(userConfig)
-}
-
-// ConfigFilename returns the filename of the current config file
 func (c *AppConfig) ConfigFilename() string {
 	return filepath.Join(c.ConfigDir, "config.yml")
 }

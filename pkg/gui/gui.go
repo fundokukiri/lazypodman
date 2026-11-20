@@ -52,8 +52,9 @@ type Gui struct {
 	markedContainerIDs   map[string]bool
 	markedContainersLock sync.Mutex
 
-	// terminal is the single interactive shell tab, if one is open.
-	terminal      *terminalState
+	// terminals holds one interactive shell per container. Opening a shell in
+	// another container keeps the first one running.
+	terminals     map[string]*terminalState
 	terminalMutex sync.Mutex
 
 	// mainRenderGeneration bumps whenever a new task takes over the main view.
@@ -65,6 +66,26 @@ type Gui struct {
 	// history instead of the default tail.
 	fullLogs      map[string]bool
 	fullLogsMutex sync.Mutex
+
+	// transcriptLogs remembers, per container, that the Logs tab should replay
+	// the stream through a terminal emulator instead of showing raw log lines.
+	transcriptLogs      map[string]bool
+	transcriptLogsMutex sync.Mutex
+	// transcriptAutoDisabled keeps a container on plain logs after the user
+	// explicitly switched transcript mode off.
+	transcriptAutoDisabled map[string]bool
+
+	// logViewCaches keeps the rendered Logs view of recently visited containers,
+	// so returning to one restores it instantly and resumes with --since instead
+	// of replaying the whole tail. Bounded by maxCachedLogViews.
+	logViewCaches          map[string]*logViewCache
+	logViewCacheOrder      []string
+	logViewCacheGeneration int
+	logViewCacheMutex      sync.Mutex
+
+	// lastRuns keeps the last submitted Run form per image for this session.
+	lastRuns      map[string]*runContainerState
+	lastRunsMutex sync.Mutex
 
 	// menuCancel, when set, is what esc or the Cancel item should do to leave
 	// the current menu. Submenus use it to return to the menu that opened them
@@ -241,7 +262,9 @@ func (gui *Gui) Run() error {
 		return err
 	}
 
-	throttledRefresh := throttle.ThrottleFunc(time.Millisecond*50, true, gui.refresh)
+	// 500ms rather than 50ms: one refresh lists the store and inspects every
+	// container, and a crash-looping container emits events faster than that.
+	throttledRefresh := throttle.ThrottleFunc(time.Millisecond*500, true, gui.refresh)
 	defer throttledRefresh.Stop()
 
 	go func() {
@@ -296,7 +319,6 @@ func (gui *Gui) Run() error {
 		throttledRefresh.Trigger()
 
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
-		gui.goEvery(time.Millisecond*1000, gui.updateContainerDetails)
 		gui.goEvery(time.Millisecond*1000, gui.checkForContextChange)
 		// we need to regularly re-render these because their stats will be changed in the background
 		gui.goEvery(time.Millisecond*1000, gui.renderContainersAndServices)
@@ -320,10 +342,6 @@ func (gui *Gui) setPanels() {
 		Networks:   gui.getNetworksPanel(),
 		Menu:       gui.getMenuPanel(),
 	}
-}
-
-func (gui *Gui) updateContainerDetails() error {
-	return gui.PodmanCommand.RefreshContainerDetails(gui.Panels.Containers.List.GetAllItems())
 }
 
 func (gui *Gui) refresh() {
@@ -527,7 +545,10 @@ func (gui *Gui) monitorContainerStats(ctx context.Context) {
 			return
 		case <-ticker.C:
 			for _, container := range gui.Panels.Containers.List.GetAllItems() {
-				if !container.MonitoringStats {
+				if container.Container.State != "running" {
+					continue
+				}
+				if container.MonitoringStats.CompareAndSwap(false, true) {
 					go gui.PodmanCommand.CreateClientStatMonitor(container)
 				}
 			}

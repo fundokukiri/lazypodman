@@ -211,6 +211,7 @@ var runContainerGroups = []runFieldGroup{
 type runContainerState struct {
 	image     string
 	extraArgs string
+	imageInfo runImageInfo
 	text      map[string]string
 	toggles   map[string]bool
 	lists     map[string][]string

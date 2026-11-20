@@ -17,9 +17,19 @@ func (gui *Gui) handleImagesRunContainer(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	state := newRunContainerState(runImageRef(image))
+	return gui.WithWaitingStatus(gui.trString(gui.Tr.RunContainerLoadingStatus, "Loading image defaults"), func() error {
+		state := gui.imageRunState(image)
 
-	return gui.showRunContainerMenu(state, 0)
+		gui.g.Update(func(*gocui.Gui) error {
+			if err := gui.showRunContainerMenu(state, 0); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+
+			return nil
+		})
+
+		return nil
+	})
 }
 
 func runImageRef(image *commands.Image) string {
@@ -132,6 +142,11 @@ func (gui *Gui) runFieldHint(field runField) string {
 }
 
 func (gui *Gui) showRunContainerMenu(state *runContainerState, selected int) error {
+	imageValue := state.image
+	if summary := state.imageInfo.summary(); summary != "" {
+		imageValue += "  " + summary
+	}
+
 	items := []*types.MenuItem{
 		{
 			LabelColumns: gui.runColumns(gui.trString(func() string {
@@ -139,7 +154,7 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState, selected int) err
 					return gui.Tr.RunContainerImage
 				}
 				return ""
-			}(), "Image"), state.image, "enter"),
+			}(), "Image"), imageValue, "enter"),
 			OnPress: func() error {
 				return gui.editRunContainerValue("image", state.image, func(value string) {
 					if value != "" {
@@ -148,7 +163,38 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState, selected int) err
 				}, func() error { return gui.showRunContainerMenu(state, 0) })
 			},
 		},
+		{
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerCommand, "Command"), gui.runCommandPreview(state), "enter"),
+			OnPress:      func() error { return gui.previewRunContainer(state) },
+		},
 	}
+
+	if len(state.imageInfo.Ports) > 0 {
+		imagePortsRow := len(items)
+		items = append(items, &types.MenuItem{
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerImagePorts, "Image ports"), strings.Join(state.imageInfo.Ports, ", "), "enter"),
+			OnPress:      func() error { return gui.showRunContainerImagePorts(state, imagePortsRow, 0) },
+		})
+	}
+
+	if last := gui.lastRunFor(state.image); last != nil {
+		items = append(items, &types.MenuItem{
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerRestore, "Restore last run"), "", "enter"),
+			OnPress: func() error {
+				restored := copyRunState(last)
+				restored.image = state.image
+				*state = *restored
+
+				return gui.showRunContainerMenu(state, 0)
+			},
+		})
+	}
+
+	runLikeRow := len(items)
+	items = append(items, &types.MenuItem{
+		LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerRunLike, "Run like a container"), "", "enter"),
+		OnPress:      func() error { return gui.showRunLikeContainerMenu(state, runLikeRow) },
+	})
 
 	for _, field := range runContainerFields {
 		field := field
@@ -160,6 +206,14 @@ func (gui *Gui) showRunContainerMenu(state *runContainerState, selected int) err
 					return gui.showRunContainerMenu(state, row)
 				})
 			},
+		})
+	}
+
+	if issues := validateRunState(state, gui.containersForRunValidation()); len(issues) > 0 {
+		checksRow := len(items)
+		items = append(items, &types.MenuItem{
+			LabelColumns: gui.runColumns(gui.trString(gui.Tr.RunContainerChecks, "Checks"), validationSummary(issues), "enter"),
+			OnPress:      func() error { return gui.showRunContainerIssues(state, checksRow, 0) },
 		})
 	}
 
@@ -399,10 +453,21 @@ func quoteRunArg(arg string) string {
 func (gui *Gui) previewRunContainer(state *runContainerState) error {
 	argv := state.argv(state.extraArgs)
 	command := formatRunCommand(gui.Config.PodmanBinary(), argv)
+	issues := validateRunState(state, gui.containersForRunValidation())
+	for _, issue := range issues {
+		if issue.Blocking {
+			return gui.createErrorPanel(issueMessages(issues))
+		}
+	}
+
+	prompt := fmt.Sprintf("%s\n\n%s", command, gui.trString(gui.Tr.RunContainerConfirm, "Run this container?"))
+	if len(issues) > 0 {
+		prompt = fmt.Sprintf("%s\n\n%s\n\n%s", issueMessages(issues), command, gui.trString(gui.Tr.RunContainerConfirm, "Run this container?"))
+	}
 
 	return gui.createConfirmationPanel(
 		gui.trString(gui.Tr.RunContainerConfirmTitle, "Confirm"),
-		fmt.Sprintf("%s\n\n%s", command, gui.trString(gui.Tr.RunContainerConfirm, "Run this container?")),
+		prompt,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return gui.executeRunContainer(state)
 		},
@@ -411,6 +476,8 @@ func (gui *Gui) previewRunContainer(state *runContainerState) error {
 }
 
 func (gui *Gui) executeRunContainer(state *runContainerState) error {
+	gui.rememberRunState(state)
+
 	argv := state.argv(state.extraArgs)
 	command := exec.Command(gui.Config.PodmanBinary(), argv...)
 

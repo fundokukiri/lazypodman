@@ -1,11 +1,6 @@
 package config
 
-import (
-	"os"
-	"testing"
-
-	"github.com/jesseduffield/yaml"
-)
+import "testing"
 
 func TestPodmanComposeCommandNoFiles(t *testing.T) {
 	composeFiles := []string{}
@@ -49,50 +44,9 @@ func TestPodmanComposeCommandMultipleFiles(t *testing.T) {
 	}
 }
 
-func TestWritingToConfigFile(t *testing.T) {
-	// init the AppConfig
-	emptyComposeFiles := []string{}
-	conf, err := NewAppConfig("name", "version", "commit", "date", "buildSource", false, emptyComposeFiles, "projectDir", "")
-	if err != nil {
-		t.Fatalf("Unexpected error: %s", err)
+func TestDefaultLogsByteBudget(t *testing.T) {
+	conf := GetDefaultConfig()
+	if conf.Logs.MaxBytes != 1024*1024 {
+		t.Fatalf("expected 1 MiB logs byte budget, got %d", conf.Logs.MaxBytes)
 	}
-
-	testFn := func(t *testing.T, ac *AppConfig, newValue bool) {
-		t.Helper()
-		updateFn := func(uc *UserConfig) error {
-			uc.ConfirmOnQuit = newValue
-			return nil
-		}
-
-		err = ac.WriteToUserConfig(updateFn)
-		if err != nil {
-			t.Fatalf("Unexpected error: %s", err)
-		}
-
-		file, err := os.OpenFile(ac.ConfigFilename(), os.O_RDONLY, 0o660)
-		if err != nil {
-			t.Fatalf("Unexpected error: %s", err)
-		}
-
-		sampleUC := UserConfig{}
-		err = yaml.NewDecoder(file).Decode(&sampleUC)
-		if err != nil {
-			t.Fatalf("Unexpected error: %s", err)
-		}
-
-		err = file.Close()
-		if err != nil {
-			t.Fatalf("Unexpected error: %s", err)
-		}
-
-		if sampleUC.ConfirmOnQuit != newValue {
-			t.Fatalf("Got %v, Expected %v\n", sampleUC.ConfirmOnQuit, newValue)
-		}
-	}
-
-	// insert value into an empty file
-	testFn(t, conf, true)
-
-	// modifying an existing file that already has 'ConfirmOnQuit'
-	testFn(t, conf, false)
 }

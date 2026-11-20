@@ -24,8 +24,8 @@ func (gui *Gui) getPodsPanel() *panels.SideListPanel[*commands.Pod] {
 		ContextState: &panels.ContextState[*commands.Pod]{
 			GetMainTabs: func() []panels.MainTab[*commands.Pod] {
 				return []panels.MainTab[*commands.Pod]{
-					{Key: "logs", Title: gui.Tr.LogsTitle, Render: gui.renderPodLogs},
 					{Key: "stats", Title: gui.Tr.PodStatsTitle, Render: gui.renderPodStats},
+					{Key: "logs", Title: gui.Tr.LogsTitle, Render: gui.renderPodLogs},
 					{Key: "containers", Title: gui.Tr.PodContainersTitle, Render: gui.renderPodContainers},
 					{Key: "config", Title: gui.Tr.ConfigTitle, Render: gui.renderPodConfig},
 				}

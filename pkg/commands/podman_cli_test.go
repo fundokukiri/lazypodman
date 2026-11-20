@@ -400,6 +400,29 @@ func TestPodLogsStreamsAndCloses(t *testing.T) {
 	assert.Equal(t, "[pod]\n[logs]\n[--follow]\n[--names]\n[--tail]\n[100]\n[--]\n[web]\n---\n", readRecordedArgv(t, argvFile))
 }
 
+func TestPodLogsFallbackWithManyContainersDoesNotBlock(t *testing.T) {
+	binary, _, stdoutFile, _ := writeFakePodmanScript(t)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte("bullet hi\n"), 0o600))
+
+	client := &cliPodmanClient{binary: binary, podLogsNamesProbed: true, podLogsNames: false}
+
+	containers := make([]*Container, 0, maxPodLogProcesses+1)
+	for i := 0; i <= maxPodLogProcesses; i++ {
+		containers = append(containers, containerNamed("c"+strconv.Itoa(i), "running"))
+	}
+
+	// The omitted notice used to be written to the pipe before the caller had
+	// the reader, so PodLogs never returned for pods over the process cap.
+	stream, err := client.PodLogs(context.Background(), &Pod{Name: "web"}, containers, 10)
+	requireNoError(t, err)
+
+	content, err := io.ReadAll(stream)
+	requireNoError(t, err)
+	requireNoError(t, stream.Close())
+
+	assert.Contains(t, string(content), "# showing 8 containers, 1 omitted")
+}
+
 func TestPodLogsCloseKillsChild(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("fake podman script requires a POSIX shell")

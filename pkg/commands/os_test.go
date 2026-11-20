@@ -286,37 +286,6 @@ func TestOSCommandFileType(t *testing.T) {
 	}
 }
 
-func TestOSCommandCreateTempFile(t *testing.T) {
-	type scenario struct {
-		testName string
-		filename string
-		content  string
-		test     func(string, error)
-	}
-
-	scenarios := []scenario{
-		{
-			"valid case",
-			"filename",
-			"content",
-			func(path string, err error) {
-				assert.NoError(t, err)
-
-				content, err := os.ReadFile(path)
-				assert.NoError(t, err)
-
-				assert.Equal(t, "content", string(content))
-			},
-		},
-	}
-
-	for _, s := range scenarios {
-		t.Run(s.testName, func(t *testing.T) {
-			s.test(NewDummyOSCommand().CreateTempFile(s.filename, s.content))
-		})
-	}
-}
-
 func TestOSCommandExecutableFromStringWithShellLinux(t *testing.T) {
 	osCommand := NewDummyOSCommand()
 
@@ -365,4 +334,30 @@ func TestOSCommandNewCommandStringWithShellWindows(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestOSCommandExecutableFromEmptyStringFailsInsteadOfPanicking(t *testing.T) {
+	// An empty command value in the config used to panic on splitCmd[0].
+	cmd := NewDummyOSCommand().ExecutableFromString("")
+	assert.NotNil(t, cmd)
+	assert.Error(t, cmd.Run())
+}
+
+func TestOSCommandEditFileSplitsEditorArguments(t *testing.T) {
+	// $EDITOR commonly carries flags ("code --wait"). They belong to the editor,
+	// not to the file name, so they must become separate argv entries.
+	osc := &OSCommand{
+		command: exec.Command,
+		getenv: func(key string) string {
+			if key == "VISUAL" {
+				return ""
+			}
+
+			return "code --wait"
+		},
+	}
+
+	cmd, err := osc.EditFile("/tmp/lazypodman-config.yml")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"code", "--wait", "/tmp/lazypodman-config.yml"}, cmd.Args)
 }

@@ -39,7 +39,7 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 	diskUsage := "Disk usage: unavailable"
 	if rw, rootFs, known := container.DiskSize(); known {
 		diskUsage = fmt.Sprintf("Disk usage: %s total (%s writable)",
-			utils.FormatDecimalBytes(int(rootFs)), utils.FormatDecimalBytes(int(rw)))
+			utils.FormatDecimalBytes(rootFs), utils.FormatDecimalBytes(rw))
 	}
 	dataReceived := fmt.Sprintf("Traffic received: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.RxBytes))
 	dataSent := fmt.Sprintf("Traffic sent: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.TxBytes))
@@ -71,22 +71,22 @@ func formatRAMUsage(stats commands.ContainerStats) string {
 		return fmt.Sprintf("RAM usage: %s", used)
 	}
 
-	percentage := float64(stats.MemoryStats.Usage) * 100 / float64(stats.MemoryStats.Limit)
+	percentage := stats.CalculateContainerMemoryUsage()
 	return fmt.Sprintf("RAM usage: %s / %s (%.1f%%)",
-		used, utils.FormatDecimalBytes(int(stats.MemoryStats.Limit)), percentage)
+		used, utils.FormatDecimalBytes(stats.MemoryStats.Limit), percentage)
 }
 
 // containerUptime formats how long the container has been running, based on
 // the StartedAt timestamp from its inspect data.
 func containerUptime(container *commands.Container, now time.Time) string {
-	if container.Details.ContainerJSONBase == nil || container.Details.State == nil {
+	if container.DetailsSnapshot().ContainerJSONBase == nil || container.DetailsSnapshot().State == nil {
 		return "unavailable"
 	}
-	if !container.Details.State.Running {
+	if !container.DetailsSnapshot().State.Running {
 		return "not running"
 	}
 
-	started, err := time.Parse(time.RFC3339Nano, container.Details.State.StartedAt)
+	started, err := time.Parse(time.RFC3339Nano, container.DetailsSnapshot().State.StartedAt)
 	if err != nil || started.IsZero() {
 		return "unavailable"
 	}

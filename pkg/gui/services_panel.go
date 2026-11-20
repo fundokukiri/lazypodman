@@ -23,14 +23,14 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.Service] {
 			GetMainTabs: func() []panels.MainTab[*commands.Service] {
 				return []panels.MainTab[*commands.Service]{
 					{
-						Key:    "logs",
-						Title:  gui.Tr.LogsTitle,
-						Render: gui.renderServiceLogs,
-					},
-					{
 						Key:    "stats",
 						Title:  gui.Tr.StatsTitle,
 						Render: gui.renderServiceStats,
+					},
+					{
+						Key:    "logs",
+						Title:  gui.Tr.LogsTitle,
+						Render: gui.renderServiceLogs,
 					},
 					{
 						Key:    "container-env",
@@ -311,12 +311,46 @@ func (gui *Gui) handleServiceAttach(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.NoContainers)
 	}
 
-	c, err := service.Attach()
+	return gui.openContainerAttachTerminal(service.Container)
+}
+
+func (gui *Gui) handleServiceExecShellExternal(g *gocui.Gui, v *gocui.View) error {
+	service, err := gui.Panels.Services.GetSelectedItem()
 	if err != nil {
-		return gui.createErrorPanel(err.Error())
+		return nil
 	}
 
-	return gui.runSubprocess(c)
+	if service.Container == nil {
+		return gui.createErrorPanel(gui.Tr.NoContainers)
+	}
+
+	return gui.openContainerShellTerminal(service.Container)
+}
+
+func (gui *Gui) handleServiceAttachCurrentTerminal(g *gocui.Gui, v *gocui.View) error {
+	service, err := gui.Panels.Services.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if service.Container == nil {
+		return gui.createErrorPanel(gui.Tr.NoContainers)
+	}
+
+	return gui.attachInCurrentTerminal(service.Container)
+}
+
+func (gui *Gui) handleServiceAttachShellTab(g *gocui.Gui, v *gocui.View) error {
+	service, err := gui.Panels.Services.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if service.Container == nil {
+		return gui.createErrorPanel(gui.Tr.NoContainers)
+	}
+
+	return gui.attachContainerTerminal(service.Container)
 }
 
 func (gui *Gui) handleServiceRenderLogsToMain(g *gocui.Gui, v *gocui.View) error {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -97,14 +98,21 @@ func (c *cliPodmanClient) StreamPodman(ctx context.Context, argv []string, onLin
 	scanDone := make(chan error, 1)
 
 	go func() {
-		scanner := bufio.NewScanner(reader)
-		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
-		for scanner.Scan() {
-			onLine(scanner.Text())
+		reader := bufio.NewReader(reader)
+		for {
+			line, err := reader.ReadString('\n')
+			if line != "" {
+				onLine(strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r"))
+			}
+			if err == io.EOF {
+				scanDone <- nil
+				return
+			}
+			if err != nil {
+				scanDone <- err
+				return
+			}
 		}
-
-		scanDone <- scanner.Err()
 	}()
 
 	runErr := command.Run()

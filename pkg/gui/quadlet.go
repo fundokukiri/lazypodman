@@ -7,53 +7,57 @@ import (
 	"strings"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
+	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
 )
 
 // handleContainerQuadletExport writes a Quadlet `.container` unit for the selected
 // container. Like the kube export it previews the file and only writes after a
 // confirmation naming the full path.
-func (gui *Gui) handleContainerQuadletExport(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleContainerQuadletExport(_ *gocui.Gui, _ *gocui.View) error {
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
 		return nil
 	}
 
-	if !ctr.DetailsLoaded() {
-		if err := gui.PodmanCommand.RefreshContainerDetails([]*commands.Container{ctr}); err != nil {
-			return gui.createErrorPanel(err.Error())
+	return gui.WithWaitingStatus(gui.Tr.QuadletExportingStatus, func() error {
+		if !ctr.DetailsLoaded() {
+			if err := gui.PodmanCommand.RefreshContainerDetails([]*commands.Container{ctr}); err != nil {
+				return err
+			}
 		}
-	}
 
-	unit := commands.BuildQuadletContainer(ctr)
-	if strings.TrimSpace(unit) == "" {
-		return gui.createErrorPanel(gui.Tr.QuadletNeedsDetails)
-	}
+		unit := commands.BuildQuadletContainer(ctr)
+		if strings.TrimSpace(unit) == "" {
+			return errors.New(gui.Tr.QuadletNeedsDetails)
+		}
 
-	path := gui.quadletFilePath(ctr.Name)
-	_, statErr := os.Stat(path)
+		path := gui.quadletFilePath(ctr.Name)
+		_, statErr := os.Stat(path)
 
-	gui.reRenderStringMain(unit)
-	gui.promptQuadletSave(unit, path, statErr == nil)
+		gui.g.Update(func(g *gocui.Gui) error {
+			gui.reRenderStringMain(unit)
 
-	return nil
+			return gui.promptQuadletSave(unit, path, statErr == nil)
+		})
+
+		return nil
+	})
 }
 
-func (gui *Gui) promptQuadletSave(unit, path string, exists bool) {
+func (gui *Gui) promptQuadletSave(unit, path string, exists bool) error {
 	prompt := gui.quadletSavePrompt(path, exists)
 
-	gui.g.Update(func(g *gocui.Gui) error {
-		return gui.createConfirmationPanel(gui.Tr.QuadletTitle, prompt, func(g *gocui.Gui, v *gocui.View) error {
-			if err := commands.WriteManifestFile(path, []byte(unit), true); err != nil {
-				return gui.createErrorPanel(err.Error())
-			}
+	return gui.createConfirmationPanel(gui.Tr.QuadletTitle, prompt, func(g *gocui.Gui, v *gocui.View) error {
+		if err := commands.WriteManifestFile(path, []byte(unit), true); err != nil {
+			return gui.createErrorPanel(err.Error())
+		}
 
-			gui.flashStatus(fmt.Sprintf(gui.Tr.QuadletSavedStatus, path))
+		gui.flashStatus(fmt.Sprintf(gui.Tr.QuadletSavedStatus, path))
 
-			return nil
-		}, func(g *gocui.Gui, v *gocui.View) error {
-			return gui.reRenderMain()
-		})
+		return nil
+	}, func(g *gocui.Gui, v *gocui.View) error {
+		return gui.reRenderMain()
 	})
 }
 

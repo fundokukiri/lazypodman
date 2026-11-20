@@ -56,5 +56,5 @@ func socketExists(path string) bool {
 		return false
 	}
 
-	return info.Mode()&os.ModeSocket != 0 || info.Mode().IsRegular()
+	return info.Mode()&os.ModeSocket != 0
 }

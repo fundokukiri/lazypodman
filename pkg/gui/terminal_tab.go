@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/fundokukiri/lazypodman/pkg/i18n"
@@ -35,40 +36,103 @@ type terminalState struct {
 	scrollable   int
 }
 
+func (gui *Gui) terminalFor(containerID string) *terminalState {
+	gui.terminalMutex.Lock()
+	defer gui.terminalMutex.Unlock()
+
+	return gui.terminals[containerID]
+}
+
 func (gui *Gui) currentTerminal() *terminalState {
-	gui.terminalMutex.Lock()
-	defer gui.terminalMutex.Unlock()
-
-	return gui.terminal
-}
-
-func (gui *Gui) setTerminal(state *terminalState) {
-	gui.terminalMutex.Lock()
-	defer gui.terminalMutex.Unlock()
-
-	gui.terminal = state
-}
-
-// terminalTabFor reports the container whose shell tab should be visible.
-func (gui *Gui) terminalTabFor(container *commands.Container) bool {
-	state := gui.currentTerminal()
-
-	return state != nil && container != nil && state.containerID == container.ID
-}
-
-func (gui *Gui) startContainerTerminal(container *commands.Container) error {
+	container := gui.terminalContainer()
 	if container == nil {
 		return nil
 	}
 
-	if state := gui.currentTerminal(); state != nil {
-		if state.containerID == container.ID {
-			return gui.focusTerminalView()
-		}
+	return gui.terminalFor(container.ID)
+}
 
-		if err := gui.closeContainerTerminal(); err != nil {
-			return err
+// terminalContainer is the container whose shell tab belongs to the current
+// side-panel context. Shells for other containers stay alive in the background.
+func (gui *Gui) terminalContainer() *commands.Container {
+	switch gui.currentSideViewName() {
+	case "services":
+		if gui.Panels.Services != nil {
+			if service, err := gui.Panels.Services.GetSelectedItem(); err == nil && service != nil {
+				return service.Container
+			}
 		}
+	case "containers":
+		if gui.Panels.Containers != nil {
+			if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil {
+				return container
+			}
+		}
+	}
+
+	return nil
+}
+
+func (gui *Gui) addTerminal(state *terminalState) {
+	gui.terminalMutex.Lock()
+	defer gui.terminalMutex.Unlock()
+
+	if gui.terminals == nil {
+		gui.terminals = map[string]*terminalState{}
+	}
+	gui.terminals[state.containerID] = state
+}
+
+func (gui *Gui) removeTerminal(state *terminalState) {
+	if state == nil {
+		return
+	}
+
+	gui.terminalMutex.Lock()
+	defer gui.terminalMutex.Unlock()
+
+	if gui.terminals[state.containerID] == state {
+		delete(gui.terminals, state.containerID)
+	}
+}
+
+func (gui *Gui) terminalByTerminal(terminal *commands.Terminal) *terminalState {
+	gui.terminalMutex.Lock()
+	defer gui.terminalMutex.Unlock()
+
+	for _, state := range gui.terminals {
+		if state.terminal == terminal {
+			return state
+		}
+	}
+
+	return nil
+}
+
+// terminalTabFor reports the container whose shell tab should be visible.
+func (gui *Gui) terminalTabFor(container *commands.Container) bool {
+	return container != nil && gui.terminalFor(container.ID) != nil
+}
+
+// startContainerTerminal opens a new shell inside the container (ctrl+x).
+func (gui *Gui) startContainerTerminal(container *commands.Container) error {
+	return gui.startTerminalTab(container, false)
+}
+
+// attachContainerTerminal opens the Shell tab attached to the container's own
+// process (F2), so the tab shows what the container is running instead of a
+// fresh shell.
+func (gui *Gui) attachContainerTerminal(container *commands.Container) error {
+	return gui.startTerminalTab(container, true)
+}
+
+func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) error {
+	if container == nil {
+		return nil
+	}
+
+	if gui.terminalFor(container.ID) != nil {
+		return gui.focusTerminalView()
 	}
 
 	if capability := gui.PodmanCommand.Capabilities().CLI; capability.State == commands.CapabilityUnavailable {
@@ -79,6 +143,13 @@ func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
 	}
 
+	if attach {
+		// podman attach needs the container's stdin to be open; a shell does not.
+		if err := container.CanAttach(); err != nil {
+			return gui.createErrorPanel(err.Error())
+		}
+	}
+
 	client := gui.PodmanCommand.Pods()
 	if client == nil {
 		return gui.createErrorPanel("cli off: podman CLI not available")
@@ -86,16 +157,21 @@ func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 
 	cols, rows := gui.terminalSize()
 
-	terminal, err := client.OpenTerminal(context.Background(), container.ID, cols, rows)
+	var (
+		terminal *commands.Terminal
+		err      error
+	)
+	if attach {
+		terminal, err = client.OpenAttachTerminal(context.Background(), container.ID, cols, rows)
+	} else {
+		terminal, err = client.OpenTerminal(context.Background(), container.ID, cols, rows)
+	}
 	if err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	gui.setTerminal(&terminalState{containerID: container.ID, terminal: terminal})
-
-	if state := gui.currentTerminal(); state != nil {
-		state.cols, state.rows = cols, rows
-	}
+	state := &terminalState{containerID: container.ID, terminal: terminal, cols: cols, rows: rows}
+	gui.addTerminal(state)
 
 	if err := gui.selectShellTab(); err != nil {
 		return err
@@ -116,8 +192,15 @@ func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 func (gui *Gui) watchTerminal(terminal *commands.Terminal) {
 	<-terminal.Done()
 
-	state := gui.currentTerminal()
-	if state == nil || state.terminal != terminal {
+	state := gui.terminalByTerminal(terminal)
+	if state == nil {
+		return
+	}
+
+	if gui.currentTerminal() != state {
+		// The shell belonged to a container that is not selected right now.
+		// Drop it quietly; the next visit simply has no shell tab.
+		gui.removeTerminal(state)
 		return
 	}
 
@@ -134,7 +217,7 @@ func (gui *Gui) closeContainerTerminal() error {
 
 	wasFocused := gui.g.CurrentView() == gui.Views.Terminal
 
-	gui.setTerminal(nil)
+	gui.removeTerminal(state)
 	_ = state.terminal.Close()
 
 	// Wipe both views before reloading: the tab that was showing before the shell
@@ -147,9 +230,10 @@ func (gui *Gui) closeContainerTerminal() error {
 		gui.Views.Terminal.Visible = false
 		gui.g.Cursor = false
 
-		gui.Views.Main.Clear()
-		_ = gui.Views.Main.SetOrigin(0, 0)
-
+		// Do not clear the main view here. This update is asynchronous and can
+		// run after the Logs task has already restored its cached content,
+		// leaving the tab blank until a new log line arrives. clearMainView
+		// above already wiped it synchronously.
 		return nil
 	})
 
@@ -163,8 +247,8 @@ func (gui *Gui) closeContainerTerminal() error {
 		}
 	}
 
-	// Always land back on Logs and force a re-render so the tab strip drops the
-	// shell tab even when Logs was already the current context.
+	// Always land back on the first tab (Stats) and force a re-render so the tab
+	// strip drops the shell tab even when that tab was already the current context.
 	gui.Panels.Containers.ContextState.SetMainTabIndex(0)
 	gui.State.Panels.Main.ObjectKey = ""
 
@@ -311,9 +395,10 @@ func terminalHeader(container *commands.Container, tr *i18n.TranslationSet) stri
 	image := container.Container.Image
 	status := container.Container.Status
 
-	if container.DetailsLoaded() {
-		image = container.Details.Config.Image
-		status = container.Details.State.Status
+	details := container.DetailsSnapshot()
+	if details.ContainerJSONBase != nil && details.Config != nil && details.State != nil {
+		image = details.Config.Image
+		status = details.State.Status
 	}
 
 	id := container.ID
@@ -386,14 +471,22 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 
 		visible = terminalWindow(nil, historyRows, height, offset)
 
-		start := total - height - offset
-		if start < 0 {
-			start = 0
-		}
+		if offset > 0 {
+			start := total - height - offset
+			if start < 0 {
+				start = 0
+			}
 
-		cursorX, cursorY = historyCursorX, historyCursorY-start
-		if cursorY < 0 || cursorY >= len(visible) {
-			cursorY = -1
+			cursorX, cursorY = historyCursorX, historyCursorY-start
+			if cursorY < 0 || cursorY >= len(visible) {
+				cursorY = -1
+			}
+		} else {
+			// Keep the history window for the rows (it is what the shell has been
+			// showing all along), but take the caret from the live screen: TUIs
+			// position the hardware cursor on the live screen, and the history copy
+			// can have a different cursor row.
+			cursorX, cursorY = screenCursorX, screenCursorY
 		}
 	} else {
 		// Alt-screen programs (vim, htop, less) redraw the screen; fall back to
@@ -437,8 +530,8 @@ func (gui *Gui) drawTerminal(container *commands.Container) {
 	// through, like the Logs view.
 	if start, size, ok := terminalScrollbar(total, height, offset); ok && maxCols > 1 {
 		for i := 0; i < len(visible) && i < height; i++ {
-			line := runewidth.Truncate(visible[i], maxCols-1, "")
-			line += strings.Repeat(" ", maxCols-1-runewidth.StringWidth(line))
+			line := truncateANSI(visible[i], maxCols-1)
+			line += strings.Repeat(" ", maxCols-1-ansiWidth(line))
 
 			if i >= start && i < start+size {
 				line += "▐"
@@ -483,7 +576,64 @@ func (gui *Gui) terminalOptionsMap() map[string]string {
 		"wheel/PgUp/PgDn": gui.Tr.Scroll,
 		"ctrl+o":          gui.Tr.LeaveShell,
 		"ctrl+x":          gui.Tr.CloseShell,
+		"ctrl+q":          gui.Tr.Quit,
 	}
+}
+
+// ansiWidth returns the printed width of a row, ignoring SGR escape sequences.
+func ansiWidth(line string) int {
+	width := 0
+
+	for i := 0; i < len(line); {
+		if line[i] == 0x1b {
+			if size := ansiSequenceLen([]byte(line[i:])); size > 0 {
+				i += size
+				continue
+			}
+		}
+
+		r, size := utf8.DecodeRuneInString(line[i:])
+		width += runewidth.RuneWidth(r)
+		i += size
+	}
+
+	return width
+}
+
+// truncateANSI cuts a row to maxWidth printed cells without breaking an SGR
+// sequence. The trailing reset keeps a cut colour from leaking into later rows.
+func truncateANSI(line string, maxWidth int) string {
+	var out strings.Builder
+
+	width := 0
+	truncated := false
+
+	for i := 0; i < len(line); {
+		if line[i] == 0x1b {
+			if size := ansiSequenceLen([]byte(line[i:])); size > 0 {
+				out.WriteString(line[i : i+size])
+				i += size
+				continue
+			}
+		}
+
+		r, size := utf8.DecodeRuneInString(line[i:])
+		runeWidth := runewidth.RuneWidth(r)
+		if width+runeWidth > maxWidth {
+			truncated = true
+			break
+		}
+
+		out.WriteRune(r)
+		width += runeWidth
+		i += size
+	}
+
+	if truncated {
+		out.WriteString("\x1b[0m")
+	}
+
+	return out.String()
 }
 
 // trimTerminalRows drops trailing blanks and zero bytes so the view does not
@@ -516,6 +666,31 @@ func (gui *Gui) leaveTerminalFocus() error {
 	})
 
 	return gui.switchFocus(gui.Panels.Containers.GetView())
+}
+
+// terminalEditor forwards printable non-ASCII runes to the PTY. The keybindings
+// below cover ASCII and control keys, but there is no practical way to bind every
+// Unicode code point, and IMEs (for example Vietnamese Telex) deliver composed
+// characters as runes that gocui would otherwise swallow.
+func (gui *Gui) terminalEditor() gocui.Editor {
+	return gocui.EditorFunc(func(_ *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) bool {
+		data, ok := terminalInputBytes(key, ch, mod)
+		if !ok {
+			return false
+		}
+
+		_ = gui.writeTerminal(data)
+
+		return true
+	})
+}
+
+func terminalInputBytes(key gocui.Key, ch rune, mod gocui.Modifier) ([]byte, bool) {
+	if ch == 0 || mod != gocui.ModNone || (key != 0 && key != gocui.KeySpace) {
+		return nil, false
+	}
+
+	return []byte(string(ch)), true
 }
 
 // terminalKeyBindings forwards keystrokes to the PTY. They live on the terminal
@@ -554,10 +729,11 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 		&Binding{ViewName: "terminal", Key: gocui.KeyPgdn, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(-10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlO, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.leaveTerminalFocus() }, Description: gui.Tr.LeaveShell},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlX, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.closeContainerTerminal() }, Description: gui.Tr.CloseShell},
+		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlQ, Modifier: gocui.ModNone, Handler: gui.quit, Description: gui.Tr.Quit},
 	)
 
 	for key := gocui.KeyCtrlA; key <= gocui.KeyCtrlZ; key++ {
-		if key == gocui.KeyCtrlX || key == gocui.KeyCtrlO {
+		if key == gocui.KeyCtrlX || key == gocui.KeyCtrlO || key == gocui.KeyCtrlQ {
 			continue
 		}
 
@@ -597,7 +773,12 @@ func (gui *Gui) scrollTerminal(delta int) error {
 // scrolledOffLines returns the lines that left the top of the screen between two
 // snapshots (used to build the scrollback history).
 func scrolledOffLines(oldRows, newRows []string) []string {
-	for k := 1; k < len(oldRows) && k <= len(newRows); k++ {
+	start := len(oldRows) - len(newRows)
+	if start < 1 {
+		start = 1
+	}
+
+	for k := start; k < len(oldRows); k++ {
 		if slicesEqual(oldRows[k:], newRows[:len(oldRows)-k]) {
 			return oldRows[:k]
 		}

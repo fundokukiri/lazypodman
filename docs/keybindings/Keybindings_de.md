@@ -39,16 +39,22 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>s</kbd>: anhalten
   <kbd>r</kbd>: neustarten
   <kbd>C</kbd>: commit to image
+  <kbd>v</kbd>: container files
   <kbd>a</kbd>: anbinden
+  <kbd>A</kbd>: attach in this terminal
+  <kbd>ctrl+a</kbd>: attach with full logs
+  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: zeige Protokolle
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
-  <kbd>Q</kbd>: Export Quadlet .container file
+  <kbd>Q</kbd>: Quadlet
   <kbd>ctrl+x</kbd>: exec shell
   <kbd>c</kbd>: führe vordefinierten benutzerdefinierten Befehl aus
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
   <kbd>enter</kbd>: fokussieren aufs Hauptpanel
   <kbd>[</kbd>: vorheriges Tab
   <kbd>]</kbd>: nächstes Tab
@@ -65,6 +71,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: neustarten
   <kbd>S</kbd>: start
   <kbd>a</kbd>: anbinden
+  <kbd>A</kbd>: attach in this terminal
+  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: zeige Protokolle
   <kbd>U</kbd>: up project
   <kbd>D</kbd>: down project
@@ -121,6 +130,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>G</kbd>: jump to latest logs
   <kbd>esc</kbd>: zurück
 </pre>
@@ -132,6 +143,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>ċ</kbd>: scrollen
   <kbd>ctrl+o</kbd>: leave shell, keep it running
   <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+q</kbd>: quit
 </pre>
 
 ## Pods

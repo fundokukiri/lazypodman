@@ -63,6 +63,13 @@ type TranslationSet struct {
 	PreviousContext             string
 	NextContext                 string
 	Attach                      string
+	AttachCurrentTerminal       string
+	AttachFullLogs              string
+	AttachShellTab              string
+	AttachOpenedInTerminal      string
+	ShellOpenedInTerminal       string
+	ExecShellExternal           string
+	NoExternalTerminal          string
 	ViewLogs                    string
 	UpProject                   string
 	DownProject                 string
@@ -73,6 +80,14 @@ type TranslationSet struct {
 	ImagesTitle                 string
 	VolumesTitle                string
 	NetworksTitle               string
+	PortsTitle                  string
+	PortHostHeader              string
+	PortContainerHeader         string
+	PortProtoHeader             string
+	PortNonePublished           string
+	PortConflict                string
+	PortMapSummary              string
+	PortConflictSummary         string
 	NoContainers                string
 	NoContainer                 string
 	NoImages                    string
@@ -118,6 +133,7 @@ type TranslationSet struct {
 	RunContainerConfirmTitle    string
 	RunContainerConfirm         string
 	RunContainerRunningStatus   string
+	RunContainerLoadingStatus   string
 	RunContainerOn              string
 	RunContainerOff             string
 	RunContainerImage           string
@@ -125,6 +141,12 @@ type TranslationSet struct {
 	RunContainerUnset           string
 	RunContainerContainerID     string
 	RunContainerAuto            string
+	RunContainerCommand         string
+	RunContainerChecks          string
+	RunContainerRestore         string
+	RunContainerRunLike         string
+	RunContainerImagePorts      string
+	RunContainerHostPort        string
 	RunContainerLabels          map[string]string
 	BuildImage                  string
 	UpdateImage                 string
@@ -138,6 +160,20 @@ type TranslationSet struct {
 	BuildImageRunningStatus     string
 	BuildImageLabels            map[string]string
 	CommitImage                 string
+	ContainerFiles              string
+	FilesList                   string
+	FilesDownload               string
+	FilesUpload                 string
+	FilesDiff                   string
+	FilesContainerPath          string
+	FilesHostPath               string
+	FilesRootDestination        string
+	FilesCopying                string
+	FilesCopied                 string
+	FilesOverwrite              string
+	FilesOverwritePrompt        string
+	FilesUploadPrompt           string
+	FilesNoChanges              string
 	CommitImageTitle            string
 	CommitImageConfirmTitle     string
 	CommitImageConfirm          string
@@ -217,15 +253,66 @@ type TranslationSet struct {
 
 	EventsTitle string
 
-	PaletteTitle            string
-	AutoUpdateContainers    string
-	ConfirmAutoUpdate       string
-	AutoUpdateHeader        string
-	QuadletExport           string
-	QuadletSavedStatus      string
-	QuadletPlaintextWarning string
-	QuadletNeedsDetails     string
-	QuadletTitle            string
+	DiagnoseTitle          string
+	DiagnoseStatus         string
+	DiagnoseExitCode       string
+	DiagnoseOOMKilled      string
+	DiagnoseRestarts       string
+	DiagnoseRestartPolicy  string
+	DiagnoseStarted        string
+	DiagnoseFinished       string
+	DiagnoseDuration       string
+	DiagnoseMemoryLimit    string
+	DiagnoseCommand        string
+	DiagnoseImage          string
+	DiagnoseLikelyCause    string
+	DiagnoseRunningCause   string
+	DiagnoseCreatedCause   string
+	DiagnosePausedCause    string
+	DiagnoseOOMCause       string
+	DiagnoseExitZeroCause  string
+	DiagnoseExitOneCause   string
+	DiagnoseExit125Cause   string
+	DiagnoseExit126Cause   string
+	DiagnoseExit127Cause   string
+	DiagnoseExit137Cause   string
+	DiagnoseExit139Cause   string
+	DiagnoseExit143Cause   string
+	DiagnoseExitOtherCause string
+	DiagnoseNoDetails      string
+	LogSearchTitle         string
+	LogSearchEmpty         string
+	LogSearchSummary       string
+	LogSearchNoMatches     string
+	LogSearchError         string
+	LogSearchHint          string
+
+	PaletteTitle             string
+	ConnectionsTitle         string
+	ConnectionsNone          string
+	ConnectionsLoadingStatus string
+	ConnectionsRestartPrompt string
+	AutoUpdateContainers     string
+	ConfirmAutoUpdate        string
+	AutoUpdateHeader         string
+	QuadletExport            string
+	QuadletMenuTitle         string
+	QuadletManage            string
+	QuadletNoUnits           string
+	QuadletEnable            string
+	QuadletDisable           string
+	QuadletReload            string
+	QuadletReloaded          string
+	QuadletLogs              string
+	QuadletSystemctlStatus   string
+	QuadletDeleteUnit        string
+	QuadletConfirmDeleteUnit string
+	QuadletDeleted           string
+	QuadletSavedStatus       string
+	QuadletPlaintextWarning  string
+	QuadletNeedsDetails      string
+	QuadletExportingStatus   string
+	QuadletTitle             string
 
 	ToggleMark             string
 	ContainerShellTitle    string
@@ -234,6 +321,9 @@ type TranslationSet struct {
 	ShellHeaderPod         string
 	AllLogs                string
 	RecentLogs             string
+	TranscriptLogs         string
+	PlainLogs              string
+	TranscriptDetected     string
 	JumpToLatest           string
 	ShellCloseHint         string
 	ShellExited            string
@@ -320,7 +410,14 @@ func englishSet() TranslationSet {
 		Recreate:                    "recreate",
 		PreviousContext:             "previous tab",
 		NextContext:                 "next tab",
-		Attach:                      "attach",
+		Attach:                      "attach in a separate terminal",
+		AttachCurrentTerminal:       "attach in this terminal",
+		AttachFullLogs:              "attach with full logs",
+		AttachShellTab:              "attach in shell tab",
+		AttachOpenedInTerminal:      "attached in a separate terminal",
+		ShellOpenedInTerminal:       "shell opened in a separate terminal",
+		ExecShellExternal:           "exec shell in a separate terminal",
+		NoExternalTerminal:          "no terminal emulator found; set the TERMINAL environment variable or install xterm, kitty, alacritty, wezterm, foot, konsole or gnome-terminal",
 		ViewLogs:                    "view logs",
 		UpProject:                   "up project",
 		DownProject:                 "down project",
@@ -353,6 +450,7 @@ func englishSet() TranslationSet {
 		RunContainerConfirmTitle:    "Confirm",
 		RunContainerConfirm:         "Run this container?",
 		RunContainerRunningStatus:   "Starting container",
+		RunContainerLoadingStatus:   "Loading image defaults",
 		RunContainerOn:              "on",
 		RunContainerOff:             "off",
 		RunContainerImage:           "Image",
@@ -360,6 +458,12 @@ func englishSet() TranslationSet {
 		RunContainerUnset:           "-",
 		RunContainerContainerID:     "container ID",
 		RunContainerAuto:            "auto",
+		RunContainerCommand:         "Command",
+		RunContainerChecks:          "Checks",
+		RunContainerRestore:         "Restore last run",
+		RunContainerRunLike:         "Run like a container",
+		RunContainerImagePorts:      "Image ports",
+		RunContainerHostPort:        "Host port",
 		ViewBulkCommands:            "view bulk commands",
 		FilterList:                  "filter list",
 		OpenInBrowser:               "open in browser (first port is http)",
@@ -374,6 +478,14 @@ func englishSet() TranslationSet {
 		ImagesTitle:                 "Images",
 		VolumesTitle:                "Volumes",
 		NetworksTitle:               "Networks",
+		PortsTitle:                  "Ports",
+		PortHostHeader:              "Host port",
+		PortContainerHeader:         "Container port",
+		PortProtoHeader:             "Proto",
+		PortNonePublished:           "No published ports.",
+		PortConflict:                "conflict",
+		PortMapSummary:              "%d published port(s) across %d container(s).",
+		PortConflictSummary:         "%d host-port conflict(s) detected.",
 		CustomCommandTitle:          "Custom Command:",
 		BulkCommandTitle:            "Bulk Command:",
 		ErrorTitle:                  "Error",
@@ -467,33 +579,87 @@ func englishSet() TranslationSet {
 		CliOff:                     "cli off:",
 		NoProbeOutput:              "(no output)",
 		EventsTitle:                "Events",
-		PaletteTitle:               "Command palette",
-		AutoUpdateContainers:       "Auto-update containers (podman auto-update)",
-		ConfirmAutoUpdate:          "Run podman auto-update?",
-		AutoUpdateHeader:           "# podman auto-update",
-		QuadletExport:              "Export Quadlet .container file",
-		QuadletSavedStatus:         "Saved %s",
-		QuadletPlaintextWarning:    "This unit contains environment variables in plaintext.",
-		QuadletNeedsDetails:        "Container details are not loaded yet",
-		QuadletTitle:               "Quadlet",
-		ToggleMark:                 "mark/unmark container",
-		ContainerShellTitle:        "container shell",
-		ShellTitle:                 "shell",
-		ShellHeader:                "container: %s · image: %s · status: %s · id: %s",
-		ShellHeaderPod:             " · pod: %s",
-		AllLogs:                    "load all logs",
-		RecentLogs:                 "load recent logs",
-		JumpToLatest:               "jump to latest logs",
-		ShellCloseHint:             "shell open: ctrl+x closes it",
-		ShellExited:                "shell exited",
-		CloseShell:                 "close shell",
-		LeaveShell:                 "leave shell, keep it running",
-		MarkedCount:                "%d selected",
-		MarksCleared:               "selection cleared",
-		StopContainersCount:        "Stop %d containers?",
-		RestartContainersCount:     "Restart %d containers?",
-		PauseContainersCount:       "Pause/unpause %d containers?",
-		RemoveContainersCount:      "Remove %d containers?",
+
+		DiagnoseTitle:            "Diagnose",
+		DiagnoseStatus:           "Status",
+		DiagnoseExitCode:         "Exit code",
+		DiagnoseOOMKilled:        "OOM killed",
+		DiagnoseRestarts:         "Restart count",
+		DiagnoseRestartPolicy:    "Restart policy",
+		DiagnoseStarted:          "Started",
+		DiagnoseFinished:         "Finished",
+		DiagnoseDuration:         "Duration",
+		DiagnoseMemoryLimit:      "Memory limit",
+		DiagnoseCommand:          "Command",
+		DiagnoseImage:            "Image",
+		DiagnoseLikelyCause:      "Likely cause",
+		DiagnoseRunningCause:     "The container is running. Nothing has failed yet; use Logs or Stats if it misbehaves.",
+		DiagnoseCreatedCause:     "The container was created but never started. Start it, or check why it was left behind.",
+		DiagnosePausedCause:      "The container is paused, so its process is frozen rather than failed.",
+		DiagnoseOOMCause:         "The kernel OOM killer terminated the container. Raise its memory limit or reduce its memory use.",
+		DiagnoseExitZeroCause:    "The main process exited successfully (exit code 0). If that was unexpected, check whether it should keep running.",
+		DiagnoseExitOneCause:     "The application returned a general error (exit code 1). The Logs tab usually has the reason.",
+		DiagnoseExit125Cause:     "Podman itself failed before the container process started (exit code 125). Check the command, image, and volume flags.",
+		DiagnoseExit126Cause:     "The command could not be executed (exit code 126). Check its permissions and interpreter.",
+		DiagnoseExit127Cause:     "The command was not found (exit code 127). Check the image and the configured command.",
+		DiagnoseExit137Cause:     "The process was killed with SIGKILL (exit code 137). That is an OOM kill or a forced podman stop.",
+		DiagnoseExit139Cause:     "The process crashed with a segmentation fault (exit code 139). Check the application logs and its native dependencies.",
+		DiagnoseExit143Cause:     "The process received SIGTERM (exit code 143), which is a normal stop.",
+		DiagnoseExitOtherCause:   "The container exited with code %d. Check the Logs tab for the application's own error.",
+		DiagnoseNoDetails:        "Container details are not loaded yet.",
+		LogSearchTitle:           "Search logs across containers",
+		LogSearchEmpty:           "Type something to search for.",
+		LogSearchSummary:         "Searching %q in the last %d lines of %d containers",
+		LogSearchNoMatches:       "No matches.",
+		LogSearchError:           "could not read logs",
+		LogSearchHint:            "ctrl+f searches again. Opening a container leaves these results.",
+		PaletteTitle:             "Command palette",
+		ConnectionsTitle:         "Podman connections",
+		ConnectionsNone:          "No podman system connections configured.",
+		ConnectionsLoadingStatus: "Loading podman connections",
+		ConnectionsRestartPrompt: "Restart lazypodman connected to %s (%s)?\n\nThe current view and running shells will close.",
+		AutoUpdateContainers:     "Auto-update containers (podman auto-update)",
+		ConfirmAutoUpdate:        "Run podman auto-update?",
+		AutoUpdateHeader:         "# podman auto-update",
+		QuadletExport:            "Export Quadlet .container file",
+		QuadletMenuTitle:         "Quadlet",
+		QuadletManage:            "Manage installed units",
+		QuadletNoUnits:           "No Quadlet units in %s",
+		QuadletEnable:            "Enable",
+		QuadletDisable:           "Disable",
+		QuadletReload:            "Reload systemd units",
+		QuadletReloaded:          "systemd reloaded",
+		QuadletLogs:              "Show logs",
+		QuadletSystemctlStatus:   "running systemctl --user",
+		QuadletDeleteUnit:        "Delete Quadlet unit",
+		QuadletConfirmDeleteUnit: "Delete %s?",
+		QuadletDeleted:           "deleted %s",
+		QuadletSavedStatus:       "Saved %s",
+		QuadletPlaintextWarning:  "This unit contains environment variables in plaintext.",
+		QuadletNeedsDetails:      "Container details are not loaded yet",
+		QuadletExportingStatus:   "Exporting Quadlet unit",
+		QuadletTitle:             "Quadlet",
+		ToggleMark:               "mark/unmark container",
+		ContainerShellTitle:      "container shell",
+		ShellTitle:               "Shell",
+		ShellHeader:              "container: %s · image: %s · status: %s · id: %s",
+		ShellHeaderPod:           " · pod: %s",
+		AllLogs:                  "load all logs",
+		RecentLogs:               "load recent logs",
+		TranscriptLogs:           "view as transcript",
+		PlainLogs:                "view as plain logs",
+		TranscriptDetected:       "transcript output detected, switched to transcript view",
+		JumpToLatest:             "jump to latest logs",
+		ShellCloseHint:           "shell open: ctrl+x closes it",
+		ShellExited:              "shell exited",
+		CloseShell:               "close shell",
+		LeaveShell:               "leave shell, keep it running",
+		MarkedCount:              "%d selected",
+		MarksCleared:             "selection cleared",
+		StopContainersCount:      "Stop %d containers?",
+		RestartContainersCount:   "Restart %d containers?",
+		PauseContainersCount:     "Pause/unpause %d containers?",
+		RemoveContainersCount:    "Remove %d containers?",
 
 		KubeMenuTitle:        "Kube",
 		KubeGenerateMenu:     "Generate kube YAML for this pod",
@@ -524,6 +690,20 @@ func englishSet() TranslationSet {
 		ImageAlreadyUpToDate:     "image already up to date: %s",
 		ImageUpdated:             "image updated: %s",
 		CommitImage:              "commit to image",
+		ContainerFiles:           "container files",
+		FilesList:                "List a directory",
+		FilesDownload:            "Download a file",
+		FilesUpload:              "Upload a file",
+		FilesDiff:                "Show changed files (podman diff)",
+		FilesContainerPath:       "Container path",
+		FilesHostPath:            "Host path",
+		FilesRootDestination:     "Refusing to copy into the host root. Choose a file path.",
+		FilesCopying:             "copying files",
+		FilesCopied:              "copied %s to %s",
+		FilesOverwrite:           "Overwrite file",
+		FilesOverwritePrompt:     "%s already exists. Overwrite it?",
+		FilesUploadPrompt:        "Copy %s to %s?",
+		FilesNoChanges:           "No changes in the container filesystem.",
 		CommitImageTitle:         "Commit container",
 		CommitImageConfirmTitle:  "Confirm commit",
 		CommitImageConfirm:       "Commit this container to an image?",

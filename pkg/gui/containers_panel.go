@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -38,14 +39,19 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 			GetMainTabs: func() []panels.MainTab[*commands.Container] {
 				tabs := []panels.MainTab[*commands.Container]{
 					{
+						Key:    "stats",
+						Title:  gui.Tr.StatsTitle,
+						Render: gui.renderContainerStats,
+					},
+					{
 						Key:    "logs",
 						Title:  gui.Tr.LogsTitle,
 						Render: gui.renderContainerLogsToMain,
 					},
 					{
-						Key:    "stats",
-						Title:  gui.Tr.StatsTitle,
-						Render: gui.renderContainerStats,
+						Key:    "diagnose",
+						Title:  gui.Tr.DiagnoseTitle,
+						Render: gui.renderContainerDiagnosis,
 					},
 					{
 						Key:    "health",
@@ -76,14 +82,15 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 
 				if gui.Panels.Containers != nil {
 					if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.terminalTabFor(container) {
-						// The shell tab only exists after x -> exec shell, right after Logs.
-						tabs = append(tabs[:1], append([]panels.MainTab[*commands.Container]{
+						// The shell tab only exists after x -> exec shell. It sits first so
+						// the shell is the tab you land on, and closing it falls back to Stats.
+						tabs = append([]panels.MainTab[*commands.Container]{
 							{
 								Key:    terminalTabKey,
 								Title:  gui.Tr.ShellTitle,
 								Render: gui.renderContainerTerminal,
 							},
-						}, tabs[1:]...)...)
+						}, tabs...)
 					}
 				}
 
@@ -182,11 +189,11 @@ func (gui *Gui) containerEnv(container *commands.Container) string {
 		return gui.Tr.WaitingForContainerInfo
 	}
 
-	if len(container.Details.Config.Env) == 0 {
+	if len(container.DetailsSnapshot().Config.Env) == 0 {
 		return gui.Tr.NothingToDisplay
 	}
 
-	envVarsList := lo.Map(container.Details.Config.Env, func(envVar string, _ int) []string {
+	envVarsList := lo.Map(container.DetailsSnapshot().Config.Env, func(envVar string, _ int) []string {
 		splitEnv := strings.SplitN(envVar, "=", 2)
 		key := splitEnv[0]
 		value := ""
@@ -221,15 +228,15 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 	output := ""
 	output += utils.WithPadding("ID: ", padding) + container.ID + "\n"
 	output += utils.WithPadding("Name: ", padding) + container.Name + "\n"
-	output += utils.WithPadding("Image: ", padding) + container.Details.Config.Image + "\n"
-	output += utils.WithPadding("Command: ", padding) + strings.Join(append([]string{container.Details.Path}, container.Details.Args...), " ") + "\n"
-	output += utils.WithPadding("Labels: ", padding) + utils.FormatMap(padding, container.Details.Config.Labels)
+	output += utils.WithPadding("Image: ", padding) + container.DetailsSnapshot().Config.Image + "\n"
+	output += utils.WithPadding("Command: ", padding) + strings.Join(append([]string{container.DetailsSnapshot().Path}, container.DetailsSnapshot().Args...), " ") + "\n"
+	output += utils.WithPadding("Labels: ", padding) + utils.FormatMap(padding, container.DetailsSnapshot().Config.Labels)
 	output += "\n"
 
 	output += utils.WithPadding("Mounts: ", padding)
-	if len(container.Details.Mounts) > 0 {
+	if len(container.DetailsSnapshot().Mounts) > 0 {
 		output += "\n"
-		for _, mount := range container.Details.Mounts {
+		for _, mount := range container.DetailsSnapshot().Mounts {
 			if mount.Type == "volume" {
 				output += fmt.Sprintf("%s%s %s\n", strings.Repeat(" ", padding), utils.ColoredString(string(mount.Type)+":", color.FgYellow), mount.Name)
 			} else {
@@ -241,9 +248,9 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 	}
 
 	output += utils.WithPadding("Ports: ", padding)
-	if len(container.Details.NetworkSettings.Ports) > 0 {
+	if len(container.DetailsSnapshot().NetworkSettings.Ports) > 0 {
 		output += "\n"
-		for k, v := range container.Details.NetworkSettings.Ports {
+		for k, v := range container.DetailsSnapshot().NetworkSettings.Ports {
 			for _, host := range v {
 				output += fmt.Sprintf("%s%s %s\n", strings.Repeat(" ", padding), utils.ColoredString(host.HostPort+":", color.FgYellow), k)
 			}
@@ -252,7 +259,8 @@ func (gui *Gui) containerConfigStr(container *commands.Container) string {
 		output += "none\n"
 	}
 
-	data, err := utils.MarshalIntoYaml(&container.Details)
+	details := container.DetailsSnapshot()
+	data, err := utils.MarshalIntoYaml(&details)
 	if err != nil {
 		return fmt.Sprintf("Error marshalling container details: %v", err)
 	}
@@ -325,14 +333,23 @@ func (gui *Gui) renderContainerTop(container *commands.Container) tasks.TaskFunc
 		Duration: time.Second,
 		Before: func(ctx context.Context) {
 			gui.clearMainView()
-			// `podman inspect --size` can take seconds on a large rootfs, so it
-			// must not delay the first stats render. The next tick picks the
-			// values up once this finishes (or the line stays unavailable).
-			go gui.refreshContainerSize(ctx, container)
 		},
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})
+}
+
+func (gui *Gui) restoreSelectedContainer(selected *commands.Container) {
+	if selected == nil {
+		return
+	}
+
+	for i, container := range gui.Panels.Containers.List.GetItems() {
+		if container.ID == selected.ID {
+			gui.Panels.Containers.SetSelectedLineIdx(i)
+			return
+		}
+	}
 }
 
 func (gui *Gui) refreshContainersAndServices() error {
@@ -345,6 +362,12 @@ func (gui *Gui) refreshContainersAndServices() error {
 	originalSelectedLineIdx := gui.Panels.Services.SelectedIdx
 	selectedService, isServiceSelected := gui.Panels.Services.List.TryGet(originalSelectedLineIdx)
 
+	// A restart moves a container between the exited and running groups. If we
+	// only keep the row index, the cursor and the main tab jump to whichever
+	// container now occupies that row. Keep the selected container by ID.
+	originalContainerIdx := gui.Panels.Containers.SelectedIdx
+	selectedContainer, isContainerSelected := gui.Panels.Containers.List.TryGet(originalContainerIdx)
+
 	containers, services, err := gui.PodmanCommand.RefreshContainersAndServices(
 		gui.Panels.Containers.List.GetAllItems(),
 	)
@@ -354,6 +377,10 @@ func (gui *Gui) refreshContainersAndServices() error {
 
 	gui.Panels.Services.SetItems(services)
 	gui.Panels.Containers.SetItems(containers)
+
+	if isContainerSelected {
+		gui.restoreSelectedContainer(selectedContainer)
+	}
 
 	// see if our selected service has moved
 	if isServiceSelected {
@@ -422,11 +449,11 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 	podman := gui.Config.PodmanBinary()
 	menuItems := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + targets[0].ID[1:10]},
+			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + targets[0].ID[:12]},
 			OnPress:      func() error { return removeAll(container.RemoveOptions{}) },
 		},
 		{
-			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + targets[0].ID[1:10]},
+			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + targets[0].ID[:12]},
 			OnPress:      func() error { return removeAll(container.RemoveOptions{RemoveVolumes: true}) },
 		},
 	}
@@ -443,8 +470,13 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) PauseContainer(container *commands.Container) error {
+	details := container.DetailsSnapshot()
+	if details.State == nil {
+		return gui.createErrorPanel(gui.Tr.WaitingForContainerInfo)
+	}
+
 	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() (err error) {
-		if container.Details.State.Paused {
+		if details.State.Paused {
 			err = container.Unpause()
 		} else {
 			err = container.Pause()
@@ -471,7 +503,7 @@ func (gui *Gui) handleContainerPause(g *gocui.Gui, v *gocui.View) error {
 	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() error {
 		for _, ctr := range targets {
 			var err error
-			if ctr.Details.State != nil && ctr.Details.State.Paused {
+			if ctr.DetailsSnapshot().State != nil && ctr.DetailsSnapshot().State.Paused {
 				err = ctr.Unpause()
 			} else {
 				err = ctr.Pause()
@@ -509,7 +541,7 @@ func (gui *Gui) handleContainerStop(g *gocui.Gui, v *gocui.View) error {
 
 			gui.clearMarkedContainers()
 
-			return nil
+			return gui.refreshContainersAndServices()
 		})
 	}, nil)
 }
@@ -529,7 +561,7 @@ func (gui *Gui) handleContainerRestart(g *gocui.Gui, v *gocui.View) error {
 
 		gui.clearMarkedContainers()
 
-		return nil
+		return gui.refreshContainersAndServices()
 	})
 }
 
@@ -539,12 +571,120 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	c, err := ctr.Attach()
-	if err != nil {
+	return gui.openContainerAttachTerminal(ctr)
+}
+
+// openContainerAttachTerminal attaches to the container in a separate terminal
+// window, where the user gets that terminal's own scrollback instead of
+// suspending the lazypodman UI. Without a terminal emulator it falls back to
+// the current terminal instead of failing.
+func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
+	if err := ctr.CanAttach(); err != nil {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	return gui.runSubprocessWithMessage(c, gui.Tr.DetachFromContainerShortCut)
+	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.attachInCurrentTerminal(ctr)
+		}
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
+
+	return nil
+}
+
+// attachInCurrentTerminal suspends the UI and attaches to the container in the
+// current terminal. `A` always uses this path; `a` only uses it as a fallback
+// when no external terminal emulator is available.
+func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	return gui.runAttachCommand(commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
+}
+
+func (gui *Gui) runAttachCommand(argv []string) error {
+	cmd := gui.OSCommand.NewCmd(argv[0], argv[1:]...)
+
+	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)
+}
+
+// openContainerShellTerminal opens a new shell in a separate terminal window.
+// `a` attaches to the container's own process instead; this is the shell path,
+// and it works on containers that cannot be attached to.
+func (gui *Gui) openContainerShellTerminal(ctr *commands.Container) error {
+	if !containerIsRunning(ctr) {
+		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
+	}
+
+	argv := commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.runSubprocess(gui.OSCommand.NewCmd(argv[0], argv[1:]...))
+		}
+
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.ShellOpenedInTerminal)
+
+	return nil
+}
+
+func (gui *Gui) handleContainerExecShellExternal(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.openContainerShellTerminal(ctr)
+}
+
+func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.attachInCurrentTerminal(ctr)
+}
+
+// handleContainerAttachFullLogs is the explicit ctrl+a path: it may replay the
+// whole history, so it lives apart from the instant a/A attach.
+func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.attachContainerTerminal(ctr)
+}
+
+func (gui *Gui) handleContainerAttachFullLogs(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	argv := commands.AttachFullLogsTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.runAttachCommand(argv)
+		}
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
+
+	return nil
 }
 
 func (gui *Gui) handlePruneContainers() error {
@@ -675,7 +815,9 @@ func (gui *Gui) openContainerInBrowser(ctr *commands.Container) error {
 		return nil
 	}
 	ip := port.IP
-	if ip == "0.0.0.0" {
+	if ip == "0.0.0.0" || ip == "::" {
+		// An unspecified address is not reachable from a browser; both mean
+		// "every interface", so the host is what the user wants.
 		ip = "localhost"
 	}
 	link := fmt.Sprintf("http://%s:%d/", ip, port.PublicPort)

@@ -71,14 +71,14 @@ func RenderPodStats(pod *commands.Pod, row commands.PodStatsRow) string {
 		{utils.ColoredString("Status", color.FgGreen), pod.Status},
 		{utils.ColoredString("Containers", color.FgGreen), fmt.Sprintf("%d", pod.NumberOfContainers)},
 		{utils.ColoredString("CPU", color.FgGreen), fmt.Sprintf("%.2f%%", row.CPU)},
-		{utils.ColoredString("Mem usage", color.FgGreen), utils.FormatDecimalBytes(int(row.MemUsage))},
-		{utils.ColoredString("Mem limit", color.FgGreen), utils.FormatDecimalBytes(int(row.MemLimit))},
+		{utils.ColoredString("Mem usage", color.FgGreen), utils.FormatDecimalBytes(row.MemUsage)},
+		{utils.ColoredString("Mem limit", color.FgGreen), utils.FormatDecimalBytes(row.MemLimit)},
 		{utils.ColoredString("Mem %", color.FgGreen), fmt.Sprintf("%d%%", memPercent)},
 	}
 
 	rendered, err := utils.RenderTable(rows)
 	if err != nil {
-		return fmt.Sprintf("CPU: %.2f%%\nMem usage: %s", row.CPU, utils.FormatDecimalBytes(int(row.MemUsage)))
+		return fmt.Sprintf("CPU: %.2f%%\nMem usage: %s", row.CPU, utils.FormatDecimalBytes(row.MemUsage))
 	}
 
 	return rendered

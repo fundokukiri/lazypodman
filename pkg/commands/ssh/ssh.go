@@ -96,13 +96,17 @@ func (noopCloser) Close() error { return nil }
 type tunneledContainerHost struct {
 	socketPath string
 	cmd        *exec.Cmd
+	socketDir  string
 	oSCommand  CmdKiller
 }
 
 var _ io.Closer = (*tunneledContainerHost)(nil)
 
 func (t *tunneledContainerHost) Close() error {
-	return t.oSCommand.Kill(t.cmd)
+	err := t.oSCommand.Kill(t.cmd)
+	_ = os.RemoveAll(t.socketDir)
+
+	return err
 }
 
 func (self *SSHHandler) createContainerHostTunnel(ctx context.Context, remoteHost string, remoteSocket string) (*tunneledContainerHost, error) {
@@ -125,6 +129,9 @@ func (self *SSHHandler) createContainerHostTunnel(ctx context.Context, remoteHos
 
 	err = self.retrySocketDial(ctx, localSocket)
 	if err != nil {
+		_ = self.oSCommand.Kill(cmd)
+		_ = os.RemoveAll(socketDir)
+
 		return nil, fmt.Errorf("ssh tunneled socket never became available: %w", err)
 	}
 
@@ -133,6 +140,7 @@ func (self *SSHHandler) createContainerHostTunnel(ctx context.Context, remoteHos
 	return &tunneledContainerHost{
 		socketPath: newContainerHostURL.String(),
 		cmd:        cmd,
+		socketDir:  socketDir,
 		oSCommand:  self.oSCommand,
 	}, nil
 }

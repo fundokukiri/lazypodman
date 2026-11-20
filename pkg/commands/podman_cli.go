@@ -477,8 +477,12 @@ func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*C
 	}
 
 	argvs, omitted := podLogArgvs(pod, containers, tail, c.podLogsNamesAvailable(ctx))
+	// The notice is written from the closing goroutine below: io.Pipe blocks
+	// until a reader exists, and the caller only gets the reader after this
+	// function returns.
+	notice := ""
 	if omitted > 0 {
-		_, _ = writer.Write([]byte(fmt.Sprintf("# showing %d containers, %d omitted\n", len(argvs), omitted)))
+		notice = fmt.Sprintf("# showing %d containers, %d omitted\n", len(argvs), omitted)
 	}
 
 	commands := make([]command, 0, len(argvs))
@@ -525,6 +529,9 @@ func (c *cliPodmanClient) PodLogs(ctx context.Context, pod *Pod, containers []*C
 	}
 
 	go func() {
+		if notice != "" {
+			_, _ = writer.Write([]byte(notice))
+		}
 		wg.Wait()
 		_ = writer.Close()
 	}()

@@ -13,7 +13,7 @@ func (gui *Gui) handleCommandPalette(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) paletteItems() []*types.MenuItem {
-	items := make([]*types.MenuItem, 0, len(gui.sidePanelKeys())+5)
+	items := make([]*types.MenuItem, 0, len(gui.sidePanelKeys())+6)
 
 	for _, panel := range gui.sidePanelKeys() {
 		panel := panel
@@ -40,6 +40,14 @@ func (gui *Gui) paletteItems() []*types.MenuItem {
 			OnPress:      func() error { return gui.closeContainerTerminal() },
 		},
 		&types.MenuItem{
+			LabelColumns: []string{gui.Tr.ConnectionsTitle},
+			OnPress:      func() error { return gui.handleConnectionsMenu(nil, nil) },
+		},
+		&types.MenuItem{
+			LabelColumns: []string{gui.Tr.LogSearchTitle},
+			OnPress:      func() error { return gui.handleLogSearch(nil, nil) },
+		},
+		&types.MenuItem{
 			LabelColumns: []string{gui.Tr.KubeMenuTitle},
 			OnPress:      func() error { return gui.handlePodsKubeMenu(nil, nil) },
 		},
@@ -52,8 +60,8 @@ func (gui *Gui) paletteItems() []*types.MenuItem {
 			OnPress:      func() error { return gui.handleAutoUpdate() },
 		},
 		&types.MenuItem{
-			LabelColumns: []string{gui.Tr.QuadletExport},
-			OnPress:      func() error { return gui.handleContainerQuadletExport(nil, nil) },
+			LabelColumns: []string{gui.Tr.QuadletMenuTitle},
+			OnPress:      func() error { return gui.handleQuadletMenu(nil, nil) },
 		},
 		&types.MenuItem{
 			LabelColumns: []string{gui.Tr.Quit},

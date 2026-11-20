@@ -230,7 +230,7 @@ func TestRefreshPodStateDisabledIsNoop(t *testing.T) {
 }
 
 func TestAggregatePodStats(t *testing.T) {
-	newStats := func(cpu float64, usage int, limit int64) *RecordedStats {
+	newStats := func(cpu float64, usage int64, limit int64) *RecordedStats {
 		stats := &RecordedStats{DerivedStats: DerivedStats{CPUPercentage: cpu}}
 		stats.ClientStats.MemoryStats.Usage = usage
 		stats.ClientStats.MemoryStats.Limit = limit
@@ -288,5 +288,9 @@ func (f *fakePodClient) StreamPodman(_ context.Context, _ []string, _ func(strin
 }
 
 func (f *fakePodClient) OpenTerminal(_ context.Context, _ string, _, _ int) (*Terminal, error) {
+	return nil, nil
+}
+
+func (f *fakePodClient) OpenAttachTerminal(_ context.Context, _ string, _, _ int) (*Terminal, error) {
 	return nil, nil
 }

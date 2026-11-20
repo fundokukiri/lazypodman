@@ -6,6 +6,11 @@ import (
 	"github.com/jesseduffield/gocui"
 )
 
+// modCtrlShift is tcell.ModCtrl | tcell.ModShift. gocui only exports ModNone
+// and ModAlt; terminals with an enhanced keyboard protocol can report this
+// combination for ctrl+shift+<letter>.
+const modCtrlShift = gocui.Modifier(3)
+
 // Binding - a keybinding mapping a key and modifier to a handler. The keypress
 // is only handled if the given view has focus, or handled globally if the view
 // is ""
@@ -19,6 +24,10 @@ type Binding struct {
 
 // GetKey is a function.
 func (b *Binding) GetKey() string {
+	if b.Key == gocui.KeyF2 {
+		return "F2"
+	}
+
 	key := 0
 
 	switch b.Key.(type) {
@@ -55,10 +64,19 @@ func (b *Binding) GetKey() string {
 	// Control keys would otherwise render as invisible characters in the generated
 	// cheatsheets; name them the way a user would type them.
 	if key >= 1 && key <= 26 {
+		if b.Modifier == modCtrlShift {
+			return "ctrl+shift+" + string(rune('a'+key-1))
+		}
+
 		return "ctrl+" + string(rune('a'+key-1))
 	}
 
-	return fmt.Sprintf("%c", key)
+	name := fmt.Sprintf("%c", key)
+	if b.Modifier == modCtrlShift {
+		name = "ctrl+shift+" + name
+	}
+
+	return name
 }
 
 // GetInitialKeybindings is a function.
@@ -75,6 +93,14 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		{
 			ViewName: "",
 			Key:      'q',
+			Modifier: gocui.ModNone,
+			Handler:  gui.quit,
+		},
+		{
+			// q is text when the terminal view has focus, so keep a quit key
+			// that works there too. The terminal binds the same key locally.
+			ViewName: "",
+			Key:      gocui.KeyCtrlQ,
 			Modifier: gocui.ModNone,
 			Handler:  gui.quit,
 		},
@@ -249,10 +275,45 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         'v',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerFilesMenu,
+			Description: gui.Tr.ContainerFiles,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'a',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerAttach,
 			Description: gui.Tr.Attach,
+		},
+		{
+			ViewName:    "containers",
+			Key:         'A',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerAttachCurrentTerminal,
+			Description: gui.Tr.AttachCurrentTerminal,
+		},
+		{
+			ViewName:    "containers",
+			Key:         gocui.KeyCtrlA,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerAttachFullLogs,
+			Description: gui.Tr.AttachFullLogs,
+		},
+		{
+			ViewName:    "containers",
+			Key:         gocui.KeyF2,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerAttachShellTab,
+			Description: gui.Tr.AttachShellTab,
+		},
+		{
+			ViewName:    "containers",
+			Key:         gocui.KeyCtrlE,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerExecShellExternal,
+			Description: gui.Tr.ExecShellExternal,
 		},
 		{
 			ViewName:    "containers",
@@ -281,8 +342,8 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			ViewName:    "containers",
 			Key:         'Q',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleContainerQuadletExport,
-			Description: gui.Tr.QuadletExport,
+			Handler:     gui.handleQuadletMenu,
+			Description: gui.Tr.QuadletMenuTitle,
 		},
 		{
 			ViewName:    "containers",
@@ -360,6 +421,27 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceAttach,
 			Description: gui.Tr.Attach,
+		},
+		{
+			ViewName:    "services",
+			Key:         'A',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceAttachCurrentTerminal,
+			Description: gui.Tr.AttachCurrentTerminal,
+		},
+		{
+			ViewName:    "services",
+			Key:         gocui.KeyF2,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceAttachShellTab,
+			Description: gui.Tr.AttachShellTab,
+		},
+		{
+			ViewName:    "services",
+			Key:         gocui.KeyCtrlE,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceExecShellExternal,
+			Description: gui.Tr.ExecShellExternal,
 		},
 		{
 			ViewName:    "services",
@@ -509,6 +591,20 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "main",
+			Key:         gocui.KeyCtrlT,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleTranscriptLogs,
+			Description: gui.Tr.TranscriptLogs,
+		},
+		{
+			ViewName:    "main",
+			Key:         gocui.KeyCtrlF,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleLogSearch,
+			Description: gui.Tr.LogSearchTitle,
+		},
+		{
+			ViewName:    "main",
 			Key:         'G',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleLogsJumpToLatest,
@@ -520,6 +616,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleFullLogs,
 			Description: gui.Tr.AllLogs,
+		},
+		{
+			ViewName:    "containers",
+			Key:         gocui.KeyCtrlT,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleTranscriptLogs,
+			Description: gui.Tr.TranscriptLogs,
 		},
 		{
 			ViewName:    "main",

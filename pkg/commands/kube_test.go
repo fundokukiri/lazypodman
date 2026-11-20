@@ -195,3 +195,19 @@ func TestKubeCapabilityStopsWhenCLIUnavailable(t *testing.T) {
 	assert.Nil(t, prefix)
 	assert.Equal(t, 0, client.probeSubcommandCalls)
 }
+
+func TestStreamPodmanHandlesLongLines(t *testing.T) {
+	binary, _, stdoutFile, _ := writeFakePodmanScript(t)
+	line := strings.Repeat("x", 2<<20)
+	requireNoError(t, os.WriteFile(stdoutFile, []byte(line+"\n"), 0o644))
+
+	client := &cliPodmanClient{binary: binary}
+	var got []string
+
+	err := client.StreamPodman(context.Background(), []string{"events"}, func(line string) {
+		got = append(got, line)
+	})
+	assert.NoError(t, err)
+	assert.Len(t, got, 1)
+	assert.Len(t, got[0], 2<<20)
+}

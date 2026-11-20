@@ -98,13 +98,6 @@ func ColoredYamlString(str string) string {
 	return p.PrintTokens(tokens)
 }
 
-// MultiColoredString takes a string and an array of colour attributes and returns a colored
-// string with those attributes
-func MultiColoredString(str string, colorAttribute ...color.Attribute) string {
-	colour := color.New(colorAttribute...)
-	return ColoredStringDirect(str, colour)
-}
-
 // ColoredStringDirect used for aggregating a few color attributes rather than
 // just sending a single one
 func ColoredStringDirect(str string, colour *color.Color) string {
@@ -203,7 +196,7 @@ func displayArraysAligned(stringArrays [][]string) bool {
 	return true
 }
 
-func FormatBinaryBytes(b int) string {
+func FormatBinaryBytes(b int64) string {
 	n := float64(b)
 	units := []string{"B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 	for _, unit := range units {
@@ -220,7 +213,7 @@ func FormatBinaryBytes(b int) string {
 	return "a lot"
 }
 
-func FormatDecimalBytes(b int) string {
+func FormatDecimalBytes(b int64) string {
 	n := float64(b)
 	units := []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 	for _, unit := range units {
@@ -237,9 +230,17 @@ func FormatDecimalBytes(b int) string {
 	return "a lot"
 }
 
+// ApplyTemplate fills in a command template. An unparsable template yields an
+// empty string instead of panicking: the template comes from the user's config.
 func ApplyTemplate(str string, object interface{}) string {
+	tmpl, err := template.New("").Parse(str)
+	if err != nil {
+		return ""
+	}
+
 	var buf bytes.Buffer
-	_ = template.Must(template.New("").Parse(str)).Execute(&buf, object)
+	_ = tmpl.Execute(&buf, object)
+
 	return buf.String()
 }
 

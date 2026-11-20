@@ -269,6 +269,20 @@ func (gui *Gui) logsOptionsMap() map[string]string {
 	return options
 }
 
+// configureLogWriter applies the log budgets to a writer. Full history keeps
+// more of itself: ctrl+l is an explicit request to read back through the log,
+// and holding only the newest megabyte of a long history makes that useless.
+func (gui *Gui) configureLogWriter(container *commands.Container, writer *logTrimWriter) {
+	writer.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
+	writer.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
+
+	if gui.logsFullFor(container) {
+		writer.keepLines *= logViewFullHistoryScale
+		writer.trimAtLines *= logViewFullHistoryScale
+		writer.maxBytes *= logViewFullHistoryScale
+	}
+}
+
 func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
@@ -302,8 +316,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
 	logWriter := newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })
-	logWriter.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
-	logWriter.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
+	gui.configureLogWriter(container, logWriter)
 	if restored {
 		logWriter.adoptCurrentContent()
 	} else {

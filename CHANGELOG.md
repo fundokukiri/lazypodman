@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every update with an erase-line and cursor-up), and an idle transcript no
   longer redraws the whole view 7 times a second.
 
+- **Full history can be scrolled**: `ctrl+l` used to fetch the whole log and then
+  keep only the newest megabyte, so scrolling back stopped almost immediately.
+  The full-history view keeps ten times more, stops trimming while you are
+  scrolled up, and keeps the line you are reading in place when a trim happens
+  instead of jumping back to the top.
+
 ## [1.0.2] - 2026-11-20
 
 ### Added

@@ -307,8 +307,11 @@ commands (prune).
 
 - Opening logs shows the **last 20 lines** by default (`logs.tail: 20`). Change
   it in the config (for example `tail: '200'`, or `''` for everything).
-- Output streams live. The view is capped at 10 000 lines (trimmed at 20 000),
-  so a very chatty container cannot grow memory without bound.
+- Output streams live. The view is capped at 10 000 lines (trimmed at 20 000)
+  and at `logs.maxBytes`, so a very chatty container cannot grow memory without
+  bound. `ctrl+l` (full history) raises both budgets tenfold, so the history you
+  asked for stays scrollable; while you are scrolled up the view stops trimming
+  for the same reason and keeps its place when it eventually has to.
 - `ctrl+l` reloads the current logs with the **full history**, and `ctrl+l` again
   goes back to the default tail. The choice is remembered per container.
 - `ctrl+t` switches the Logs tab between plain text and a **transcript view**.

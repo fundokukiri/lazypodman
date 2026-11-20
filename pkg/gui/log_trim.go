@@ -29,6 +29,14 @@ const (
 	// logInitialHold is short enough to feel immediate and long enough to hide
 	// the initial tail arriving in several chunks.
 	logInitialHold = 120 * time.Millisecond
+	// logViewPausedScale multiplies both budgets while the reader has scrolled
+	// up: keeping the window still beats keeping it small, but memory still has
+	// a ceiling.
+	logViewPausedScale = 4
+	// logViewFullHistoryScale multiplies both budgets when the user asked for
+	// the whole history with ctrl+l. Keeping only the newest megabyte of a
+	// multi-megabyte history makes scrolling back through it pointless.
+	logViewFullHistoryScale = 10
 )
 
 // logTrimTarget is the part of *gocui.View the trimmer needs.
@@ -37,6 +45,7 @@ type logTrimTarget interface {
 	SetContent(string)
 	BufferLines() []string
 	Size() (int, int)
+	OriginY() int
 	SetOriginY(int) error
 }
 
@@ -52,6 +61,8 @@ type logTrimWriter struct {
 	maxLineBytes int
 	bytes        int
 	maxBytes     int
+	keepLines    int
+	trimAtLines  int
 	initial      []byte
 	initialTimer *time.Timer
 	flushed      bool
@@ -63,7 +74,14 @@ type logTrimWriter struct {
 }
 
 func newLogTrimWriter(view logTrimTarget, shouldPin func() bool, stale func() bool) *logTrimWriter {
-	return &logTrimWriter{view: view, shouldPin: shouldPin, stale: stale, flushed: true}
+	return &logTrimWriter{
+		view:        view,
+		shouldPin:   shouldPin,
+		stale:       stale,
+		flushed:     true,
+		keepLines:   logViewKeepLines,
+		trimAtLines: logViewTrimAt,
+	}
 }
 
 func (w *logTrimWriter) Write(p []byte) (int, error) {
@@ -293,14 +311,26 @@ func (w *logTrimWriter) pinToBottomLocked() {
 }
 
 func (w *logTrimWriter) needsTrimLocked() bool {
-	if w.lines > logViewTrimAt {
+	trimAt := w.trimAtLines
+	maxBytes := w.maxBytes
+
+	// While the reader is scrolled up, the newest lines are not the ones on
+	// screen: trimming would slide the text out from under them. Give both
+	// budgets room to spare instead of freezing or growing without bound.
+	if w.shouldPin != nil && !w.shouldPin() {
+		trimAt *= logViewPausedScale
+		maxBytes *= logViewPausedScale
+	}
+
+	if w.lines > trimAt {
 		return true
 	}
 
-	return w.maxBytes > 0 && w.bytes > w.maxBytes+w.maxBytes/2
+	return w.maxBytes > 0 && w.bytes > maxBytes+maxBytes/2
 }
 
 func (w *logTrimWriter) trimLocked() {
+	originY := w.view.OriginY()
 	lines := w.view.BufferLines()
 
 	for len(lines) > 0 && lines[len(lines)-1] == "" {
@@ -312,7 +342,7 @@ func (w *logTrimWriter) trimLocked() {
 	for i := len(lines) - 1; i >= 0; i-- {
 		cost := len(lines[i]) + 1
 		if i != len(lines)-1 {
-			if len(lines)-i > logViewKeepLines {
+			if len(lines)-i > w.keepLines {
 				break
 			}
 			if w.maxBytes > 0 && total+cost > w.maxBytes {
@@ -334,6 +364,14 @@ func (w *logTrimWriter) trimLocked() {
 	w.view.SetContent(content)
 	w.lines = len(lines)
 	w.bytes = len(content)
+
+	// SetContent rewinds the origin. A reader who scrolled up is looking at a
+	// fixed line, so keep that line under their cursor as the top falls off.
+	if w.shouldPin != nil && !w.shouldPin() {
+		if origin := originY - start; origin > 0 {
+			_ = w.view.SetOriginY(origin)
+		}
+	}
 }
 
 // holdInitialFor keeps the first burst out of the view for delay. Podman can

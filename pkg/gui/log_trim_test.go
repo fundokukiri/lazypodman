@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -279,6 +280,82 @@ func TestLogTrimWriterTrimsByBytes(t *testing.T) {
 	assert.LessOrEqual(t, len(retained), 150, "trim happens once the 1.5x threshold is crossed")
 	assert.Contains(t, retained, "line-29")
 	assert.NotContains(t, retained, "line-00")
+}
+
+// A reader who scrolled up keeps the lines they are on: trimming would slide the
+// text out from under them, so the budgets only grow.
+func TestLogTrimWriterKeepsLinesWhileTheReaderScrollsUp(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, func() bool { return false }, nil)
+
+	var builder strings.Builder
+	for i := 0; i < logViewTrimAt+500; i++ {
+		fmt.Fprintf(&builder, "line %d\n", i)
+	}
+
+	_, err := writer.Write([]byte(builder.String()))
+	assert.NoError(t, err)
+
+	lines := target.BufferLines()
+	assert.Equal(t, logViewTrimAt+501, len(lines), "nothing was trimmed while scrolled up")
+}
+
+func TestLogTrimWriterCapsMemoryWhileScrollStaysUp(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, func() bool { return false }, nil)
+
+	var builder strings.Builder
+	for i := 0; i < logViewTrimAt*logViewPausedScale+500; i++ {
+		fmt.Fprintf(&builder, "line %d\n", i)
+	}
+
+	_, err := writer.Write([]byte(builder.String()))
+	assert.NoError(t, err)
+
+	lines := target.BufferLines()
+	assert.Equal(t, logViewKeepLines, len(lines), "the paused budget still bounds memory")
+}
+
+func TestLogTrimWriterKeepsTheScrollPositionAcrossATrim(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, func() bool { return false }, nil)
+
+	var builder strings.Builder
+	for i := 0; i < 100; i++ {
+		fmt.Fprintf(&builder, "line %d\n", i)
+	}
+
+	_, err := writer.Write([]byte(builder.String()))
+	assert.NoError(t, err)
+
+	// The reader is looking at line 40; keeping 80 lines drops the first 20.
+	assert.NoError(t, target.SetOriginY(40))
+
+	writer.keepLines = 80
+	writer.trimAtLines = 1
+	writer.trimLocked()
+
+	assert.Equal(t, 20, target.originY, "the same line stays under the cursor")
+}
+
+func TestFullHistoryKeepsMoreOfTheLog(t *testing.T) {
+	gui := logsGuiWithTail("20")
+	gui.Config.UserConfig.Logs.MaxBytes = 1024
+	container := &commands.Container{ID: "abc"}
+
+	plain := newLogTrimWriter(&fakeLogTarget{}, nil, nil)
+	gui.configureLogWriter(container, plain)
+
+	assert.Equal(t, 1024, plain.maxBytes)
+	assert.Equal(t, logViewKeepLines, plain.keepLines)
+
+	gui.fullLogs = map[string]bool{container.ID: true}
+
+	full := newLogTrimWriter(&fakeLogTarget{}, nil, nil)
+	gui.configureLogWriter(container, full)
+
+	assert.Equal(t, 1024*logViewFullHistoryScale, full.maxBytes)
+	assert.Equal(t, logViewKeepLines*logViewFullHistoryScale, full.keepLines)
 }
 
 func TestLogTrimWriterHoldsInitialOutput(t *testing.T) {

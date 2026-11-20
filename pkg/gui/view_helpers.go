@@ -253,6 +253,7 @@ func (gui *Gui) renderPanelOptions() error {
 		if gui.logsTabActive() {
 			options := gui.globalOptionsMap()
 			options["ctrl+l"] = gui.logsToggleDescription()
+			options["ctrl+t"] = gui.transcriptToggleDescription()
 			options["G"] = gui.Tr.JumpToLatest
 
 			return gui.renderOptionsMap(options)
@@ -364,9 +365,11 @@ func (gui *Gui) CurrentView() *gocui.View {
 	return gui.g.CurrentView()
 }
 
-func (gui *Gui) currentSidePanel() (panels.ISideListPanel, bool) {
-	viewName := gui.currentViewName()
-
+// sidePanelByViewName finds the side panel that owns a view. Tab clicks must use
+// the side panel from the view stack, not the currently focused view: clicking
+// the main frame focuses "main", and looking only at the focused view would make
+// every later tab click a no-op.
+func (gui *Gui) sidePanelByViewName(viewName string) (panels.ISideListPanel, bool) {
 	for _, sidePanel := range gui.allSidePanels() {
 		if sidePanel.GetView().Name() == viewName {
 			return sidePanel, true

@@ -52,8 +52,9 @@ type Gui struct {
 	markedContainerIDs   map[string]bool
 	markedContainersLock sync.Mutex
 
-	// terminal is the single interactive shell tab, if one is open.
-	terminal      *terminalState
+	// terminals holds one interactive shell per container. Opening a shell in
+	// another container keeps the first one running.
+	terminals     map[string]*terminalState
 	terminalMutex sync.Mutex
 
 	// mainRenderGeneration bumps whenever a new task takes over the main view.
@@ -65,6 +66,25 @@ type Gui struct {
 	// history instead of the default tail.
 	fullLogs      map[string]bool
 	fullLogsMutex sync.Mutex
+
+	// transcriptLogs remembers, per container, that the Logs tab should replay
+	// the stream through a terminal emulator instead of showing raw log lines.
+	transcriptLogs      map[string]bool
+	transcriptLogsMutex sync.Mutex
+	// transcriptAutoDisabled keeps a container on plain logs after the user
+	// explicitly switched transcript mode off.
+	transcriptAutoDisabled map[string]bool
+
+	// logViewCache keeps the last rendered Logs view while the user visits
+	// another main tab. Returning to Logs restores it instantly and resumes with
+	// --tail 0 instead of replaying the whole tail.
+	logViewCache           *logViewCache
+	logViewCacheGeneration int
+	logViewCacheMutex      sync.Mutex
+
+	// lastRuns keeps the last submitted Run form per image for this session.
+	lastRuns      map[string]*runContainerState
+	lastRunsMutex sync.Mutex
 
 	// menuCancel, when set, is what esc or the Cancel item should do to leave
 	// the current menu. Submenus use it to return to the menu that opened them

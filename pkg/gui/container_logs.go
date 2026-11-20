@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -30,6 +32,93 @@ func (gui *Gui) containerLogTail(container *commands.Container) string {
 	return gui.Config.UserConfig.Logs.Tail
 }
 
+func (gui *Gui) transcriptLogsFor(container *commands.Container) bool {
+	gui.transcriptLogsMutex.Lock()
+	defer gui.transcriptLogsMutex.Unlock()
+
+	return gui.transcriptLogs[container.ID]
+}
+
+func (gui *Gui) transcriptAutoDisabledFor(container *commands.Container) bool {
+	gui.transcriptLogsMutex.Lock()
+	defer gui.transcriptLogsMutex.Unlock()
+
+	return gui.transcriptAutoDisabled[container.ID]
+}
+
+func (gui *Gui) toggleTranscriptLogs(container *commands.Container) {
+	gui.transcriptLogsMutex.Lock()
+	if gui.transcriptLogs == nil {
+		gui.transcriptLogs = map[string]bool{}
+	}
+	if gui.transcriptAutoDisabled == nil {
+		gui.transcriptAutoDisabled = map[string]bool{}
+	}
+	gui.transcriptLogs[container.ID] = !gui.transcriptLogs[container.ID]
+	gui.transcriptAutoDisabled[container.ID] = !gui.transcriptLogs[container.ID]
+	gui.transcriptLogsMutex.Unlock()
+
+	gui.invalidateLogViewCache()
+
+	if gui.State.Panels != nil && gui.State.Panels.Main != nil {
+		gui.State.Panels.Main.ObjectKey = ""
+	}
+}
+
+// enableTranscriptLogsAutomatically switches a container to transcript mode
+// after its log stream showed full-screen terminal output. It respects an
+// explicit switch back to plain logs.
+func (gui *Gui) enableTranscriptLogsAutomatically(container *commands.Container) {
+	gui.transcriptLogsMutex.Lock()
+	if gui.transcriptLogs[container.ID] || gui.transcriptAutoDisabled[container.ID] {
+		gui.transcriptLogsMutex.Unlock()
+		return
+	}
+	if gui.transcriptLogs == nil {
+		gui.transcriptLogs = map[string]bool{}
+	}
+	gui.transcriptLogs[container.ID] = true
+	gui.transcriptLogsMutex.Unlock()
+
+	gui.invalidateLogViewCache()
+	// The context key is ID + state + tab, so switching mode does not change it.
+	// Force the Logs tab to queue a fresh task or HandleSelect will think the
+	// existing (plain) content is still current.
+	if gui.State.Panels != nil && gui.State.Panels.Main != nil {
+		gui.State.Panels.Main.ObjectKey = ""
+	}
+
+	gui.g.Update(func(*gocui.Gui) error {
+		if !gui.logsTabActive() || gui.Panels.Containers == nil {
+			return nil
+		}
+		selected, err := gui.Panels.Containers.GetSelectedItem()
+		if err != nil || selected.ID != container.ID {
+			return nil
+		}
+
+		gui.flashStatus(gui.Tr.TranscriptDetected)
+		return gui.Panels.Containers.HandleSelect()
+	})
+}
+
+// transcriptLogTail gives the terminal replay enough history to rebuild the
+// current screen. The regular 20-line tail is usually only the last prompt and
+// leaves a TUI looking scrambled.
+func (gui *Gui) transcriptLogTail(container *commands.Container) string {
+	tail := gui.containerLogTail(container)
+	if tail == "" {
+		return ""
+	}
+
+	n, err := strconv.Atoi(tail)
+	if err != nil || n < 5000 {
+		return "5000"
+	}
+
+	return tail
+}
+
 func (gui *Gui) logsFullFor(container *commands.Container) bool {
 	gui.fullLogsMutex.Lock()
 	defer gui.fullLogsMutex.Unlock()
@@ -46,6 +135,8 @@ func (gui *Gui) toggleFullLogs(container *commands.Container) {
 	}
 	gui.fullLogs[container.ID] = !gui.fullLogs[container.ID]
 	gui.fullLogsMutex.Unlock()
+
+	gui.invalidateLogViewCache()
 
 	// Force the log task to restart with the new tail.
 	if gui.State.Panels != nil && gui.State.Panels.Main != nil {
@@ -92,6 +183,16 @@ func (gui *Gui) handleToggleFullLogs(g *gocui.Gui, v *gocui.View) error {
 
 // logsToggleDescription is "load all logs", or "load recent logs" once the full
 // history is already loaded.
+func (gui *Gui) transcriptToggleDescription() string {
+	if gui.Panels.Containers != nil {
+		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.transcriptLogsFor(container) {
+			return gui.Tr.PlainLogs
+		}
+	}
+
+	return gui.Tr.TranscriptLogs
+}
+
 func (gui *Gui) logsToggleDescription() string {
 	if gui.Panels.Containers != nil {
 		if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.logsFullFor(container) {
@@ -103,6 +204,27 @@ func (gui *Gui) logsToggleDescription() string {
 }
 
 // handleLogsJumpToLatest re-enables follow mode and scrolls to the newest line.
+func (gui *Gui) handleToggleTranscriptLogs(g *gocui.Gui, v *gocui.View) error {
+	if !gui.logsTabActive() {
+		return nil
+	}
+
+	container, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	gui.toggleTranscriptLogs(container)
+
+	if gui.transcriptLogsFor(container) {
+		gui.flashStatus(gui.Tr.TranscriptLogs)
+	} else {
+		gui.flashStatus(gui.Tr.PlainLogs)
+	}
+
+	return gui.Panels.Containers.HandleSelect()
+}
+
 func (gui *Gui) handleLogsJumpToLatest(g *gocui.Gui, v *gocui.View) error {
 	if !gui.logsTabActive() {
 		return nil
@@ -132,9 +254,11 @@ func (gui *Gui) logsOptionsMap() map[string]string {
 		"PgUp/PgDn": gui.Tr.Scroll,
 		"G":         gui.Tr.JumpToLatest,
 		"ctrl+l":    gui.Tr.AllLogs,
+		"ctrl+t":    gui.Tr.TranscriptLogs,
 	}
 
 	options["ctrl+l"] = gui.logsToggleDescription()
+	options["ctrl+t"] = gui.transcriptToggleDescription()
 
 	return options
 }
@@ -144,28 +268,62 @@ func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.T
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
 			gui.renderContainerLogsToMainAux(container, ctx, notifyStopped)
 		},
-		Duration: time.Millisecond * 200,
-		// TODO: see why this isn't working (when switching from Top tab to Logs tab in the services panel, the tops tab's content isn't removed)
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Duration:   time.Millisecond * 200,
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: true,
 	})
 }
 
 func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx context.Context, notifyStopped chan struct{}) {
-	gui.clearMainView()
-	defer func() {
-		notifyStopped <- struct{}{}
-	}()
+	if gui.transcriptLogsFor(container) {
+		gui.renderContainerTranscriptToMain(container, ctx, notifyStopped)
+		return
+	}
 
 	mainView := gui.Views.Main
+	restored, resumeSince := gui.restoreLogView(container, mainView)
+	if !restored {
+		gui.clearMainView()
+	}
+	cacheGeneration := gui.logCacheGeneration()
+	defer func() {
+		if ctx.Err() != nil {
+			gui.cacheLogView(container, mainView, cacheGeneration)
+		}
+		notifyStopped <- struct{}{}
+	}()
 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
 	logWriter := newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })
 	logWriter.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
-	if err := gui.writeContainerLogs(container, ctx, logWriter); err != nil {
-		gui.Log.Error(err)
+	logWriter.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
+	if restored {
+		logWriter.adoptCurrentContent()
+	} else {
+		logWriter.holdInitialFor(logInitialHold)
+	}
+	defer logWriter.Close()
+
+	tail := gui.containerLogTail(container)
+	since := ""
+	if restored {
+		// The cached view already contains everything up to savedAt. Fetch only
+		// what arrived after it, so returning to the tab neither replays the tail
+		// nor loses logs emitted while another tab was open.
+		tail = ""
+		since = resumeSince.Format(time.RFC3339Nano)
+	}
+	logOutput := io.Writer(logWriter)
+	if !gui.transcriptAutoDisabledFor(container) {
+		logOutput = io.MultiWriter(logWriter, newTranscriptDetector(func() {
+			gui.enableTranscriptLogsAutomatically(container)
+		}))
+	}
+	writeErr := gui.writeContainerLogs(container, ctx, logOutput, tail, since)
+	logWriter.flushInitial()
+	if writeErr != nil {
+		gui.Log.Error(writeErr)
 	}
 
 	// if we are here because the task has been stopped, we should return
@@ -180,6 +338,72 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 			result, err := container.Inspect()
 			if err != nil {
 				// if we get an error, then the container has probably been removed so we'll get out of here
+				gui.Log.Error(err)
+				return
+			}
+			if result.State.Running {
+				return
+			}
+		}
+	}
+}
+
+// renderContainerTranscriptToMain replays the log stream through a terminal
+// emulator and draws the resulting screen. This makes output from full-screen
+// programs readable instead of showing their raw cursor/erase sequences.
+func (gui *Gui) renderContainerTranscriptToMain(container *commands.Container, ctx context.Context, notifyStopped chan struct{}) {
+	defer func() { notifyStopped <- struct{}{} }()
+
+	mainView := gui.Views.Main
+	gui.clearMainView()
+
+	cols, rows := mainView.Size()
+	if cols < 1 || rows < 1 {
+		return
+	}
+
+	transcript := commands.NewLogTranscript(cols, rows)
+	done := make(chan error, 1)
+	go func() {
+		done <- gui.writeContainerLogs(container, ctx, transcript, gui.transcriptLogTail(container), "")
+	}()
+
+	render := func() {
+		gui.RenderStringMain(strings.Join(transcript.Snapshot(), "\n"))
+	}
+
+	ticker := time.NewTicker(time.Millisecond * 150)
+	defer ticker.Stop()
+
+	render()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case err := <-done:
+			render()
+			if err != nil {
+				gui.Log.Error(err)
+			}
+			gui.waitForContainerRunning(ctx, container)
+			return
+		case <-ticker.C:
+			render()
+		}
+	}
+}
+
+func (gui *Gui) waitForContainerRunning(ctx context.Context, container *commands.Container) {
+	ticker := time.NewTicker(time.Millisecond * 100)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			result, err := container.Inspect()
+			if err != nil {
 				gui.Log.Error(err)
 				return
 			}
@@ -212,7 +436,7 @@ func (gui *Gui) renderLogsToStdout(container *commands.Container) {
 		}
 	}()
 
-	if err := gui.writeContainerLogs(container, ctx, os.Stdout); err != nil {
+	if err := gui.writeContainerLogs(container, ctx, os.Stdout, gui.containerLogTail(container), ""); err != nil {
 		gui.Log.Error(err)
 		return
 	}
@@ -231,13 +455,34 @@ func (gui *Gui) promptToReturn() {
 	}
 }
 
-func (gui *Gui) writeContainerLogs(ctr *commands.Container, ctx context.Context, writer io.Writer) error {
+func (gui *Gui) containerLogSince(ctr *commands.Container) string {
+	if gui.logsFullFor(ctr) {
+		return ""
+	}
+
+	// A stopped container usually has no output in the last 60 minutes. The
+	// configured tail still bounds the request, so ignoring the age filter here
+	// shows its last lines instead of an empty Logs tab.
+	if ctr.Container.State == "exited" || ctr.Container.State == "stopped" || ctr.Container.State == "dead" {
+		return ""
+	}
+	if ctr.DetailsLoaded() && ctr.Details.State != nil && !ctr.Details.State.Running {
+		return ""
+	}
+
+	return gui.Config.UserConfig.Logs.Since
+}
+
+func (gui *Gui) writeContainerLogs(ctr *commands.Container, ctx context.Context, writer io.Writer, tail string, since string) error {
+	if since == "" {
+		since = gui.containerLogSince(ctr)
+	}
 	readCloser, err := gui.PodmanCommand.Client.ContainerLogs(ctx, ctr.ID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: gui.Config.UserConfig.Logs.Timestamps,
-		Since:      gui.Config.UserConfig.Logs.Since,
-		Tail:       gui.containerLogTail(ctr),
+		Since:      since,
+		Tail:       tail,
 		Follow:     true,
 	})
 	if err != nil {

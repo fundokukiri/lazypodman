@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,19 +11,41 @@ import (
 )
 
 type fakeLogTarget struct {
+	mutex   sync.Mutex
 	content string
 	originY int
 	height  int
 }
 
 func (f *fakeLogTarget) Write(p []byte) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
 	f.content += string(p)
 
 	return len(p), nil
 }
 
 func (f *fakeLogTarget) SetContent(s string) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
 	f.content = s
+}
+
+func (f *fakeLogTarget) Content() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	return f.content
+}
+
+func (f *fakeLogTarget) Buffer() string {
+	return f.Content()
+}
+
+func (f *fakeLogTarget) OriginY() int {
+	return f.originY
 }
 
 func (f *fakeLogTarget) Size() (int, int) {
@@ -36,6 +59,9 @@ func (f *fakeLogTarget) SetOriginY(y int) error {
 }
 
 func (f *fakeLogTarget) BufferLines() []string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
 	if f.content == "" {
 		return nil
 	}
@@ -237,4 +263,105 @@ func TestLogTrimWriterDoesNotSpinOnLongMalformedEscape(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("Write did not return for a malformed escape sequence")
 	}
+}
+
+func TestLogTrimWriterTrimsByBytes(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.maxBytes = 100
+
+	for i := 0; i < 30; i++ {
+		_, err := writer.Write([]byte(fmt.Sprintf("line-%02d-abcdefghij\n", i)))
+		assert.NoError(t, err)
+	}
+
+	retained := strings.Join(target.BufferLines(), "\n")
+	assert.LessOrEqual(t, len(retained), 150, "trim happens once the 1.5x threshold is crossed")
+	assert.Contains(t, retained, "line-29")
+	assert.NotContains(t, retained, "line-00")
+}
+
+func TestLogTrimWriterHoldsInitialOutput(t *testing.T) {
+	target := &fakeLogTarget{height: 2}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.holdInitialFor(time.Hour)
+	defer writer.Close()
+
+	_, err := writer.Write([]byte("one\ntwo\nthree\n"))
+	assert.NoError(t, err)
+	assert.Empty(t, target.content, "initial output stays hidden")
+
+	writer.flushInitial()
+	assert.Equal(t, "one\ntwo\nthree\n", target.content)
+	assert.Equal(t, 1, target.originY)
+}
+
+func TestLogTrimWriterCloseFlushesInitialOutput(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.holdInitialFor(time.Hour)
+
+	_, err := writer.Write([]byte("one\n"))
+	assert.NoError(t, err)
+	assert.Empty(t, target.content)
+
+	writer.Close()
+	assert.Equal(t, "one\n", target.content)
+}
+
+func TestLogTrimWriterDropsStaleInitialOutput(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	stale := false
+	writer := newLogTrimWriter(target, nil, func() bool { return stale })
+	writer.holdInitialFor(time.Hour)
+	defer writer.Close()
+
+	_, err := writer.Write([]byte("one\n"))
+	assert.NoError(t, err)
+	stale = true
+
+	writer.flushInitial()
+	assert.Empty(t, target.content)
+}
+
+func TestLogTrimWriterStreamsAfterInitialFlush(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.holdInitialFor(time.Hour)
+	defer writer.Close()
+
+	_, err := writer.Write([]byte("one\n"))
+	assert.NoError(t, err)
+	writer.flushInitial()
+
+	_, err = writer.Write([]byte("two\n"))
+	assert.NoError(t, err)
+	assert.Equal(t, "one\ntwo\n", target.content)
+}
+
+func TestLogTrimWriterBoundsTheHiddenInitialBurst(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.maxBytes = 100
+	writer.holdInitialFor(time.Hour)
+	defer writer.Close()
+
+	_, err := writer.Write([]byte(strings.Repeat("0123456789\n", 50)))
+	assert.NoError(t, err)
+	writer.flushInitial()
+
+	retained := strings.Join(target.BufferLines(), "\n")
+	assert.LessOrEqual(t, len(retained), 150)
+	assert.Contains(t, retained, "0123456789")
+}
+
+func TestLogTrimWriterFlushesInitialOnTimer(t *testing.T) {
+	target := &fakeLogTarget{height: 10}
+	writer := newLogTrimWriter(target, nil, nil)
+	writer.holdInitialFor(5 * time.Millisecond)
+	defer writer.Close()
+
+	_, err := writer.Write([]byte("one\ntwo\n"))
+	assert.NoError(t, err)
+	assert.Eventually(t, func() bool { return target.Content() == "one\ntwo\n" }, time.Second, 5*time.Millisecond)
 }

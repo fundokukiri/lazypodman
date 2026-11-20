@@ -38,9 +38,38 @@ var TerminalBudget = 2 * time.Second
 // HistoryRows is how many rows the scrollback screen keeps.
 const HistoryRows = 2000
 
+// interactiveShellCommand starts the best available shell. It deliberately
+// prefers zsh, then bash, and only falls back to sh because a container's
+// passwd entry can still point at sh after chsh failed or after the image was
+// built without the shell.
+const interactiveShellCommand = `if command -v zsh >/dev/null 2>&1; then exec zsh; elif [ -x /bin/zsh ]; then exec /bin/zsh; elif [ -x /usr/bin/zsh ]; then exec /usr/bin/zsh; elif [ -x /usr/local/bin/zsh ]; then exec /usr/local/bin/zsh; elif command -v bash >/dev/null 2>&1; then exec bash; elif [ -x /bin/bash ]; then exec /bin/bash; elif [ -x /usr/bin/bash ]; then exec /usr/bin/bash; elif [ -x /usr/local/bin/bash ]; then exec /usr/local/bin/bash; else exec sh; fi`
+
+// ShellTerminalArgv builds a `podman exec` command that starts the preferred
+// shell in a terminal window. a/A use it instead of `podman attach`, so they
+// open zsh (or bash/sh) rather than whatever shell the container was started
+// with.
+func ShellTerminalArgv(podmanBinary, ref string) []string {
+	return []string{podmanBinary, "exec", "-it", "--", ref, "/bin/sh", "-c", interactiveShellCommand}
+}
+
 // OpenTerminal starts an interactive shell in the container and sizes the PTY to
 // cols x rows. The caller owns the returned Terminal and must Close it.
 func (c *cliPodmanClient) OpenTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error) {
+	return c.openTerminal(ctx, ref, cols, rows, []string{
+		"exec", "-it", "--", ref, "/bin/sh", "-c", interactiveShellCommand,
+	})
+}
+
+// OpenAttachTerminal attaches to the container's main process in a PTY. It is
+// the in-app equivalent of the external `a`/`A` attach, but keeps the session in
+// the Shell tab.
+func (c *cliPodmanClient) OpenAttachTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error) {
+	return c.openTerminal(ctx, ref, cols, rows, []string{
+		"attach", "--sig-proxy=false", ref,
+	})
+}
+
+func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, rows int, args []string) (*Terminal, error) {
 	if err := validatePodRef(ref); err != nil {
 		return nil, err
 	}
@@ -51,7 +80,7 @@ func (c *cliPodmanClient) OpenTerminal(ctx context.Context, ref string, cols, ro
 
 	execCtx, cancel := context.WithCancel(ctx)
 
-	command := exec.CommandContext(execCtx, c.binary, "exec", "-it", "--", ref, "/bin/sh", "-c", "eval $(grep ^$(id -un): /etc/passwd | cut -d : -f 7-)")
+	command := exec.CommandContext(execCtx, c.binary, args...)
 	command.WaitDelay = TerminalBudget
 
 	file, err := pty.StartWithSize(command, &pty.Winsize{Cols: uint16(cols), Rows: uint16(rows)})
@@ -120,12 +149,7 @@ func (t *Terminal) Snapshot() (rows []string, cursorX, cursorY int, visible bool
 
 	rows = make([]string, screenRows)
 	for y := 0; y < screenRows; y++ {
-		line := make([]rune, cols)
-		for x := 0; x < cols; x++ {
-			line[x] = t.screen.Cell(x, y).Char
-		}
-
-		rows[y] = string(line)
+		rows[y] = terminalRow(t.screen, y, cols)
 	}
 
 	return rows, cursor.X, cursor.Y, t.screen.CursorVisible()
@@ -149,27 +173,27 @@ func (t *Terminal) Scrollback() (rows []string, cursorX, cursorY int, ok bool) {
 	cols, screenRows := t.historyScreen.Size()
 	cursor := t.historyScreen.Cursor()
 
-	all := make([]string, screenRows)
-	for y := 0; y < screenRows; y++ {
-		line := make([]rune, cols)
+	isBlank := func(y int) bool {
 		for x := 0; x < cols; x++ {
-			line[x] = t.historyScreen.Cell(x, y).Char
+			if ch := t.historyScreen.Cell(x, y).Char; ch != 0 && ch != ' ' {
+				return false
+			}
 		}
 
-		all[y] = strings.TrimRight(string(line), " ")
+		return true
 	}
 
 	start := 0
-	for start < len(all) && all[start] == "" {
+	for start < screenRows && isBlank(start) {
 		start++
 	}
 
-	if start == len(all) {
+	if start == screenRows {
 		return nil, cursor.X, 0, true
 	}
 
-	end := len(all)
-	for end > start && all[end-1] == "" {
+	end := screenRows
+	for end > start && isBlank(end-1) {
 		end--
 	}
 
@@ -177,13 +201,113 @@ func (t *Terminal) Scrollback() (rows []string, cursorX, cursorY int, ok bool) {
 		end = cursor.Y + 1
 	}
 
-	rows = all[start:end]
+	rows = make([]string, 0, end-start)
+	for y := start; y < end; y++ {
+		rows = append(rows, strings.TrimRight(terminalRow(t.historyScreen, y, cols), " "))
+	}
+
 	cursorY = cursor.Y - start
 	if cursorY < 0 {
 		cursorY = 0
 	}
 
 	return rows, cursor.X, cursorY, true
+}
+
+// terminalRow renders one screen row with ANSI SGR colour sequences. Colours are
+// emitted only when they change, so an ordinary row stays small and a coloured
+// prompt/command keeps the colours the program intended.
+func terminalRow(view vt10x.View, y int, cols int) string {
+	var row strings.Builder
+	row.Grow(cols)
+
+	lastFG, lastBG := vt10x.Color(0), vt10x.Color(0)
+	styled := false
+
+	for x := 0; x < cols; x++ {
+		cell := view.Cell(x, y)
+
+		if !styled {
+			lastFG, lastBG = cell.FG, cell.BG
+			styled = true
+
+			if sgr := sgrFor(lastFG, lastBG); sgr != "" && sgr != "\x1b[0m" {
+				row.WriteString(sgr)
+			}
+		} else if cell.FG != lastFG || cell.BG != lastBG {
+			row.WriteString(sgrFor(cell.FG, cell.BG))
+			lastFG, lastBG = cell.FG, cell.BG
+		}
+
+		row.WriteRune(cell.Char)
+	}
+
+	if !isDefaultColor(lastFG) || !isDefaultColor(lastBG) || isReverseDefault(lastFG, lastBG) {
+		row.WriteString("\x1b[0m")
+	}
+
+	return row.String()
+}
+
+func sgrFor(fg, bg vt10x.Color) string {
+	// vt10x applies reverse video by swapping the cell colours. For the default
+	// foreground/background pair both halves are then "default", so emitting no
+	// colours would erase the reverse block. That block is how full-screen TUIs
+	// draw their input caret when they hide the hardware cursor.
+	if isReverseDefault(fg, bg) {
+		return "\x1b[7m"
+	}
+
+	params := []string{"0"}
+
+	if code := sgrColor(fg, true); code != "" {
+		params = append(params, code)
+	}
+
+	if code := sgrColor(bg, false); code != "" {
+		params = append(params, code)
+	}
+
+	return "\x1b[" + strings.Join(params, ";") + "m"
+}
+
+func sgrColor(color vt10x.Color, foreground bool) string {
+	if isDefaultColor(color) {
+		return ""
+	}
+
+	base := 30
+	if !foreground {
+		base = 40
+	}
+
+	if color.ANSI() {
+		value := int(color)
+		if value >= 8 {
+			base += 60
+			value -= 8
+		}
+
+		return fmt.Sprintf("%d", base+value)
+	}
+
+	if color < 256 {
+		return fmt.Sprintf("%d;5;%d", base+8, color)
+	}
+
+	r := (color >> 16) & 0xff
+	g := (color >> 8) & 0xff
+	b := color & 0xff
+
+	return fmt.Sprintf("%d;2;%d;%d;%d", base+8, r, g, b)
+}
+
+func isDefaultColor(color vt10x.Color) bool {
+	return color == vt10x.DefaultFG || color == vt10x.DefaultBG || color == vt10x.DefaultCursor
+}
+
+func isReverseDefault(fg, bg vt10x.Color) bool {
+	return fg == vt10x.DefaultBG && bg == vt10x.DefaultFG
 }
 
 // Done is closed when the shell process ends.

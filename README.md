@@ -15,11 +15,12 @@ projects, logs and stats in one window, every common action one keypress away.
   view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
-- Attach to a container in a separate terminal window (or via `TERMINAL`)
-  with plain `podman attach`, so live output starts immediately; `A` does the
-  same in the current terminal, and `a` falls back to it when no emulator
-  exists. `ctrl+a` replays the full logs before attaching. Open an in-app PTY
-  shell tab, view its processes (`top`), config and env
+- Open a shell in a container in a separate terminal window (or via
+  `TERMINAL`); `A` opens it in the current terminal, and `a` falls back to it
+  when no emulator exists. `F2` opens the same shell in the in-app shell tab.
+  The shell is `zsh` when the container has it, otherwise `bash`, then `sh`.
+  `ctrl+a` still attaches to the existing container process with the full logs.
+  View processes (`top`), config and env in their own tabs
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus
@@ -210,8 +211,9 @@ Flags:
 | `--version`, `-h` | version and help |
 
 Layout: the left column holds **Project → Services → Pods → Containers → Images
-→ Volumes → Networks**; the main panel shows the selected item's **Logs / Stats /
-Health / Config / Env / Top / Compose Config / About** tabs. When the pods feature is
+→ Volumes → Networks**; the main panel shows the selected item's **Logs /
+Diagnose / Stats / Health / Config / Env / Top / Compose Config / About** tabs.
+The Networks panel has **Ports / Config** tabs. When the pods feature is
 unavailable the Pods panel is hidden and the remaining panels keep contiguous
 numbers (`1`…`6`).
 
@@ -227,6 +229,7 @@ numbers (`1`…`6`).
 | `/` | filter the list |
 | `esc` | close panel / go back |
 | `q` | quit |
+| `ctrl+q` | quit even while the in-app shell has focus (where `q` is sent to the shell) |
 | `+` / `_` | screen mode (normal / half / fullscreen) |
 | `o` / `e` | open / edit the config (Projects panel) |
 | `B` | build an image from a Containerfile (any panel) |
@@ -234,11 +237,29 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` attach in a new terminal · `A` attach in this terminal ·
-`ctrl+a` attach with full logs · `m` logs · `t` run healthcheck ·
-`C` commit to an image · `ctrl+x` open/close the in-app shell tab ·
+`r` restart · `a` shell in a new terminal · `A` shell in this terminal ·
+`ctrl+a` attach with full logs · `F2` shell in the shell tab ·
+`m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
+`t` run healthcheck · `C` commit to an image · `v` container files ·
+`Q` Quadlet menu · `ctrl+x` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
+
+The **Ports** tab on the Networks panel lists every published host port with
+its container, protocol and network, marks host-port collisions, and needs no
+extra process.
+
+**Container files** (`v`) opens a small menu for listing a directory
+(`podman exec … ls -la`), downloading a file (with an overwrite confirmation),
+uploading a file after a confirmation, and showing `podman diff`. Paths are
+argv arguments, never a shell string.
+
+The **Diagnose** tab explains the container's current state from the inspect
+data already in memory: status, exit code, OOM kill, restart count and policy,
+uptime, memory limit, command, image, last healthcheck output, and a plain
+language "likely cause". Exit codes 0, 1, 125, 126, 127, 137, 139 and 143 have
+specific explanations; other codes show the number and point at Logs. It spawns
+no process.
 
 The **Health** tab shows the health status, the failing streak and the recorded
 probes (newest first) from the container inspect data, so it costs no extra
@@ -248,9 +269,9 @@ not an error. The run is recorded by Podman: it appends to the health log, can
 change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
-stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
-terminal · `A` attach in this terminal · `m` logs ·
-`ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
+stop/start · `r`/`R` restart / restart menu · `p` pause · `a` shell in a new
+terminal · `A` shell in this terminal · `F2` shell in the shell tab ·
+`m` logs · `ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
 (menu, with force) · `b` bulk commands (prune stopped pods) · `c` custom command ·
@@ -286,6 +307,12 @@ commands (prune).
   so a very chatty container cannot grow memory without bound.
 - `ctrl+l` reloads the current logs with the **full history**, and `ctrl+l` again
   goes back to the default tail. The choice is remembered per container.
+- `ctrl+t` switches the Logs tab between plain text and a **transcript view**.
+  Transcript mode replays the stream through a terminal emulator and shows the
+  final screen, which keeps the layout of full-screen programs readable instead
+  of showing their raw cursor and erase sequences. Full-screen output is
+  detected automatically and switches the tab for you; `ctrl+t` toggles it
+  back, and that choice is remembered per container.
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
 - `m` opens logs for the selected container or service; the Logs tab is also the
@@ -294,11 +321,19 @@ commands (prune).
 ### In-app shell
 
 - Select a container (or service) and press `x` → **exec shell**, or press
-  `ctrl+x` directly. A real PTY (`podman exec -it … /bin/sh`) opens in a **shell**
-  tab right after **Logs**, and the app switches to it.
+  `ctrl+x` directly. A real PTY opens in the **shell** tab right after
+  **Logs**, and the app switches to it. Lazypodman uses `zsh` if the container
+  has it, otherwise `bash`, then `sh`. `a`, `A` and `F2` use the same shell
+  selection.
 - The terminal is a VT10x screen, so `vim`, `htop` and `less` work. The line above
   it shows the container name (yellow), image (magenta), status (green/red),
   short ID (grey) and pod when there is one.
+- `F2` opens the preferred shell in this same shell tab instead of an external
+  terminal. `ctrl+a` is still the one that attaches to the container's main
+  process and replays its full logs.
+- Each container can keep its own shell. Opening a shell in another container
+  leaves the first one running in the background; going back to that container
+  shows its shell tab again.
 - `ctrl+x` closes the shell, wipes the view and reloads the logs; exiting the
   shell inside the container closes the tab too. The tab only exists while a
   shell is open, so nothing is spawned at startup.
@@ -307,7 +342,8 @@ commands (prune).
   the last column; it hides while you read old output and the caret comes back at
   the bottom, or as soon as you type/`Enter`.
 - `ctrl+o` leaves the terminal focused but keeps the shell running, so `[`/`]`,
-  the palette and the rest of the UI work again. `esc` is forwarded to the app
+  the palette and the rest of the UI work again. `ctrl+q` quits Lazypodman from
+  the shell; plain `q` is forwarded to the program running inside the shell. `esc` is forwarded to the app
   inside the shell.
 - Full-screen apps use their own screen buffer; paging keys belong to the app
   there, so scrollback is available for normal shell output.
@@ -323,6 +359,17 @@ commands (prune).
   the other repeatable flags open a list where `enter` edits or deletes a value
   and **add** creates one. Menu navigation wraps: down on the last row goes to
   the first, up on the first goes to the last.
+- **Image defaults**: the menu inspects the selected image and prefills the
+  command, entrypoint, working directory, user and health command it declares.
+  Exposed ports are listed and can be published with one host-port prompt.
+- **Run like a container**: copy the visible settings (ports, mounts, env,
+  labels, restart policy, tty/stdin) from any existing container, then edit
+  before running. The container name is not copied.
+- **Restore last run**: re-open the last submitted form for this image during
+  the session.
+- The menu shows the current command preview and a **Checks** row for invalid
+  ports, name or host-port conflicts, missing bind paths, privileged mode and
+  other warnings. Blocking problems stop the run before the confirmation.
 - **Advanced** groups the less common flags: network/DNS, storage, resources,
   security, healthcheck, runtime/image and environment/labels. Anything not in
   the menu can be typed into **Extra args**.
@@ -378,10 +425,21 @@ commands (prune).
   and the confirmation names the count. A successful action clears the marks;
   `space` on a marked row unmarks it. Marks are keyed by container ID, so they
   survive a list refresh.
+- `ctrl+f` opens a **log search** across every visible container. It reads the
+  last 500 lines of each container (bounded to 4 MiB per container and a 5 s
+  timeout), groups matches by container and focuses the main panel so the
+  results can be scrolled. The search runs as a cancellable task, so leaving the
+  panel stops it. Opening a container replaces the results with that container's
+  normal tab.
 - `ctrl+p` opens the **command palette**: jump to any panel, the kube menu, a
-  healthcheck run, `podman auto-update`, the Quadlet export, or quit. It calls the
-  same handlers as the keys, so it cannot drift from them.
-- `Q` exports the selected container as a Quadlet `.container` unit. The preview
+  healthcheck run, a log search, Podman connections, `podman auto-update`, the
+  Quadlet menu, or quit. It calls the same handlers as the keys, so it cannot drift from them.
+- `Q` opens the **Quadlet** menu: export the selected container, or manage the
+  units already installed in `gui.quadletDir`. The manager lists `.container`,
+  `.pod`, `.kube`, `.network` and `.volume` files, then offers start, stop,
+  restart, enable, disable, `systemctl --user daemon-reload`, journal logs, edit
+  and delete (with confirmation). It never enables anything automatically.
+- Exporting a container writes a Quadlet `.container` unit. The preview
   is shown first; the file goes to `gui.quadletDir` (default
   `<user config dir>/containers/systemd`, where Podman looks for user units) as
   `0600` after a confirmation naming the full path. The unit contains
@@ -389,6 +447,11 @@ commands (prune).
   `PublishPort=`, `Volume=`, `Network=` and a `[Service]`/`[Install]` section.
   It is a readable starting point, not a complete translation of every inspect
   field; the generator does not run `systemctl` or enable anything.
+- The command palette's **Podman connections** entry lists
+  `podman system connection ls` and restarts lazypodman with the chosen endpoint
+  (`CONTAINER_HOST`/`DOCKER_HOST`). A restart is required because every panel
+  and log stream belongs to the old store. On Windows the menu explains the
+  manual environment variable instead.
 - `podman auto-update` is available in the Containers panel bulk menu (`b`). It
   confirms first, then streams the output into the main panel and refreshes the
   container list. It updates only containers that carry the auto-update label,
@@ -448,9 +511,10 @@ gui:
 
 logs:
   timestamps: false
-  since: '60m'                # '' = all logs
+  since: '60m'                # '' = all logs (stopped containers ignore it)
   tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
   maxLineLength: 4096         # split long horizontal lines; 0 = keep whole (slower)
+  maxBytes: 1048576           # rendered log kept in the Logs tab; 0 = no byte cap
 
 commandTemplates:
   podman: podman               # CLI used for attach/exec (e.g. podman-remote)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
@@ -21,6 +22,13 @@ const (
 	// horizontal log is wrapped in these batches instead of holding the view
 	// lock for one enormous Write.
 	logWriteBatch = 16 * 1024
+	// logInitialBytes bounds the hidden first burst even when the user disables
+	// the normal byte budget. A stream can otherwise fill memory before the
+	// first render.
+	logInitialBytes = 1024 * 1024
+	// logInitialHold is short enough to feel immediate and long enough to hide
+	// the initial tail arriving in several chunks.
+	logInitialHold = 120 * time.Millisecond
 )
 
 // logTrimTarget is the part of *gocui.View the trimmer needs.
@@ -42,6 +50,11 @@ type logTrimWriter struct {
 	lineCols     int
 	lineBytes    int
 	maxLineBytes int
+	bytes        int
+	maxBytes     int
+	initial      []byte
+	initialTimer *time.Timer
+	flushed      bool
 	pending      []byte
 	buf          []byte
 	skipLF       bool
@@ -50,7 +63,7 @@ type logTrimWriter struct {
 }
 
 func newLogTrimWriter(view logTrimTarget, shouldPin func() bool, stale func() bool) *logTrimWriter {
-	return &logTrimWriter{view: view, shouldPin: shouldPin, stale: stale}
+	return &logTrimWriter{view: view, shouldPin: shouldPin, stale: stale, flushed: true}
 }
 
 func (w *logTrimWriter) Write(p []byte) (int, error) {
@@ -91,15 +104,20 @@ func (w *logTrimWriter) Write(p []byte) (int, error) {
 		}
 
 		out := w.wrapLocked(batch, maxX)
-		if _, err := w.view.Write(out); err != nil {
-			return 0, err
-		}
+		if !w.flushed {
+			w.appendInitialLocked(out)
+		} else {
+			if _, err := w.view.Write(out); err != nil {
+				return 0, err
+			}
 
-		w.lines += bytes.Count(out, []byte("\n"))
-		if w.lines > logViewTrimAt {
-			w.trimLocked()
+			w.bytes += len(out)
+			w.lines += bytes.Count(out, []byte("\n"))
+			if w.needsTrimLocked() {
+				w.trimLocked()
+			}
+			w.pinToBottomLocked()
 		}
-		w.pinToBottomLocked()
 
 		p = p[len(batch):]
 		// Only carry pending bytes into the next batch when there is more input.
@@ -274,6 +292,14 @@ func (w *logTrimWriter) pinToBottomLocked() {
 	_ = w.view.SetOriginY(origin)
 }
 
+func (w *logTrimWriter) needsTrimLocked() bool {
+	if w.lines > logViewTrimAt {
+		return true
+	}
+
+	return w.maxBytes > 0 && w.bytes > w.maxBytes+w.maxBytes/2
+}
+
 func (w *logTrimWriter) trimLocked() {
 	lines := w.view.BufferLines()
 
@@ -281,12 +307,125 @@ func (w *logTrimWriter) trimLocked() {
 		lines = lines[:len(lines)-1]
 	}
 
-	if len(lines) <= logViewKeepLines {
+	start := len(lines)
+	total := 0
+	for i := len(lines) - 1; i >= 0; i-- {
+		cost := len(lines[i]) + 1
+		if i != len(lines)-1 {
+			if len(lines)-i > logViewKeepLines {
+				break
+			}
+			if w.maxBytes > 0 && total+cost > w.maxBytes {
+				break
+			}
+		}
+		total += cost
+		start = i
+	}
+
+	if start == 0 {
 		w.lines = len(lines)
+		w.bytes = total
 		return
 	}
 
-	lines = lines[len(lines)-logViewKeepLines:]
+	lines = lines[start:]
+	content := strings.Join(lines, "\n")
+	w.view.SetContent(content)
 	w.lines = len(lines)
-	w.view.SetContent(strings.Join(lines, "\n"))
+	w.bytes = len(content)
+}
+
+// holdInitialFor keeps the first burst out of the view for delay. Podman can
+// deliver the initial tail in many chunks; writing each one makes the view
+// visibly scroll from the top. The timer writes the bounded burst once, at the
+// bottom.
+func (w *logTrimWriter) holdInitialFor(delay time.Duration) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if w.initialTimer != nil {
+		return
+	}
+
+	w.flushed = false
+	w.initialTimer = time.AfterFunc(delay, w.flushInitial)
+}
+
+func (w *logTrimWriter) appendInitialLocked(out []byte) {
+	w.initial = append(w.initial, out...)
+
+	budget := w.maxBytes
+	if budget <= 0 {
+		budget = logInitialBytes
+	}
+	limit := budget + budget/2
+	if len(w.initial) <= limit {
+		return
+	}
+
+	// Drop complete old lines so the hidden buffer does not itself grow without
+	// bound. Wrapped output always contains newlines unless the stream ended in
+	// the middle of a line.
+	excess := len(w.initial) - budget
+	start := 0
+	if index := bytes.IndexByte(w.initial[excess:], '\n'); index >= 0 {
+		start = excess + index + 1
+	}
+	w.initial = append([]byte(nil), w.initial[start:]...)
+}
+
+func (w *logTrimWriter) flushInitial() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	w.flushInitialLocked()
+}
+
+func (w *logTrimWriter) flushInitialLocked() {
+	if w.flushed {
+		return
+	}
+	w.flushed = true
+
+	if w.initialTimer != nil {
+		w.initialTimer.Stop()
+		w.initialTimer = nil
+	}
+
+	if w.stale != nil && w.stale() {
+		w.initial = nil
+		return
+	}
+
+	if len(w.initial) == 0 {
+		return
+	}
+
+	if _, err := w.view.Write(w.initial); err != nil {
+		w.initial = nil
+		return
+	}
+
+	w.bytes += len(w.initial)
+	w.lines += bytes.Count(w.initial, []byte("\n"))
+	w.initial = nil
+
+	if w.needsTrimLocked() {
+		w.trimLocked()
+	}
+	w.pinToBottomLocked()
+}
+
+// Close flushes the hidden initial burst when the log stream ends within the
+// debounce window.
+func (w *logTrimWriter) Close() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	if w.initialTimer != nil {
+		w.initialTimer.Stop()
+		w.initialTimer = nil
+	}
+	w.flushInitialLocked()
 }

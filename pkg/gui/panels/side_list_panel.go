@@ -14,6 +14,7 @@ import (
 
 type ISideListPanel interface {
 	SetMainTabIndex(int)
+	GetMainTabTitles() []string
 	HandleSelect() error
 	GetView() *gocui.View
 	Refocus()
@@ -133,14 +134,21 @@ func (self *SideListPanel[T]) renderContext(item T) error {
 		return nil
 	}
 
+	// A different item starts on its first tab (Logs for containers) rather than
+	// inheriting the tab that was open on the previous item.
+	self.ContextState.SyncItem(item)
+
+	// Update the tab strip on every selection, even when the content is already
+	// cached. Otherwise clicking a tab can set the index without repainting the
+	// active tab, which makes the mouse look stuck on the previous tab.
+	mainView := self.Gui.GetMainView()
+	mainView.Tabs = self.ContextState.GetMainTabTitles()
+	mainView.TabIndex = self.ContextState.mainTabIdx
+
 	key := self.ContextState.GetCurrentContextKey(item)
 	if !self.Gui.ShouldRefresh(key) {
 		return nil
 	}
-
-	mainView := self.Gui.GetMainView()
-	mainView.Tabs = self.ContextState.GetMainTabTitles()
-	mainView.TabIndex = self.ContextState.mainTabIdx
 
 	task := self.ContextState.GetCurrentMainTab().Render(item)
 
@@ -265,6 +273,14 @@ func (self *SideListPanel[T]) SetMainTabIndex(index int) {
 	}
 
 	self.ContextState.SetMainTabIndex(index)
+}
+
+func (self *SideListPanel[T]) GetMainTabTitles() []string {
+	if self.ContextState == nil {
+		return nil
+	}
+
+	return self.ContextState.GetMainTabTitles()
 }
 
 func (self *SideListPanel[T]) IsFilterDisabled() bool {

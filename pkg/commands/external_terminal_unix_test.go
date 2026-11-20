@@ -73,6 +73,8 @@ func TestAttachTerminalArgvRunsPlainAttachAndNudgesSize(t *testing.T) {
 	script := got[2]
 	assert.Contains(t, script, `bin=$1; ref=$2;`)
 	assert.Contains(t, script, `kill -WINCH $$`)
+	assert.Contains(t, script, `sleep 0.5`)
+	assert.Contains(t, script, `sleep 4`)
 	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
 	assert.NotContains(t, script, ` logs `, "a/A must not replay logs")
 }
@@ -90,4 +92,5 @@ func TestAttachFullLogsArgvReplaysLogsBeforeAttach(t *testing.T) {
 	assert.Contains(t, script, `"$bin" logs "$ref"`)
 	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
 	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
+	assert.Less(t, strings.Index(script, `"$bin" logs "$ref"`), strings.Index(script, "kill -WINCH"), "nudge after the log replay")
 }

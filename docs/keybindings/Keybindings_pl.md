@@ -39,18 +39,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>s</kbd>: zatrzymaj
   <kbd>r</kbd>: restartuj
   <kbd>C</kbd>: commit to image
+  <kbd>v</kbd>: container files
   <kbd>a</kbd>: przyczep
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>A</kbd>: shell in this terminal
   <kbd>ctrl+a</kbd>: attach with full logs
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: pokaż logi
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
-  <kbd>Q</kbd>: Export Quadlet .container file
+  <kbd>Q</kbd>: Quadlet
   <kbd>ctrl+x</kbd>: exec shell
   <kbd>c</kbd>: wykonaj predefiniowaną własną komende
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
   <kbd>enter</kbd>: skup na głównym panelu
   <kbd>[</kbd>: poprzednia zakładka
   <kbd>]</kbd>: następna zakładka
@@ -67,7 +70,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: restartuj
   <kbd>S</kbd>: start
   <kbd>a</kbd>: przyczep
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>A</kbd>: shell in this terminal
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: pokaż logi
   <kbd>U</kbd>: up project
   <kbd>D</kbd>: down project
@@ -124,7 +128,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>G</kbd>: jump to latest logs
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>esc</kbd>: powrót
 </pre>
 
@@ -135,6 +142,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>ċ</kbd>: przewiń
   <kbd>ctrl+o</kbd>: leave shell, keep it running
   <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+q</kbd>: quit
 </pre>
 
 ## Pods

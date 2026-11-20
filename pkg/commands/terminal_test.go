@@ -75,6 +75,41 @@ func TestOpenTerminalRunsAShellAndForwardsInput(t *testing.T) {
 	requireNoError(t, terminal.Write([]byte("stty size\r")))
 	waitForScreen(t, terminal, "10 60")
 	assert.Contains(t, readRecordedArgv(t, argvFile), "[exec]\n[-it]\n[--]\n[abc123]\n")
+	assert.Contains(t, readRecordedArgv(t, argvFile), "command -v zsh")
+	assert.Contains(t, readRecordedArgv(t, argvFile), "exec bash")
+}
+
+func TestShellTerminalArgvRunsThePreferredShell(t *testing.T) {
+	got := ShellTerminalArgv("/usr/bin/podman", "abc123")
+
+	assert.Equal(t, []string{
+		"/usr/bin/podman", "exec", "-it", "--", "abc123", "/bin/sh", "-c",
+		interactiveShellCommand,
+	}, got)
+	assert.Contains(t, interactiveShellCommand, "command -v zsh")
+	assert.Contains(t, interactiveShellCommand, "exec bash")
+}
+
+func TestOpenAttachTerminalRunsPlainAttach(t *testing.T) {
+	binary, argvFile := writeInteractiveFakePodman(t)
+
+	client := &cliPodmanClient{binary: binary}
+	terminal, err := client.OpenAttachTerminal(context.Background(), "abc123", 60, 10)
+	requireNoError(t, err)
+	defer func() { _ = terminal.Close() }()
+
+	want := "[attach]\n[--sig-proxy=false]\n[abc123]\n"
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		data, err := os.ReadFile(argvFile)
+		if err == nil && strings.Contains(string(data), want) {
+			return
+		}
+
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	assert.Contains(t, readRecordedArgv(t, argvFile), want)
 }
 
 func TestOpenTerminalResizeKeepsWorking(t *testing.T) {
@@ -147,4 +182,66 @@ func TestScrollbackIgnoresAltScreen(t *testing.T) {
 
 	_, _, _, ok := terminal.Scrollback()
 	assert.False(t, ok)
+}
+
+func TestTerminalSnapshotKeepsTextColours(t *testing.T) {
+	terminal := &Terminal{screen: vt10x.New(vt10x.WithSize(20, 2))}
+	_, _ = terminal.screen.Write([]byte("\x1b[31mred\x1b[0m plain"))
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.Equal(t, "\x1b[0;31mred\x1b[0m plain", strings.TrimRight(rows[0], " "))
+}
+
+func TestTerminalSnapshotKeepsReverseDefaultCursor(t *testing.T) {
+	terminal := &Terminal{screen: vt10x.New(vt10x.WithSize(20, 2))}
+	_, _ = terminal.screen.Write([]byte("abc\x1b[7m \x1b[27mdef"))
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.Equal(t, "abc\x1b[7m \x1b[0mdef", strings.TrimRight(rows[0], " "))
+}
+
+func TestTerminalSnapshotKeepsReverseDefaultCursorAtLineStart(t *testing.T) {
+	terminal := &Terminal{screen: vt10x.New(vt10x.WithSize(20, 2))}
+	_, _ = terminal.screen.Write([]byte("\x1b[7m \x1b[27mdef"))
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.Equal(t, "\x1b[7m \x1b[0mdef", strings.TrimRight(rows[0], " "))
+}
+
+func TestTerminalSnapshotLeavesPlainRowsPlain(t *testing.T) {
+	terminal := &Terminal{screen: vt10x.New(vt10x.WithSize(20, 2))}
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.Empty(t, strings.TrimRight(rows[0], " "))
+}
+
+func TestTerminalScrollbackKeepsTextColours(t *testing.T) {
+	terminal := &Terminal{historyScreen: vt10x.New(vt10x.WithSize(20, 200))}
+	_, _ = terminal.historyScreen.Write([]byte("\x1b[32mgreen\x1b[0m\r\n"))
+
+	rows, _, _, ok := terminal.Scrollback()
+	assert.True(t, ok)
+	assert.Equal(t, "\x1b[0;32mgreen\x1b[0m", rows[0])
+}
+
+func TestSGRColorCodes(t *testing.T) {
+	tests := []struct {
+		name       string
+		color      vt10x.Color
+		foreground bool
+		want       string
+	}{
+		{name: "ansi red", color: vt10x.Red, foreground: true, want: "31"},
+		{name: "bright red", color: vt10x.LightRed, foreground: true, want: "91"},
+		{name: "background blue", color: vt10x.Blue, foreground: false, want: "44"},
+		{name: "256 colour", color: vt10x.Color(123), foreground: true, want: "38;5;123"},
+		{name: "true colour", color: vt10x.Color(0x112233), foreground: true, want: "38;2;17;34;51"},
+		{name: "default", color: vt10x.DefaultFG, foreground: true, want: ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, sgrColor(test.color, test.foreground))
+		})
+	}
 }

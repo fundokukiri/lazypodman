@@ -44,6 +44,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Render: gui.renderContainerLogsToMain,
 					},
 					{
+						Key:    "diagnose",
+						Title:  gui.Tr.DiagnoseTitle,
+						Render: gui.renderContainerDiagnosis,
+					},
+					{
 						Key:    "stats",
 						Title:  gui.Tr.StatsTitle,
 						Render: gui.renderContainerStats,
@@ -336,6 +341,19 @@ func (gui *Gui) renderContainerTop(container *commands.Container) tasks.TaskFunc
 	})
 }
 
+func (gui *Gui) restoreSelectedContainer(selected *commands.Container) {
+	if selected == nil {
+		return
+	}
+
+	for i, container := range gui.Panels.Containers.List.GetItems() {
+		if container.ID == selected.ID {
+			gui.Panels.Containers.SetSelectedLineIdx(i)
+			return
+		}
+	}
+}
+
 func (gui *Gui) refreshContainersAndServices() error {
 	if gui.Views.Containers == nil {
 		// if the containersView hasn't been instantiated yet we just return
@@ -346,6 +364,12 @@ func (gui *Gui) refreshContainersAndServices() error {
 	originalSelectedLineIdx := gui.Panels.Services.SelectedIdx
 	selectedService, isServiceSelected := gui.Panels.Services.List.TryGet(originalSelectedLineIdx)
 
+	// A restart moves a container between the exited and running groups. If we
+	// only keep the row index, the cursor and the main tab jump to whichever
+	// container now occupies that row. Keep the selected container by ID.
+	originalContainerIdx := gui.Panels.Containers.SelectedIdx
+	selectedContainer, isContainerSelected := gui.Panels.Containers.List.TryGet(originalContainerIdx)
+
 	containers, services, err := gui.PodmanCommand.RefreshContainersAndServices(
 		gui.Panels.Containers.List.GetAllItems(),
 	)
@@ -355,6 +379,10 @@ func (gui *Gui) refreshContainersAndServices() error {
 
 	gui.Panels.Services.SetItems(services)
 	gui.Panels.Containers.SetItems(containers)
+
+	if isContainerSelected {
+		gui.restoreSelectedContainer(selectedContainer)
+	}
 
 	// see if our selected service has moved
 	if isServiceSelected {
@@ -510,7 +538,7 @@ func (gui *Gui) handleContainerStop(g *gocui.Gui, v *gocui.View) error {
 
 			gui.clearMarkedContainers()
 
-			return nil
+			return gui.refreshContainersAndServices()
 		})
 	}, nil)
 }
@@ -530,7 +558,7 @@ func (gui *Gui) handleContainerRestart(g *gocui.Gui, v *gocui.View) error {
 
 		gui.clearMarkedContainers()
 
-		return nil
+		return gui.refreshContainersAndServices()
 	})
 }
 
@@ -540,19 +568,19 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	if err := ctr.CanAttach(); err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
-
 	return gui.openContainerAttachTerminal(ctr)
 }
 
-// openContainerAttachTerminal runs podman attach in a separate terminal window,
-// where the user gets that terminal's own scrollback instead of suspending the
-// lazypodman UI. Without a terminal emulator it falls back to the current
-// terminal instead of failing.
+// openContainerAttachTerminal opens the preferred shell in a separate terminal
+// window, where the user gets that terminal's own scrollback instead of
+// suspending the lazypodman UI. Without a terminal emulator it falls back to
+// the current terminal instead of failing.
 func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
-	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if !containerIsRunning(ctr) {
+		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
+	}
+
+	argv := commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
 	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
 			return gui.attachInCurrentTerminal(ctr)
@@ -565,16 +593,15 @@ func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	return nil
 }
 
-// attachInCurrentTerminal suspends the UI and runs the plain podman attach
-// command, so the live output appears immediately at the bottom of the
-// terminal. `A` always uses this path; `a` only uses it as a fallback when no
-// external terminal emulator is available.
+// attachInCurrentTerminal suspends the UI and runs the preferred shell in the
+// current terminal. `A` always uses this path; `a` only uses it as a fallback
+// when no external terminal emulator is available.
 func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
-	if err := ctr.CanAttach(); err != nil {
-		return gui.createErrorPanel(err.Error())
+	if !containerIsRunning(ctr) {
+		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
 	}
 
-	return gui.runAttachCommand(commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
+	return gui.runAttachCommand(commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
 }
 
 func (gui *Gui) runAttachCommand(argv []string) error {
@@ -594,6 +621,15 @@ func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View
 
 // handleContainerAttachFullLogs is the explicit ctrl+a path: it may replay the
 // whole history, so it lives apart from the instant a/A attach.
+func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.startContainerTerminal(ctr)
+}
+
 func (gui *Gui) handleContainerAttachFullLogs(g *gocui.Gui, v *gocui.View) error {
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {

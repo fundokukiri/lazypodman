@@ -39,18 +39,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>s</kbd>: 停止
   <kbd>r</kbd>: 重新启动
   <kbd>C</kbd>: commit to image
-  <kbd>a</kbd>: attach
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>v</kbd>: container files
+  <kbd>a</kbd>: shell in a separate terminal
+  <kbd>A</kbd>: shell in this terminal
   <kbd>ctrl+a</kbd>: attach with full logs
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
-  <kbd>Q</kbd>: Export Quadlet .container file
+  <kbd>Q</kbd>: Quadlet
   <kbd>ctrl+x</kbd>: 执行shell
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>b</kbd>: 查看批量命令
   <kbd>w</kbd>: 在浏览器中打开(第一个端口为http)
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
   <kbd>enter</kbd>: 聚焦主面板
   <kbd>[</kbd>: 上一个选项卡
   <kbd>]</kbd>: 下一个选项卡
@@ -66,8 +69,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: 暂停
   <kbd>r</kbd>: 重新启动
   <kbd>S</kbd>: 启动项目
-  <kbd>a</kbd>: attach
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>a</kbd>: shell in a separate terminal
+  <kbd>A</kbd>: shell in this terminal
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: 查看日志
   <kbd>U</kbd>: 创建并启动容器
   <kbd>D</kbd>: 停止并移除容器
@@ -124,7 +128,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>G</kbd>: jump to latest logs
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>esc</kbd>: 返回
 </pre>
 
@@ -135,6 +142,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>ċ</kbd>: 滚动
   <kbd>ctrl+o</kbd>: leave shell, keep it running
   <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+q</kbd>: 退出
 </pre>
 
 ## Pods

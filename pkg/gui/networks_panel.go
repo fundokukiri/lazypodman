@@ -21,6 +21,11 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 			GetMainTabs: func() []panels.MainTab[*commands.Network] {
 				return []panels.MainTab[*commands.Network]{
 					{
+						Key:    "ports",
+						Title:  gui.Tr.PortsTitle,
+						Render: gui.renderNetworkPorts,
+					},
+					{
 						Key:    "config",
 						Title:  gui.Tr.ConfigTitle,
 						Render: gui.renderNetworkConfig,

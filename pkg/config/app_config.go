@@ -384,6 +384,9 @@ type LogsConfig struct {
 	// otherwise make a 20-line tail take a long time to render. 0 disables the
 	// split and keeps the full line in one piece.
 	MaxLineLength int `yaml:"maxLineLength,omitempty"`
+	// MaxBytes bounds the rendered text kept in the Logs view. It keeps the
+	// newest bytes and trims whole old lines. 0 disables the byte budget.
+	MaxBytes int `yaml:"maxBytes,omitempty"`
 }
 
 // GetDefaultConfig returns the application default configuration NOTE (to
@@ -428,6 +431,7 @@ func GetDefaultConfig() UserConfig {
 			// selected container. "all"/"" still means everything.
 			Tail:          "20",
 			MaxLineLength: 4096,
+			MaxBytes:      1024 * 1024,
 		},
 		CommandTemplates: CommandTemplatesConfig{
 			Podman:             "podman",

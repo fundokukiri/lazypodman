@@ -25,6 +25,7 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 		printables int
 		ctrlX      bool
 		ctrlO      bool
+		ctrlQ      bool
 	)
 
 	for _, binding := range gui.terminalKeyBindings() {
@@ -43,6 +44,10 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 			ctrlO = true
 		}
 
+		if binding.Key == gocui.KeyCtrlQ {
+			ctrlQ = true
+		}
+
 		if binding.Key == gocui.KeySpace || binding.Key == gocui.KeyEnter || binding.Key == gocui.KeyEsc {
 			assert.False(t, binding.Modifier == gocui.ModAlt)
 		}
@@ -51,6 +56,7 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 	assert.Equal(t, 94, printables, "all printable ASCII keys are forwarded")
 	assert.True(t, ctrlX)
 	assert.True(t, ctrlO, "ctrl+o leaves the shell focused")
+	assert.True(t, ctrlQ, "ctrl+q quits while the shell has focus")
 	assert.Equal(t, 1, closeCount, "ctrl+x closes the shell exactly once")
 }
 
@@ -142,12 +148,29 @@ func TestTerminalTabOnlyForItsContainer(t *testing.T) {
 	assert.False(t, gui.terminalTabFor(container))
 	assert.False(t, gui.terminalTabFor(nil))
 
-	gui.setTerminal(&terminalState{containerID: "abc"})
+	state := &terminalState{containerID: "abc"}
+	gui.addTerminal(state)
 	assert.True(t, gui.terminalTabFor(container))
 	assert.False(t, gui.terminalTabFor(&commands.Container{ID: "other"}))
 
-	gui.setTerminal(nil)
+	gui.removeTerminal(state)
 	assert.False(t, gui.terminalTabFor(container))
+}
+
+func TestTerminalStatesAreKeptPerContainer(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+	first := &terminalState{containerID: "first"}
+	second := &terminalState{containerID: "second"}
+
+	gui.addTerminal(first)
+	gui.addTerminal(second)
+
+	assert.Same(t, first, gui.terminalFor("first"))
+	assert.Same(t, second, gui.terminalFor("second"))
+
+	gui.removeTerminal(first)
+	assert.Nil(t, gui.terminalFor("first"))
+	assert.Same(t, second, gui.terminalFor("second"))
 }
 
 func TestTerminalOptionsShowHowToClose(t *testing.T) {
@@ -158,7 +181,18 @@ func TestTerminalOptionsShowHowToClose(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		"wheel/PgUp/PgDn": gui.Tr.Scroll,
 		"ctrl+o":          gui.Tr.LeaveShell,
+		"ctrl+q":          gui.Tr.Quit,
 		"ctrl+x":          gui.Tr.CloseShell,
 	}, options)
-	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+x: close shell, wheel/PgUp/PgDn: scroll", gui.optionsMapToString(options))
+	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+q: quit, ctrl+x: close shell, wheel/PgUp/PgDn: scroll", gui.optionsMapToString(options))
+}
+
+func TestANSIWidthIgnoresColourSequences(t *testing.T) {
+	assert.Equal(t, 3, ansiWidth("\x1b[0;31mred\x1b[0m"))
+	assert.Equal(t, 5, ansiWidth("\x1b[38;5;123mhello\x1b[0m"))
+}
+
+func TestTruncateANSIPreservesColourSequences(t *testing.T) {
+	assert.Equal(t, "\x1b[0;31mab\x1b[0m", truncateANSI("\x1b[0;31mabcd\x1b[0m", 2))
+	assert.Equal(t, "\x1b[0;31mabc\x1b[0m", truncateANSI("\x1b[0;31mabc\x1b[0m", 3))
 }

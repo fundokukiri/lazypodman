@@ -74,15 +74,22 @@ func (gui *Gui) jumpToTopMain(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) onMainTabClick(tabIndex int) error {
-	gui.Log.Warn(tabIndex)
-
-	currentSidePanel, ok := gui.currentSidePanel()
+	// The main view can already have focus (for example after clicking its
+	// frame), so use the side panel from the view stack rather than currentView.
+	currentSidePanel, ok := gui.sidePanelByViewName(gui.currentSideViewName())
 
 	if !ok {
 		return nil
 	}
 
 	currentSidePanel.SetMainTabIndex(tabIndex)
+
+	// Move the highlight immediately instead of waiting for the panel to queue
+	// its render task. Logs can still be draining, but the mouse stays usable.
+	mainView := gui.GetMainView()
+	mainView.Tabs = currentSidePanel.GetMainTabTitles()
+	mainView.TabIndex = tabIndex
+
 	return currentSidePanel.HandleSelect()
 }
 

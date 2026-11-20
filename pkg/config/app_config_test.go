@@ -96,3 +96,10 @@ func TestWritingToConfigFile(t *testing.T) {
 	// modifying an existing file that already has 'ConfirmOnQuit'
 	testFn(t, conf, false)
 }
+
+func TestDefaultLogsByteBudget(t *testing.T) {
+	conf := GetDefaultConfig()
+	if conf.Logs.MaxBytes != 1024*1024 {
+		t.Fatalf("expected 1 MiB logs byte budget, got %d", conf.Logs.MaxBytes)
+	}
+}

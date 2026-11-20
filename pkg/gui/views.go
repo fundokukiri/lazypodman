@@ -154,6 +154,10 @@ func (gui *Gui) createAllViews() error {
 
 	gui.Views.Terminal.Visible = false
 	gui.Views.Terminal.Frame = false
+	// The terminal needs an editor so non-ASCII input (e.g. Vietnamese through
+	// an IME) reaches the PTY. Printable ASCII is handled by terminalKeyBindings.
+	gui.Views.Terminal.Editable = true
+	gui.Views.Terminal.Editor = gui.terminalEditor()
 
 	gui.Views.Confirmation.Visible = false
 	gui.Views.Confirmation.Wrap = true

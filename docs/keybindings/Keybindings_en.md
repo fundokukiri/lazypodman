@@ -39,18 +39,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>s</kbd>: stop
   <kbd>r</kbd>: restart
   <kbd>C</kbd>: commit to image
-  <kbd>a</kbd>: attach
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>v</kbd>: container files
+  <kbd>a</kbd>: shell in a separate terminal
+  <kbd>A</kbd>: shell in this terminal
   <kbd>ctrl+a</kbd>: attach with full logs
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: view logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
-  <kbd>Q</kbd>: Export Quadlet .container file
+  <kbd>Q</kbd>: Quadlet
   <kbd>ctrl+x</kbd>: exec shell
   <kbd>c</kbd>: run predefined custom command
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
   <kbd>enter</kbd>: focus main panel
   <kbd>[</kbd>: previous tab
   <kbd>]</kbd>: next tab
@@ -66,8 +69,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: pause
   <kbd>r</kbd>: restart
   <kbd>S</kbd>: start
-  <kbd>a</kbd>: attach
-  <kbd>A</kbd>: attach in this terminal
+  <kbd>a</kbd>: shell in a separate terminal
+  <kbd>A</kbd>: shell in this terminal
+  <kbd>F2</kbd>: shell in shell tab
   <kbd>m</kbd>: view logs
   <kbd>U</kbd>: up project
   <kbd>D</kbd>: down project
@@ -124,7 +128,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>ctrl+l</kbd>: load all logs
+  <kbd>ctrl+t</kbd>: view as transcript
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>G</kbd>: jump to latest logs
+  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>esc</kbd>: return
 </pre>
 
@@ -135,6 +142,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>ċ</kbd>: scroll
   <kbd>ctrl+o</kbd>: leave shell, keep it running
   <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+q</kbd>: quit
 </pre>
 
 ## Pods

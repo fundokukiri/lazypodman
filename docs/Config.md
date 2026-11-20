@@ -62,7 +62,7 @@ gui:
   containerStatusHealthStyle: "long"
 logs:
   timestamps: false
-  since: '60m' # set to '' to show all logs
+  since: '60m' # set to '' to show all logs; ignored for stopped containers
   # tail limits how much history is fetched when a log tab opens (empty = all).
   # Default is '20'; press ctrl+l in the Logs tab to load the whole history.
   tail: '20'
@@ -70,6 +70,9 @@ logs:
   # prevents a single horizontal line from making a small tail slow to render.
   # 0 = no split.
   maxLineLength: 4096
+  # maxBytes bounds the rendered text kept in the Logs tab (newest lines win).
+  # Default 1048576 (1 MiB); 0 = only the 10000-line cap applies.
+  maxBytes: 1048576
 commandTemplates:
   podman: podman # The podman executable used for attach/exec (default: podman)
   podmanCompose: podman compose # Determines the compose command to run, referred to as .PodmanCompose in commandTemplates

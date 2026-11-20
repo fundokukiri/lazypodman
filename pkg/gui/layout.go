@@ -26,8 +26,27 @@ func (gui *Gui) getFocusLayout() func(g *gocui.Gui) error {
 
 func (gui *Gui) onFocusChange() error {
 	currentView := gui.g.CurrentView()
+	selectedLineBgColor := GetGocuiStyle(gui.Config.UserConfig.Gui.Theme.SelectedLineBgColor)
+	activeSidePanel := gui.currentSideViewName()
+
 	for _, view := range gui.g.Views() {
-		view.Highlight = view == currentView && view.Name() != "main" && view.Name() != "terminal"
+		focused := view == currentView && view.Name() != "main" && view.Name() != "terminal"
+		if focused {
+			view.Highlight = true
+			view.SelBgColor = selectedLineBgColor
+			continue
+		}
+
+		// The main tabs belong to one side panel. Keep only that panel's
+		// selection visible while the main area has focus. Other panels
+		// (pods, images, volumes...) are not the current context and stay plain.
+		if view.Name() == activeSidePanel {
+			view.Highlight = true
+			view.SelBgColor = selectedLineBgColor
+			continue
+		}
+
+		view.Highlight = false
 	}
 	return nil
 }

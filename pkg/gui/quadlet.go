@@ -13,7 +13,7 @@ import (
 // handleContainerQuadletExport writes a Quadlet `.container` unit for the selected
 // container. Like the kube export it previews the file and only writes after a
 // confirmation naming the full path.
-func (gui *Gui) handleContainerQuadletExport(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleContainerQuadletExport(_ *gocui.Gui, _ *gocui.View) error {
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
 		return nil

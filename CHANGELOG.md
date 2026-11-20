@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Quit from the Shell tab**: `ctrl+q` quits Lazypodman while the terminal has
+  focus. Plain `q` remains part of the shell input and is not a quit key there.
+
+- **Shell selection everywhere a shell is opened**: `ctrl+x`, `E`, the `x`
+  menu's **exec shell**, and `a`/`A`/`F2` now run `zsh` when the container has
+  it, otherwise `bash`, and fall back to `sh`. `a`/`A`/`F2` therefore start a
+  new `podman exec` shell instead of attaching to the container's main process;
+  `ctrl+a` remains the full-log attach path.
+
+- **Run Container menu improvements**: image inspect prefills the command,
+  entrypoint, working directory, user and health command; exposed image ports
+  can be published with one host-port prompt; **Run like a container** copies
+  the visible settings from an existing container; **Restore last run** keeps
+  the last submitted form per image for the session. The menu now carries a live
+  command preview and a **Checks** row for invalid ports, name or host-port
+  conflicts, missing bind paths and privileged mode.
+
+- **Ports tab on the Networks panel**: lists every published host port with its
+  container, protocol and network, and marks host-port collisions. It reads the
+  container list already in memory.
+
+- **Container files menu** (`v`): list a directory with `podman exec … ls -la`,
+  download a file (overwrite confirmation), upload a file (confirmation), and
+  show `podman diff`. Arguments are passed as an argv slice.
+
+- **Quadlet manager** (`Q` now opens a menu): export a container or manage
+  installed `.container`/`.pod`/`.kube`/`.network`/`.volume` units. Start, stop,
+  restart, enable, disable, daemon-reload, journal logs, edit and delete with
+  confirmation.
+
+- **Podman connection switcher** in the command palette: lists
+  `podman system connection ls` and restarts lazypodman against the chosen
+  endpoint. Windows explains the manual `CONTAINER_HOST` step.
+
+- **Diagnose tab**: explains why a container is in its current state using the
+  inspect data already loaded: status, exit code, OOM kill, restart count and
+  policy, uptime, memory limit, command, image, last healthcheck output, and a
+  plain-language likely cause. Common exit codes (0, 1, 125, 126, 127, 137,
+  139, 143) have specific explanations. It opens without spawning a process.
+
+- **Search logs across containers**: `ctrl+f` reads the last 500 lines of every
+  visible container, groups matches by container in the main panel, and focuses
+  the main panel so the results can be scrolled. Each container is bounded to
+  4 MiB and a 5 s timeout; the search is a cancellable task.
+
+- **Transcript view for busy Logs tabs**: `ctrl+t` replays the container's log
+  stream through a terminal emulator and shows the final screen, so output from
+  full-screen programs is readable instead of a mix of cursor moves, carriage
+  returns and raw escape sequences. Transcript mode replays up to 5000 lines so
+  it has enough history to rebuild the current screen instead of only the last
+  prompt. Full-screen output is detected from cursor, erase and alternate-screen
+  sequences and switches automatically; `ctrl+t` still toggles it back, and an
+  explicit switch to plain logs is remembered for that container.
+
 ### Fixed
 
 - **Attach opens in a separate terminal**: `a` (and the `x` menu) now launches
@@ -40,6 +96,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   writer now also checks cancellation between batches, so leaving the tab does
   not wait for the whole log chunk to be rendered.
 
+- **The shell caret stays visible**: at the bottom of the Shell tab the
+  renderer takes the cursor from the live terminal screen instead of the bottom
+  window of the tall scrollback screen. Reverse-video cells on the default
+  foreground/background are also rendered as reverse video again, so TUIs that
+  hide the hardware cursor and draw the input caret as a reversed block (for
+  example free-pi-cli) show the caret, including when that block is the first
+  cell on a line.
+
+- **Mouse tab switching stays responsive**: clicking a main-view tab now
+  updates the tab highlight immediately and always repaints the tab strip, even
+  when the previous Logs stream is still shutting down. Tab clicks also resolve
+  the owning side panel from the view stack, so clicking the main frame (which
+  focuses `main`) no longer makes later tab label clicks do nothing.
+
+- **A different container starts on the Logs tab**: switching containers no
+  longer keeps the tab that was open on the previous one. Open Env on
+  container A, select container B, and B starts on Logs.
+
+- **External attach no longer starts blank**: the attach wrapper sends several
+  window-size signals over the first few seconds, so an attached TUI redraws
+  itself instead of staying empty until the first key press. For the full-log
+  attach path the nudges start after the log replay.
+
+- **Attach inside the Shell tab**: `F2` on a container or service
+  opens `podman attach` in the in-app shell tab. It replaces the old
+  `ctrl+shift+a` binding, which many terminals report as plain `A`. `a`/`A`
+  still use an external or the current terminal.
+
+- **Closing the shell leaves the Logs tab populated**: the asynchronous view
+  cleanup no longer clears the main view after the Logs task has restored its
+  content, so `ctrl+x` shows the existing logs immediately instead of waiting
+  for a new line to arrive.
+
+- **Each container keeps its own shell**: opening a shell in another container
+  no longer closes the first one. The other shell keeps running in the
+  background and its tab comes back when that container is selected again.
+
+- **Shell output keeps its colours**: ANSI foreground/background colours from
+  the container PTY are rendered in the live shell and its scrollback instead
+  of being flattened to plain text.
+
+- **Vietnamese and other non-ASCII input works in the Shell tab**: composed
+  IME characters are now forwarded to the container PTY instead of being
+  swallowed by the UI.
+
+- **The selected container stays highlighted while a main tab has focus**:
+  clicking Logs/Stats/etc. no longer makes the active side panel's selection
+  disappear, so it is still clear which container those tabs belong to. Other
+  panels keep their normal, unhighlighted rows.
+
+- **Restarting or stopping a container keeps it selected**: the container is
+  re-found by ID after the refresh instead of leaving the cursor on the row it
+  used to occupy, so the side panel and main tab stay on the same container
+  when it moves between the running and exited groups. Stop and restart now
+  also refresh immediately.
+
+- **Returning to the Logs tab no longer reloads it**: switching to Stats,
+  Health, Env or another main tab and back restores the last Logs view and
+  resumes from the time it was cached, so the tail is not replayed and logs
+  written while away are not lost. `ctrl+l` still forces a real full-history
+  reload.
+
+- **Stopped containers no longer show an empty Logs tab**: the `logs.since`
+  age filter is skipped for stopped containers, so the last `logs.tail` lines
+  are shown even when they are older than the window. `ctrl+l` now loads full
+  history without the age filter too.
+
+- Logs now have a byte budget (`logs.maxBytes`, default 1 MiB) as well as the
+  line cap. The initial tail is held for 120 ms and then drawn once at the
+  bottom, so opening Logs no longer replays the whole history visibly. This
+  keeps the tab's memory bounded even when every line is 4 KiB wide.
 - Logs keep streaming immediately (old behaviour) but the view is capped at
   10.000 lines, trimmed when it passes 20.000, so follow mode no longer grows
   memory without bound. Set `logs.tail` to also limit the initial fetch.

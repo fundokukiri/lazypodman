@@ -315,8 +315,15 @@ commands (prune).
   Transcript mode replays the stream through a terminal emulator and shows the
   final screen, which keeps the layout of full-screen programs readable instead
   of showing their raw cursor and erase sequences. Full-screen output is
-  detected automatically and switches the tab for you; `ctrl+t` toggles it
-  back, and that choice is remembered per container.
+  detected automatically and switches the tab for you (entering the alternate
+  screen, clearing the screen, or repainting with cursor moves; a progress bar
+  that only erases a line does not count); `ctrl+t` toggles it back, and that
+  choice is remembered per container.
+- Transcript mode replays `logs.transcriptTail` lines (500 by default) instead
+  of the 20-line tail, because the last 20 lines are usually only the final
+  prompt. Setting it to 0 replays only `tail`. Replaying thousands of lines
+  makes the Podman service scan a large log file, which is where a memory
+  spike on a busy container comes from.
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
 - `m` opens logs for the selected container or service; closing the in-app
@@ -522,6 +529,7 @@ logs:
   tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
   maxLineLength: 4096         # split long horizontal lines; 0 = keep whole (slower)
   maxBytes: 1048576           # rendered log kept in the Logs tab; 0 = no byte cap
+  transcriptTail: 500         # lines replayed in the transcript view; 0 = use tail
 
 commandTemplates:
   podman: podman               # CLI used for attach/exec (e.g. podman-remote)

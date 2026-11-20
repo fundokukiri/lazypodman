@@ -104,19 +104,25 @@ func (gui *Gui) enableTranscriptLogsAutomatically(container *commands.Container)
 
 // transcriptLogTail gives the terminal replay enough history to rebuild the
 // current screen. The regular 20-line tail is usually only the last prompt and
-// leaves a TUI looking scrambled.
+// leaves a TUI looking scrambled, while replaying thousands of lines asks the
+// Podman service to scan a large log file: that is where the memory goes when
+// the Logs tab is opened on a chatty container. Logs.TranscriptTail bounds it.
 func (gui *Gui) transcriptLogTail(container *commands.Container) string {
 	tail := gui.containerLogTail(container)
 	if tail == "" {
 		return ""
 	}
 
-	n, err := strconv.Atoi(tail)
-	if err != nil || n < 5000 {
-		return "5000"
+	replay := gui.Config.UserConfig.Logs.TranscriptTail
+	if replay <= 0 {
+		return tail
 	}
 
-	return tail
+	if n, err := strconv.Atoi(tail); err == nil && n >= replay {
+		return tail
+	}
+
+	return strconv.Itoa(replay)
 }
 
 func (gui *Gui) logsFullFor(container *commands.Container) bool {
@@ -373,8 +379,17 @@ func (gui *Gui) renderContainerTranscriptToMain(container *commands.Container, c
 		done <- gui.writeContainerLogs(container, ctx, transcript, gui.transcriptLogTail(container), "")
 	}()
 
+	// Redrawing the whole view every tick allocates a copy of the screen even
+	// when the container printed nothing, so only render real changes.
+	rendered := ""
 	render := func() {
-		gui.RenderStringMain(strings.Join(transcript.Snapshot(), "\n"))
+		content := strings.Join(transcript.Snapshot(), "\n")
+		if content == rendered {
+			return
+		}
+
+		rendered = content
+		gui.RenderStringMain(content)
 	}
 
 	ticker := time.NewTicker(time.Millisecond * 150)

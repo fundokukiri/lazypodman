@@ -10,7 +10,7 @@ import (
 func TestTranscriptDetectorRecognisesAFullScreenProgram(t *testing.T) {
 	assert.True(t, looksLikeTranscript([]byte("\x1b[?1049hhello")))
 	assert.True(t, looksLikeTranscript([]byte("\x1b[2J\x1b[H\x1b[10;20Htext")))
-	assert.True(t, looksLikeTranscript([]byte("\x1b[2K\x1b[1A\x1b[K")))
+	assert.True(t, looksLikeTranscript([]byte("\x1b[H\x1b[1A\x1b[3B\x1b[10;20Hrepaint")))
 }
 
 func TestTranscriptDetectorIgnoresCursorHidingOnly(t *testing.T) {
@@ -21,6 +21,14 @@ func TestTranscriptDetectorIgnoresCursorHidingOnly(t *testing.T) {
 func TestTranscriptDetectorIgnoresPlainColouredLogs(t *testing.T) {
 	assert.False(t, looksLikeTranscript([]byte("\x1b[31mred\x1b[0m normal log line\n")))
 	assert.False(t, looksLikeTranscript([]byte("progress: 50%\rprogress: 100%\n")))
+}
+
+// A progress bar erases its line and moves up one row. That is readable as plain
+// text, and treating it as a full-screen program re-reads hundreds of lines of
+// logs for nothing.
+func TestTranscriptDetectorIgnoresProgressBars(t *testing.T) {
+	assert.False(t, looksLikeTranscript([]byte("\x1b[2K\x1b[1A\x1b[K 45%\r")))
+	assert.False(t, looksLikeTranscript([]byte("\x1b[1Gdownloading\x1b[K 12 MB\r")))
 }
 
 func TestTranscriptDetectorKeepsSplitSequences(t *testing.T) {

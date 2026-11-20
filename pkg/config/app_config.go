@@ -387,6 +387,12 @@ type LogsConfig struct {
 	// MaxBytes bounds the rendered text kept in the Logs view. It keeps the
 	// newest bytes and trims whole old lines. 0 disables the byte budget.
 	MaxBytes int `yaml:"maxBytes,omitempty"`
+	// TranscriptTail is how many lines the transcript view replays to rebuild
+	// the current screen. Tail alone is usually the last prompt, which leaves a
+	// full-screen program looking scrambled, while replaying thousands of lines
+	// makes the Podman service scan a large log file and spike memory. 0 uses
+	// Tail as-is.
+	TranscriptTail int `yaml:"transcriptTail,omitempty"`
 }
 
 // GetDefaultConfig returns the application default configuration NOTE (to
@@ -429,9 +435,10 @@ func GetDefaultConfig() UserConfig {
 			Since:      "60m",
 			// 20 keeps the log tab cheap; ctrl+l loads the full history for the
 			// selected container. "all"/"" still means everything.
-			Tail:          "20",
-			MaxLineLength: 4096,
-			MaxBytes:      1024 * 1024,
+			Tail:           "20",
+			MaxLineLength:  4096,
+			MaxBytes:       1024 * 1024,
+			TranscriptTail: 500,
 		},
 		CommandTemplates: CommandTemplatesConfig{
 			Podman:             "podman",

@@ -51,6 +51,10 @@ func looksLikeTranscript(data []byte) bool {
 		[]byte("\x1b[?2004h"),
 		[]byte("\x1b[?1000h"),
 		[]byte("\x1b[?7l"),
+		// Clearing the whole screen or the scrollback: a full-screen program
+		// repaints instead of appending.
+		[]byte("\x1b[2J"),
+		[]byte("\x1b[3J"),
 	} {
 		if bytes.Contains(data, marker) {
 			return true
@@ -71,8 +75,11 @@ func looksLikeTranscript(data []byte) bool {
 			break
 		}
 
+		// Cursor positioning is what a redrawing TUI does. Erasing a line and
+		// moving up one row (`\x1b[2K\x1b[1A`) is what a progress bar does, so
+		// those do not count: they are readable without a terminal emulator.
 		switch data[j] {
-		case 'H', 'f', 'A', 'B', 'C', 'D', 'J', 'K':
+		case 'H', 'f', 'A', 'B':
 			score++
 			if score >= 3 {
 				return true

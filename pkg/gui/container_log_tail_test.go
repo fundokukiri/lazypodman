@@ -13,8 +13,11 @@ import (
 func logsGuiWithTail(tail string) *Gui {
 	translations := i18n.GetTranslationSets()["en"]
 
+	logs := config.GetDefaultConfig().Logs
+	logs.Tail = tail
+
 	return &Gui{
-		Config: &config.AppConfig{UserConfig: &config.UserConfig{Logs: config.LogsConfig{Tail: tail}}},
+		Config: &config.AppConfig{UserConfig: &config.UserConfig{Logs: logs}},
 		Tr:     &translations,
 	}
 }
@@ -71,13 +74,28 @@ func TestTranscriptLogTailKeepsEnoughHistoryToRebuildAScreen(t *testing.T) {
 	gui := logsGuiWithTail("20")
 	container := &commands.Container{ID: "abc"}
 
-	assert.Equal(t, "5000", gui.transcriptLogTail(container))
+	assert.Equal(t, "500", gui.transcriptLogTail(container), "the default replay budget, not the 20-line tail")
 
 	gui.Config.UserConfig.Logs.Tail = "9000"
-	assert.Equal(t, "9000", gui.transcriptLogTail(container))
+	assert.Equal(t, "9000", gui.transcriptLogTail(container), "a larger configured tail wins")
 
 	gui.Config.UserConfig.Logs.Tail = ""
 	assert.Equal(t, "", gui.transcriptLogTail(container), "an empty tail still means everything")
+}
+
+func TestTranscriptLogTailFollowsTheReplayBudget(t *testing.T) {
+	gui := logsGuiWithTail("20")
+	gui.Config.UserConfig.Logs.TranscriptTail = 0
+	container := &commands.Container{ID: "abc"}
+
+	assert.Equal(t, "20", gui.transcriptLogTail(container), "0 replays only the configured tail")
+
+	gui.Config.UserConfig.Logs.TranscriptTail = 1200
+	assert.Equal(t, "1200", gui.transcriptLogTail(container))
+}
+
+func TestDefaultTranscriptReplayIsBounded(t *testing.T) {
+	assert.Equal(t, 500, config.GetDefaultConfig().Logs.TranscriptTail)
 }
 
 func TestDefaultLogsTailIsBounded(t *testing.T) {

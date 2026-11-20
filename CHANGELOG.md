@@ -78,6 +78,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The transcript view no longer replays 5000 lines of logs**: it used to
+  ignore `logs.tail` and ask Podman for 5000 lines, which made the service read
+  a large log file and pushed its memory up while lazypodman's own process
+  stayed flat. The replay now has its own budget, `logs.transcriptTail`
+  (500 by default, 0 to follow `tail`).
+
+- **Progress bars no longer switch the Logs tab to transcript mode**: erasing a
+  line and moving up one row is plain output, not a full-screen program, so it
+  no longer triggers the automatic switch (and the 500-line reload behind it).
+  Clearing the screen or repainting with cursor moves still does.
+
+- **An idle transcript no longer redraws the whole view 7 times a second**: the
+  tab only re-renders when the emulated screen actually changed.
+
 - **Shell scrollback no longer panics when the screen shrinks**: the
   scrolled-off-line detector now only compares overlapping rows instead of
   slicing past the new screen.

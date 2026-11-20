@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-20
+
+### Changed
+
+- **Logs is the first tab again**: the Containers, Services and Pods panels open
+  on **Logs** with Stats second. The in-app **Shell** tab still comes first
+  while it exists, so `ctrl+x` and `F2` land on it, and closing the shell falls
+  back to Logs.
+
+### Fixed
+
+- **The transcript view no longer leaks memory on the Podman host**: opening the
+  Logs tab on a busy container spiked RAM somewhere other than lazypodman's own
+  process, because transcript mode ignored `logs.tail` and asked for 5000 lines
+  — the Podman service had to read a large log file and hold it. The replay now
+  has its own budget, `logs.transcriptTail` (500 by default, 0 to follow
+  `tail`), the automatic switch no longer fires on progress bars (which end
+  every update with an erase-line and cursor-up), and an idle transcript no
+  longer redraws the whole view 7 times a second.
+
 ## [1.0.2] - 2026-11-20
 
 ### Added
@@ -67,9 +87,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sequences and switches automatically; `ctrl+t` still toggles it back, and an
   explicit switch to plain logs is remembered for that container.
 
-- **The in-app Shell tab comes first while it exists**, so `ctrl+x` and `F2`
-  land on it and closing it falls back to Logs, the first tab of the Containers,
-  Services and Pods panels.
+- **Stats is the first tab**: the Containers, Services and Pods panels open on
+  **Stats**, with Logs second. The in-app **Shell** tab comes first while it
+  exists, so `ctrl+x`/`F2` land on it and closing it falls back to Stats.
 
 - **Logs survive a switch**: the Logs tab keeps the rendered view of the last
   four containers, so browsing the list with `j`/`k` and coming back resumes with
@@ -77,20 +97,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   container restart still force a reload.
 
 ### Fixed
-
-- **The transcript view no longer replays 5000 lines of logs**: it used to
-  ignore `logs.tail` and ask Podman for 5000 lines, which made the service read
-  a large log file and pushed its memory up while lazypodman's own process
-  stayed flat. The replay now has its own budget, `logs.transcriptTail`
-  (500 by default, 0 to follow `tail`).
-
-- **Progress bars no longer switch the Logs tab to transcript mode**: erasing a
-  line and moving up one row is plain output, not a full-screen program, so it
-  no longer triggers the automatic switch (and the 500-line reload behind it).
-  Clearing the screen or repainting with cursor moves still does.
-
-- **An idle transcript no longer redraws the whole view 7 times a second**: the
-  tab only re-renders when the emulated screen actually changed.
 
 - **Shell scrollback no longer panics when the screen shrinks**: the
   scrolled-off-line detector now only compares overlapping rows instead of

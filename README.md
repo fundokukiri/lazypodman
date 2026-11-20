@@ -20,8 +20,8 @@ projects, logs and stats in one window, every common action one keypress away.
   tab. `ctrl+e` instead opens a new shell (`zsh` when the container has it,
   otherwise `bash`, then `sh`) in the in-app tab, so you can look around without
   touching the running process; `e` opens that shell in a separate terminal
-  window. Those windows are titled `Container: <name> - <id>`, with
-  ` - tiến trình đang chạy` after an attach.
+  window. Those windows are titled `Container: <name> - <id>`, and an attach
+  window adds the process it attached to (e.g. `- nginx`).
   View processes (`top`), config and env in their own tabs
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a

@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **The separate terminal windows are named**: `a` and `e` open a window titled
-  `Container: <name> - <id>`, and attach appends ` - tiến trình đang chạy`, so
-  several containers stay distinguishable in the task bar. The title is sent as
-  an OSC sequence (the one mechanism every emulator honours) and on Windows it
-  is the `start` window title.
+  `Container: <name> - <id>`, and attach appends the name of the process it
+  attached to (`- nginx`), read from the inspect data the UI already holds. The
+  title is sent as an OSC sequence (the one mechanism every emulator honours)
+  and on Windows it is the `start` window title.
 
 ### Changed
 

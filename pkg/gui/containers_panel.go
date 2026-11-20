@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -614,7 +615,8 @@ func (gui *Gui) runAttachCommand(argv []string) error {
 }
 
 // containerTerminalTitle names the window opened by `a` and `e`, so several
-// containers stay distinguishable in the task bar.
+// containers stay distinguishable in the task bar. An attach window also shows
+// the process it is attached to.
 func containerTerminalTitle(ctr *commands.Container, attach bool) string {
 	id := ctr.ID
 	if len(id) > 12 {
@@ -623,10 +625,38 @@ func containerTerminalTitle(ctr *commands.Container, attach bool) string {
 
 	title := fmt.Sprintf("Container: %s - %s", ctr.Name, id)
 	if attach {
-		title += " - tiến trình đang chạy"
+		title += " - " + containerProcessName(ctr)
 	}
 
 	return title
+}
+
+// containerProcessName is the container's entrypoint, taken from the inspect
+// data the UI already holds so naming a window costs no extra podman call.
+func containerProcessName(ctr *commands.Container) string {
+	details := ctr.DetailsSnapshot()
+	if details.ContainerJSONBase != nil {
+		if name := processBaseName(details.Path); name != "" {
+			return name
+		}
+	}
+
+	if details.Config != nil && len(details.Config.Cmd) > 0 {
+		if name := processBaseName(details.Config.Cmd[0]); name != "" {
+			return name
+		}
+	}
+
+	return "running process"
+}
+
+func processBaseName(command string) string {
+	name := path.Base(command)
+	if name == "." || name == "/" || name == "" {
+		return ""
+	}
+
+	return name
 }
 
 // openContainerShellTerminal opens a new shell in a separate terminal window.

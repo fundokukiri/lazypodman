@@ -230,7 +230,7 @@ func TestRefreshPodStateDisabledIsNoop(t *testing.T) {
 }
 
 func TestAggregatePodStats(t *testing.T) {
-	newStats := func(cpu float64, usage int, limit int64) *RecordedStats {
+	newStats := func(cpu float64, usage int64, limit int64) *RecordedStats {
 		stats := &RecordedStats{DerivedStats: DerivedStats{CPUPercentage: cpu}}
 		stats.ClientStats.MemoryStats.Usage = usage
 		stats.ClientStats.MemoryStats.Limit = limit

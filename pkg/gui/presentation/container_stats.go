@@ -41,8 +41,8 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 		diskUsage = fmt.Sprintf("Disk usage: %s total (%s writable)",
 			utils.FormatDecimalBytes(rootFs), utils.FormatDecimalBytes(rw))
 	}
-	dataReceived := fmt.Sprintf("Traffic received: %s", utils.FormatDecimalBytes(int64(stats.ClientStats.Networks.Eth0.RxBytes)))
-	dataSent := fmt.Sprintf("Traffic sent: %s", utils.FormatDecimalBytes(int64(stats.ClientStats.Networks.Eth0.TxBytes)))
+	dataReceived := fmt.Sprintf("Traffic received: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.RxBytes))
+	dataSent := fmt.Sprintf("Traffic sent: %s", utils.FormatDecimalBytes(stats.ClientStats.Networks.Eth0.TxBytes))
 
 	originalStats, err := utils.MarshalIntoYaml(stats)
 	if err != nil {
@@ -66,12 +66,12 @@ func RenderStats(userConfig *config.UserConfig, container *commands.Container, v
 // formatRAMUsage shows the current memory usage and, when a limit is set, what
 // percentage of it the container is using.
 func formatRAMUsage(stats commands.ContainerStats) string {
-	used := utils.FormatDecimalBytes(int64(stats.MemoryStats.Usage))
+	used := utils.FormatDecimalBytes(stats.MemoryStats.Usage)
 	if stats.MemoryStats.Limit <= 0 {
 		return fmt.Sprintf("RAM usage: %s", used)
 	}
 
-	percentage := float64(stats.MemoryStats.Usage) * 100 / float64(stats.MemoryStats.Limit)
+	percentage := stats.CalculateContainerMemoryUsage()
 	return fmt.Sprintf("RAM usage: %s / %s (%.1f%%)",
 		used, utils.FormatDecimalBytes(stats.MemoryStats.Limit), percentage)
 }

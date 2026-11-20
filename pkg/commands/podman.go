@@ -257,18 +257,26 @@ func (c *PodmanCommand) CreateClientStatMonitor(container *Container) {
 
 	scanner := bufio.NewScanner(stream.Body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	var lastSample time.Time
 	for scanner.Scan() {
 		data := scanner.Bytes()
 		var stats ContainerStats
 		_ = json.Unmarshal(data, &stats)
 
+		// CPU percentage is the CPU time used since the previous sample
+		// divided by the wall time that passed, so the gap between samples
+		// matters. The first sample has no predecessor.
+		now := time.Now()
+		elapsed := now.Sub(lastSample)
+		lastSample = now
+
 		recordedStats := &RecordedStats{
 			ClientStats: stats,
 			DerivedStats: DerivedStats{
-				CPUPercentage:    stats.CalculateContainerCPUPercentage(),
+				CPUPercentage:    stats.CalculateContainerCPUPercentage(elapsed),
 				MemoryPercentage: stats.CalculateContainerMemoryUsage(),
 			},
-			RecordedAt: time.Now(),
+			RecordedAt: now,
 		}
 
 		container.appendStats(recordedStats, c.Config.UserConfig.Stats.MaxDuration)

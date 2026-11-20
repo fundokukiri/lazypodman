@@ -80,10 +80,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scrolled-off-line detector now only compares overlapping rows instead of
   slicing past the new screen.
 
-- **CPU percentages count the online CPUs and ignore counter resets**: a
-  container using a full core is no longer reported as a fraction of one core
-  on multi-core hosts, and a restarted stats stream cannot produce a negative
-  percentage.
+- **CPU percentages match `podman stats`**: the percentage is the container's
+  CPU time divided by the time between two samples, so 250% means 2.5 cores
+  busy. The old docker formula scaled by `system_cpu_usage`, which Podman fills
+  with the CPU the *host* actually consumed instead of the host's capacity, so
+  an idle host reported a 0.3-core container as 240%. A restarted container
+  (counter reset) and the unusably short gap before the first streamed sample
+  report 0 instead of a bogus number.
 
 - **Pod logs no longer hang with many containers**: the "N containers omitted"
   notice is written inside the closing goroutine, so a pod with more containers

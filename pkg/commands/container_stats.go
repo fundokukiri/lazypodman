@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"math"
 	"time"
 )
 
@@ -78,8 +77,8 @@ type ContainerStats struct {
 		} `json:"throttling_data"`
 	} `json:"precpu_stats"`
 	MemoryStats struct {
-		Usage    int `json:"usage"`
-		MaxUsage int `json:"max_usage"`
+		Usage    int64 `json:"usage"`
+		MaxUsage int64 `json:"max_usage"`
 		Stats    struct {
 			ActiveAnon              int   `json:"active_anon"`
 			ActiveFile              int   `json:"active_file"`
@@ -120,47 +119,45 @@ type ContainerStats struct {
 	ID       string `json:"id"`
 	Networks struct {
 		Eth0 struct {
-			RxBytes   int `json:"rx_bytes"`
-			RxPackets int `json:"rx_packets"`
-			RxErrors  int `json:"rx_errors"`
-			RxDropped int `json:"rx_dropped"`
-			TxBytes   int `json:"tx_bytes"`
-			TxPackets int `json:"tx_packets"`
-			TxErrors  int `json:"tx_errors"`
-			TxDropped int `json:"tx_dropped"`
+			RxBytes   int64 `json:"rx_bytes"`
+			RxPackets int64 `json:"rx_packets"`
+			RxErrors  int64 `json:"rx_errors"`
+			RxDropped int64 `json:"rx_dropped"`
+			TxBytes   int64 `json:"tx_bytes"`
+			TxPackets int64 `json:"tx_packets"`
+			TxErrors  int64 `json:"tx_errors"`
+			TxDropped int64 `json:"tx_dropped"`
 		} `json:"eth0"`
 	} `json:"networks"`
 }
 
-// CalculateContainerCPUPercentage calculates the cpu usage of the container as a percent of total CPU usage
-// to calculate CPU usage, we take the increase in CPU time from the container since the last poll, divide that by the total increase in CPU time since the last poll, times by the number of cores, and times by 100 to get a percentage
-// I'm not entirely sure why we need to multiply by the number of cores, but the numbers work
-func (s *ContainerStats) CalculateContainerCPUPercentage() float64 {
+// minCPUStatsInterval is the shortest gap between two stats samples that still
+// gives a usable CPU percentage: Podman can deliver two samples almost
+// together, and a single cgroup tick over such a gap is noise.
+const minCPUStatsInterval = 100 * time.Millisecond
+
+// CalculateContainerCPUPercentage reports how much CPU the container is using
+// as a percentage of one core, like `podman stats`: 250% means it kept 2.5
+// cores busy.
+//
+// The docker client divides the container's CPU time by the change in
+// system_cpu_usage and multiplies by the online CPUs. That only works when
+// system_cpu_usage is the host's total capacity. Podman fills it with the CPU
+// the host actually *used* (it sums cpu.stat usage_usec over the cgroups), so on
+// an idle host the ratio explodes: 0.3 cores of an 8-core machine reads as
+// 240%. cpu_usage.total_usage is nanoseconds of CPU time, so dividing it by the
+// nanoseconds elapsed between the two samples is the honest number.
+func (s *ContainerStats) CalculateContainerCPUPercentage(elapsed time.Duration) float64 {
 	cpuUsageDelta := s.CPUStats.CPUUsage.TotalUsage - s.PrecpuStats.CPUUsage.TotalUsage
-	cpuTotalUsageDelta := s.CPUStats.SystemCPUUsage - s.PrecpuStats.SystemCPUUsage
-
-	// Podman on cgroup v2 can omit system_cpu_usage (and therefore the delta is
-	// zero) in the first sample it sends, which would give us +/-Inf.
-	if cpuUsageDelta <= 0 || cpuTotalUsageDelta <= 0 {
+	if cpuUsageDelta <= 0 || elapsed < minCPUStatsInterval {
 		return 0
 	}
 
-	cpus := s.CPUStats.OnlineCpus
-	if cpus < 1 {
-		cpus = len(s.CPUStats.CPUUsage.PercpuUsage)
-	}
-	if cpus < 1 {
-		cpus = 1
-	}
-
-	value := float64(cpuUsageDelta) * 100 / float64(cpuTotalUsageDelta) * float64(cpus)
-	if math.IsNaN(value) || math.IsInf(value, 0) {
-		return 0
-	}
-	return value
+	return float64(cpuUsageDelta) * 100 / float64(elapsed)
 }
 
-// CalculateContainerMemoryUsage calculates the memory usage of the container as a percent of total available memory
+// CalculateContainerMemoryUsage reports the memory usage as a percentage of the
+// container's memory limit, like `podman stats`.
 func (s *ContainerStats) CalculateContainerMemoryUsage() float64 {
 	// A zero limit means "unlimited", which Podman reports as the host's total
 	// memory; dividing by it would give us +/-Inf.
@@ -168,11 +165,7 @@ func (s *ContainerStats) CalculateContainerMemoryUsage() float64 {
 		return 0
 	}
 
-	value := float64(s.MemoryStats.Usage*100) / float64(s.MemoryStats.Limit)
-	if math.IsNaN(value) || math.IsInf(value, 0) {
-		return 0
-	}
-	return value
+	return float64(s.MemoryStats.Usage) * 100 / float64(s.MemoryStats.Limit)
 }
 
 func (c *Container) appendStats(stats *RecordedStats, maxDuration time.Duration) {

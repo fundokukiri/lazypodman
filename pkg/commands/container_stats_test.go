@@ -2,49 +2,46 @@ package commands
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCalculateContainerCPUPercentage(t *testing.T) {
+// statsWithCPU returns a sample pair where the container used cpuUsage
+// nanoseconds of CPU time since the previous sample.
+func statsWithCPU(cpuUsage int64) *ContainerStats {
 	container := &ContainerStats{}
-	container.CPUStats.CPUUsage.TotalUsage = 10
-	container.CPUStats.SystemCPUUsage = 10
-	container.PrecpuStats.CPUUsage.TotalUsage = 5
-	container.PrecpuStats.SystemCPUUsage = 2
+	container.CPUStats.CPUUsage.TotalUsage = cpuUsage
 
-	assert.EqualValues(t, 62.5, container.CalculateContainerCPUPercentage())
+	return container
 }
 
-func TestCalculateContainerCPUPercentageUsesOnlineCPUs(t *testing.T) {
-	container := &ContainerStats{}
-	container.CPUStats.CPUUsage.TotalUsage = 10
-	container.CPUStats.SystemCPUUsage = 10
-	container.PrecpuStats.CPUUsage.TotalUsage = 5
-	container.PrecpuStats.SystemCPUUsage = 2
-	container.CPUStats.OnlineCpus = 4
+func TestCalculateContainerCPUPercentage(t *testing.T) {
+	// One full core of CPU time in one second of wall time.
+	assert.EqualValues(t, 100, statsWithCPU(int64(time.Second)).CalculateContainerCPUPercentage(time.Second))
+}
 
-	assert.EqualValues(t, 250, container.CalculateContainerCPUPercentage())
+func TestCalculateContainerCPUPercentageCountsCoresNotHostShare(t *testing.T) {
+	// 2.5 cores busy; an idle host must not inflate this.
+	assert.EqualValues(t, 250, statsWithCPU(2500*int64(time.Millisecond)).CalculateContainerCPUPercentage(time.Second))
 }
 
 func TestCalculateContainerCPUPercentageIgnoresNegativeDelta(t *testing.T) {
-	container := &ContainerStats{}
-	container.CPUStats.CPUUsage.TotalUsage = 5
-	container.CPUStats.SystemCPUUsage = 10
-	container.PrecpuStats.CPUUsage.TotalUsage = 10
-	container.PrecpuStats.SystemCPUUsage = 2
+	// The cgroup counter dropped, so the container was restarted.
+	container := statsWithCPU(int64(time.Second))
+	container.PrecpuStats.CPUUsage.TotalUsage = 2 * int64(time.Second)
 
-	assert.EqualValues(t, 0, container.CalculateContainerCPUPercentage())
+	assert.EqualValues(t, 0, container.CalculateContainerCPUPercentage(time.Second))
 }
 
-func TestCalculateContainerCPUPercentageWithZeroSystemDelta(t *testing.T) {
-	// Podman may not report system_cpu_usage in its first stats frame.
-	container := &ContainerStats{}
-	container.CPUStats.CPUUsage.TotalUsage = 10
-	container.CPUStats.SystemCPUUsage = 10
-	container.PrecpuStats.SystemCPUUsage = 10
+func TestCalculateContainerCPUPercentageIgnoresTooShortInterval(t *testing.T) {
+	// A single cgroup tick over a sub-millisecond gap is noise.
+	assert.EqualValues(t, 0, statsWithCPU(int64(time.Millisecond)).CalculateContainerCPUPercentage(time.Microsecond))
+}
 
-	assert.EqualValues(t, 0, container.CalculateContainerCPUPercentage())
+func TestCalculateContainerCPUPercentageWithoutElapsedTime(t *testing.T) {
+	// The first sample of a stream has no predecessor to measure against.
+	assert.EqualValues(t, 0, statsWithCPU(int64(time.Second)).CalculateContainerCPUPercentage(0))
 }
 
 func TestCalculateContainerMemoryUsage(t *testing.T) {

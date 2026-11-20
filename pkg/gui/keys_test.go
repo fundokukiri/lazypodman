@@ -197,34 +197,36 @@ func TestTranscriptLogsKeyIsBound(t *testing.T) {
 func TestAttachFullLogsKeyIsBound(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
-	found := false
-	for _, binding := range gui.staticKeybindings() {
-		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+a" {
-			found = true
-			assert.NotNil(t, binding.Handler)
-			assert.Equal(t, gui.Tr.AttachFullLogs, binding.Description)
-		}
-	}
-
-	assert.True(t, found, "containers must bind ctrl+a")
-}
-
-func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
-	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
-
-	for _, view := range []string{"containers", "services"} {
+	for _, want := range []struct {
+		key  string
+		desc string
+	}{
+		{key: "F2", desc: gui.Tr.AttachFullLogs},
+		{key: "ctrl+a", desc: gui.Tr.AttachShellTab},
+	} {
 		found := false
 		for _, binding := range gui.staticKeybindings() {
-			if binding.ViewName != view || binding.GetKey() != "A" {
-				continue
+			if binding.ViewName == "containers" && binding.GetKey() == want.key {
+				found = true
+				assert.NotNil(t, binding.Handler)
+				assert.Equal(t, want.desc, binding.Description)
 			}
-
-			found = true
-			assert.NotNil(t, binding.Handler)
-			assert.Equal(t, gui.Tr.AttachCurrentTerminal, binding.Description)
 		}
 
-		assert.True(t, found, "%s must bind uppercase A", view)
+		assert.True(t, found, "containers must bind %s", want.key)
+	}
+}
+
+func TestShellKeysAreNotDuplicated(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	for _, binding := range gui.staticKeybindings() {
+		if binding.ViewName != "containers" && binding.ViewName != "services" {
+			continue
+		}
+
+		assert.NotEqual(t, "A", binding.GetKey(), "A is gone: a opens the shell, ctrl+a/F2 attach")
+		assert.NotEqual(t, "ctrl+e", binding.GetKey(), "ctrl+e duplicated a")
 	}
 }
 

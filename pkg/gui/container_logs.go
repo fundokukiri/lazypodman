@@ -273,18 +273,14 @@ func (gui *Gui) logsOptionsMap() map[string]string {
 	return options
 }
 
-// configureLogWriter applies the log budgets to a writer. Full history keeps
-// more of itself: ctrl+l is an explicit request to read back through the log,
-// and holding only the newest megabyte of a long history makes that useless.
-func (gui *Gui) configureLogWriter(container *commands.Container, writer *logTrimWriter) {
+// configureLogWriter applies the log budgets to a writer. The budget is the same
+// with and without ctrl+l: every rendered line costs far more memory than its
+// text (a gocui cell is eight bytes per character), so raising it for full
+// history is what made the Logs tab a memory hog. ctrl+l raises only the number
+// of lines *fetched* (logs.fullTail), which is bounded the same way.
+func (gui *Gui) configureLogWriter(writer *logTrimWriter) {
 	writer.maxLineBytes = gui.Config.UserConfig.Logs.MaxLineLength
 	writer.maxBytes = gui.Config.UserConfig.Logs.MaxBytes
-
-	if gui.logsFullFor(container) {
-		writer.keepLines *= logViewFullHistoryScale
-		writer.trimAtLines *= logViewFullHistoryScale
-		writer.maxBytes *= logViewFullHistoryScale
-	}
 }
 
 func (gui *Gui) renderContainerLogsToMain(container *commands.Container) tasks.TaskFunc {
@@ -320,7 +316,7 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 	// Keep the old streaming behaviour (lines appear immediately) but bound the
 	// view's memory: follow mode would otherwise keep every line until exit.
 	logWriter := newLogTrimWriter(mainView, func() bool { return mainView.Autoscroll }, func() bool { return ctx.Err() != nil })
-	gui.configureLogWriter(container, logWriter)
+	gui.configureLogWriter(logWriter)
 	if restored {
 		logWriter.adoptCurrentContent()
 	} else {

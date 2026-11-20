@@ -309,14 +309,15 @@ commands (prune).
   it in the config (for example `tail: '200'`, or `''` for everything).
 - Output streams live. The view is capped at 10 000 lines (trimmed at 20 000)
   and at `logs.maxBytes`, so a very chatty container cannot grow memory without
-  bound. `ctrl+l` (full history) raises both budgets tenfold, so the history you
-  asked for stays scrollable; while you are scrolled up the view stops trimming
-  for the same reason and keeps its place when it eventually has to.
+  bound. The budget does not grow with `ctrl+l`: gocui holds a rendered line as
+  cells costing several times its text, so a raised budget is what used to fill
+  memory. While you are scrolled up the view trims at twice the budget (not
+  never) and keeps your line in place when it has to trim.
 - `ctrl+l` reloads the current logs with the **full history**, capped at
-  `logs.fullTail` lines (50 000 by default — a whole log file can take minutes to
-  stream and scrolls away before you read it; set 0 for everything), and
-  `ctrl+l` again goes back to the default tail. The choice is remembered per
-  container.
+  `logs.fullTail` lines (10 000 by default, the same amount the view keeps — a
+  whole log file can take minutes to stream, and every rendered line costs far
+  more memory than its text; set 0 for everything), and `ctrl+l` again goes back
+  to the default tail. The choice is remembered per container.
 - `ctrl+t` switches the Logs tab between plain text and a **transcript view**.
   Transcript mode replays the stream through a terminal emulator and shows the
   final screen, which keeps the layout of full-screen programs readable instead
@@ -535,7 +536,7 @@ logs:
   tail: '20'                  # default tail; '' = full history (ctrl+l toggles)
   maxLineLength: 4096         # split long horizontal lines; 0 = keep whole (slower)
   maxBytes: 1048576           # rendered log kept in the Logs tab; 0 = no byte cap
-  fullTail: 50000             # ctrl+l line cap; 0 = whole history
+  fullTail: 10000             # ctrl+l line cap; 0 = whole history
   transcriptTail: 500         # lines replayed in the transcript view
 
 commandTemplates:

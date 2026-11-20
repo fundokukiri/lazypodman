@@ -37,7 +37,7 @@ func TestContainerLogTailSwitchToAllAndBack(t *testing.T) {
 	gui.toggleFullLogs(container)
 
 	assert.True(t, gui.logsFullFor(container))
-	assert.Equal(t, "50000", gui.containerLogTail(container), "full history is capped, not unbounded")
+	assert.Equal(t, "10000", gui.containerLogTail(container), "full history is capped, not unbounded")
 
 	gui.toggleFullLogs(container)
 
@@ -104,14 +104,20 @@ func TestFullHistoryTailIsBounded(t *testing.T) {
 	container := &commands.Container{ID: "abc"}
 	gui.fullLogs = map[string]bool{container.ID: true}
 
-	assert.Equal(t, "50000", gui.containerLogTail(container))
+	assert.Equal(t, "10000", gui.containerLogTail(container))
 
 	gui.Config.UserConfig.Logs.FullTail = 0
 	assert.Equal(t, "", gui.containerLogTail(container), "0 keeps the unbounded behaviour")
 }
 
 func TestDefaultFullTailIsBounded(t *testing.T) {
-	assert.Equal(t, 50000, config.GetDefaultConfig().Logs.FullTail)
+	assert.Equal(t, 10000, config.GetDefaultConfig().Logs.FullTail)
+}
+
+// Fetching more than the view keeps means paying for lines only to trim them
+// away, which is how ctrl+l used to fill memory with rendered cells.
+func TestDefaultFullTailMatchesWhatTheViewKeeps(t *testing.T) {
+	assert.Equal(t, logViewKeepLines, config.GetDefaultConfig().Logs.FullTail)
 }
 
 func TestDefaultTranscriptReplayIsBounded(t *testing.T) {

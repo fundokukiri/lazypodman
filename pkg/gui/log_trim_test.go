@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fundokukiri/lazypodman/pkg/commands"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -338,24 +337,20 @@ func TestLogTrimWriterKeepsTheScrollPositionAcrossATrim(t *testing.T) {
 	assert.Equal(t, 20, target.originY, "the same line stays under the cursor")
 }
 
-func TestFullHistoryKeepsMoreOfTheLog(t *testing.T) {
+// Every kept line costs far more memory than its text once gocui renders it, so
+// the view budget must not grow with ctrl+l. The fetch cap (logs.fullTail) is
+// what makes full history cheap.
+func TestFullHistoryDoesNotRaiseTheViewBudget(t *testing.T) {
 	gui := logsGuiWithTail("20")
 	gui.Config.UserConfig.Logs.MaxBytes = 1024
-	container := &commands.Container{ID: "abc"}
+	gui.fullLogs = map[string]bool{"abc": true}
 
-	plain := newLogTrimWriter(&fakeLogTarget{}, nil, nil)
-	gui.configureLogWriter(container, plain)
+	writer := newLogTrimWriter(&fakeLogTarget{}, nil, nil)
+	gui.configureLogWriter(writer)
 
-	assert.Equal(t, 1024, plain.maxBytes)
-	assert.Equal(t, logViewKeepLines, plain.keepLines)
-
-	gui.fullLogs = map[string]bool{container.ID: true}
-
-	full := newLogTrimWriter(&fakeLogTarget{}, nil, nil)
-	gui.configureLogWriter(container, full)
-
-	assert.Equal(t, 1024*logViewFullHistoryScale, full.maxBytes)
-	assert.Equal(t, logViewKeepLines*logViewFullHistoryScale, full.keepLines)
+	assert.Equal(t, 1024, writer.maxBytes)
+	assert.Equal(t, logViewKeepLines, writer.keepLines)
+	assert.Equal(t, logViewTrimAt, writer.trimAtLines)
 }
 
 func TestLogTrimWriterHoldsInitialOutput(t *testing.T) {

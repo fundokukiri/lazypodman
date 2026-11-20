@@ -30,10 +30,12 @@ var terminalCandidates = []terminalCandidate{
 	{binary: "xterm", flag: []string{"-e"}},
 }
 
-func externalTerminalArgv(argv []string) ([]string, error) {
+func externalTerminalArgv(argv []string, title string) ([]string, error) {
 	if len(argv) == 0 {
 		return nil, ErrNoTerminalEmulator
 	}
+
+	argv = withTerminalTitle(argv, title)
 
 	if terminal := os.Getenv("TERMINAL"); terminal != "" {
 		parts := str.ToArgv(terminal)

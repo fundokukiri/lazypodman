@@ -584,7 +584,7 @@ func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	}
 
 	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
-	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+	if err := gui.OSCommand.OpenExternalTerminal(argv, containerTerminalTitle(ctr, true)); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
 			return gui.attachInCurrentTerminal(ctr)
 		}
@@ -613,6 +613,22 @@ func (gui *Gui) runAttachCommand(argv []string) error {
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)
 }
 
+// containerTerminalTitle names the window opened by `a` and `e`, so several
+// containers stay distinguishable in the task bar.
+func containerTerminalTitle(ctr *commands.Container, attach bool) string {
+	id := ctr.ID
+	if len(id) > 12 {
+		id = id[:12]
+	}
+
+	title := fmt.Sprintf("Container: %s - %s", ctr.Name, id)
+	if attach {
+		title += " - tiến trình đang chạy"
+	}
+
+	return title
+}
+
 // openContainerShellTerminal opens a new shell in a separate terminal window.
 // `a` attaches to the container's own process instead; this is the shell path,
 // and it works on containers that cannot be attached to.
@@ -622,7 +638,7 @@ func (gui *Gui) openContainerShellTerminal(ctr *commands.Container) error {
 	}
 
 	argv := commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
-	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+	if err := gui.OSCommand.OpenExternalTerminal(argv, containerTerminalTitle(ctr, false)); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
 			return gui.runSubprocess(gui.OSCommand.NewCmd(argv[0], argv[1:]...))
 		}

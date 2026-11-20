@@ -8,9 +8,10 @@ var ErrNoTerminalEmulator = errors.New("no terminal emulator found")
 
 // OpenExternalTerminal starts argv in a new terminal window and returns as soon
 // as the launcher has started. Neither stdin nor the output of the new terminal
-// is connected to lazypodman, so the TUI keeps running.
-func (c *OSCommand) OpenExternalTerminal(argv []string) error {
-	launcher, err := externalTerminalArgv(argv)
+// is connected to lazypodman, so the TUI keeps running. A non-empty title names
+// the new window.
+func (c *OSCommand) OpenExternalTerminal(argv []string, title string) error {
+	launcher, err := externalTerminalArgv(argv, title)
 	if err != nil {
 		return err
 	}

@@ -7,10 +7,12 @@ import (
 	"strings"
 )
 
-func externalTerminalArgv(argv []string) ([]string, error) {
+func externalTerminalArgv(argv []string, title string) ([]string, error) {
 	if len(argv) == 0 {
 		return nil, ErrNoTerminalEmulator
 	}
+
+	argv = withTerminalTitle(argv, title)
 
 	command := make([]string, len(argv))
 	for i, arg := range argv {

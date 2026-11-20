@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The separate terminal windows are named**: `a` and `e` open a window titled
+  `Container: <name> - <id>`, and attach appends ` - tiến trình đang chạy`, so
+  several containers stay distinguishable in the task bar. The title is sent as
+  an OSC sequence (the one mechanism every emulator honours) and on Windows it
+  is the `start` window title.
+
 ### Changed
 
 - **Stats is the first tab again**: Containers, Services and Pods open on

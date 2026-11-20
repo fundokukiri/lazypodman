@@ -17,9 +17,24 @@ import (
 func TestExternalTerminalArgvUsesTerminalEnvironment(t *testing.T) {
 	t.Setenv("TERMINAL", "myterm --class podman")
 
-	got, err := externalTerminalArgv([]string{"podman", "attach", "abc"})
+	got, err := externalTerminalArgv([]string{"podman", "attach", "abc"}, "")
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"myterm", "--class", "podman", "-e", "podman", "attach", "abc"}, got)
+}
+
+func TestExternalTerminalArgvSetsTheWindowTitle(t *testing.T) {
+	t.Setenv("TERMINAL", "myterm")
+
+	got, err := externalTerminalArgv([]string{"podman", "attach", "abc"}, "Container: web - abc123")
+	assert.NoError(t, err)
+
+	// The title is emitted by a host shell, so every emulator gets it without a
+	// per-emulator --title flag.
+	assert.Equal(t, []string{
+		"myterm", "-e",
+		"sh", "-c", `printf '\033]0;%s\007' "$1"; shift; exec "$@"`, "lazypodman-title", "Container: web - abc123",
+		"podman", "attach", "abc",
+	}, got)
 }
 
 func TestOpenExternalTerminalStartsDetachedLauncher(t *testing.T) {
@@ -36,7 +51,7 @@ func TestOpenExternalTerminalStartsDetachedLauncher(t *testing.T) {
 	t.Setenv("ARGV_FILE", argvFile)
 
 	osCommand := NewOSCommand(NewDummyLog(), NewDummyAppConfig())
-	if err := osCommand.OpenExternalTerminal([]string{"podman", "attach", "--sig-proxy=false", "abc123"}); err != nil {
+	if err := osCommand.OpenExternalTerminal([]string{"podman", "attach", "--sig-proxy=false", "abc123"}, ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -80,7 +95,7 @@ func TestOpenExternalTerminalLeavesTheLauncherInItsOwnSession(t *testing.T) {
 	t.Setenv("PID_FILE", pidFile)
 
 	osCommand := NewOSCommand(NewDummyLog(), NewDummyAppConfig())
-	if err := osCommand.OpenExternalTerminal([]string{"podman", "attach", "abc123"}); err != nil {
+	if err := osCommand.OpenExternalTerminal([]string{"podman", "attach", "abc123"}, ""); err != nil {
 		t.Fatal(err)
 	}
 

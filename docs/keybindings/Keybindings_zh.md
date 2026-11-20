@@ -40,9 +40,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: 重新启动
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
-  <kbd>a</kbd>: exec shell in a separate terminal
-  <kbd>ctrl+a</kbd>: attach in shell tab
-  <kbd>F2</kbd>: attach with full logs
+  <kbd>a</kbd>: attach in a separate terminal
+  <kbd>A</kbd>: attach in this terminal
+  <kbd>ctrl+a</kbd>: attach with full logs
+  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
@@ -68,8 +70,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>p</kbd>: 暂停
   <kbd>r</kbd>: 重新启动
   <kbd>S</kbd>: 启动项目
-  <kbd>a</kbd>: exec shell in a separate terminal
+  <kbd>a</kbd>: attach in a separate terminal
+  <kbd>A</kbd>: attach in this terminal
   <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>U</kbd>: 创建并启动容器
   <kbd>D</kbd>: 停止并移除容器

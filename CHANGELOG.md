@@ -7,18 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **`a` opens your shell, not the container's process**: `a` used to run
-  `podman attach`, so it showed whatever the container was started with
-  (`sh`/`bash`, no oh-my-zsh) and refused containers started without stdin. It
-  now opens a new `zsh` (then `bash`, then `sh`) in a separate terminal window,
-  exactly like the old `ctrl+e`. `ctrl+e` is gone because it became a duplicate,
-  and `A` (attach in the current terminal) is gone too: attaching to the real
-  process is still there as `ctrl+a` (in the in-app shell tab) and `F2`
-  (full logs replayed, then attach in a separate window, which used to be
-  `ctrl+a`). `ctrl+x` still opens the shell tab.
-
 ### Fixed
 
 - **The window opened by `a` now outlives lazypodman**: it used to be started

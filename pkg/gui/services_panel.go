@@ -301,6 +301,19 @@ func (gui *Gui) handleServiceStart(g *gocui.Gui, v *gocui.View) error {
 	})
 }
 
+func (gui *Gui) handleServiceAttach(g *gocui.Gui, v *gocui.View) error {
+	service, err := gui.Panels.Services.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if service.Container == nil {
+		return gui.createErrorPanel(gui.Tr.NoContainers)
+	}
+
+	return gui.openContainerAttachTerminal(service.Container)
+}
+
 func (gui *Gui) handleServiceExecShellExternal(g *gocui.Gui, v *gocui.View) error {
 	service, err := gui.Panels.Services.GetSelectedItem()
 	if err != nil {
@@ -312,6 +325,19 @@ func (gui *Gui) handleServiceExecShellExternal(g *gocui.Gui, v *gocui.View) erro
 	}
 
 	return gui.openContainerShellTerminal(service.Container)
+}
+
+func (gui *Gui) handleServiceAttachCurrentTerminal(g *gocui.Gui, v *gocui.View) error {
+	service, err := gui.Panels.Services.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if service.Container == nil {
+		return gui.createErrorPanel(gui.Tr.NoContainers)
+	}
+
+	return gui.attachInCurrentTerminal(service.Container)
 }
 
 func (gui *Gui) handleServiceAttachShellTab(g *gocui.Gui, v *gocui.View) error {

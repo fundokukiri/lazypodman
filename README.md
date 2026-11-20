@@ -15,12 +15,12 @@ projects, logs and stats in one window, every common action one keypress away.
   view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
-- Attach to a container's own process: `F2` replays the full logs and attaches
-  in a separate terminal window, `ctrl+a` attaches in the in-app shell tab.
-  `a` instead opens a new shell (`zsh` when the container has it, otherwise
-  `bash`, then `sh`) in a separate terminal window, so you get your own shell
-  and rc files without touching the running process; `ctrl+x` opens that shell
-  in the in-app tab.
+- Attach to a container's own process: `a` in a separate terminal window (or
+  via `TERMINAL`), `A` in the current terminal, `F2` in the in-app shell tab.
+  `x` or `ctrl+x` instead opens a new shell (`zsh` when the container has it,
+  otherwise `bash`, then `sh`), so you can look around without touching the
+  running process; `ctrl+e` opens that shell in a separate terminal window.
+  `ctrl+a` attaches with the full logs replayed first.
   View processes (`top`), config and env in their own tabs
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
@@ -239,8 +239,9 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` exec shell in a new terminal · `ctrl+a` attach in the shell tab ·
-`F2` attach with full logs ·
+`r` restart · `a` attach in a new terminal · `A` attach in this terminal ·
+`ctrl+e` exec shell in a new terminal · `ctrl+a` attach with full logs ·
+`F2` attach in the shell tab ·
 `m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
 `t` run healthcheck · `C` commit to an image · `v` container files ·
 `Q` Quadlet menu · `ctrl+x` open/close the in-app shell tab ·
@@ -271,8 +272,9 @@ not an error. The run is recorded by Podman: it appends to the health log, can
 change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
-stop/start · `r`/`R` restart / restart menu · `p` pause · `a` exec shell in a new
-terminal · `F2` attach in the shell tab ·
+stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
+terminal · `A` attach in this terminal · `ctrl+e` exec shell in a new terminal ·
+`F2` attach in the shell tab ·
 `m` logs · `ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
@@ -339,16 +341,16 @@ commands (prune).
 - Select a container (or service) and press `x` → **exec shell**, or press
   `ctrl+x` directly. A real PTY opens in the **Shell** tab, which comes first
   while it exists, and the app switches to it. Lazypodman uses `zsh` if the
-  container has it, otherwise `bash`, then `sh`. `a` runs the same shell in a
-  separate terminal window, which also works on containers that cannot be
+  container has it, otherwise `bash`, then `sh`. `ctrl+e` runs the same shell in
+  a separate terminal window, which also works on containers that cannot be
   attached to.
 - The terminal is a VT10x screen, so `vim`, `htop` and `less` work. The line above
   it shows the container name (yellow), image (magenta), status (green/red),
   short ID (grey) and pod when there is one.
-- `F2` attaches to the container's own process, with the full logs replayed
-  first, in a separate terminal window. A container started without stdin (`-i`)
-  cannot be attached to, so `F2` reports that instead of opening a dead terminal.
-  `ctrl+a` is the same attach inside this tab, without the log replay.
+- `F2` attaches to the container's own process in this same tab, instead of
+  opening a shell there. A container started without stdin (`-i`) cannot be
+  attached to, so `F2` reports that instead of opening a dead terminal.
+  `ctrl+a` is the same attach with the full logs replayed first.
 - Each container can keep its own shell. Opening a shell in another container
   leaves the first one running in the background; going back to that container
   shows its shell tab again.

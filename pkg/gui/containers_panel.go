@@ -653,8 +653,8 @@ func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View
 	return gui.attachInCurrentTerminal(ctr)
 }
 
-// handleContainerAttachFullLogs is the explicit ctrl+a path: it may replay the
-// whole history, so it lives apart from the instant a/A attach.
+// handleContainerAttachShellTab is the ctrl+a path: attach the in-app Shell tab
+// to the container's own process.
 func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error {
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
@@ -662,29 +662,6 @@ func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error
 	}
 
 	return gui.attachContainerTerminal(ctr)
-}
-
-func (gui *Gui) handleContainerAttachFullLogs(g *gocui.Gui, v *gocui.View) error {
-	ctr, err := gui.Panels.Containers.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	if err := ctr.CanAttach(); err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
-
-	argv := commands.AttachFullLogsTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
-	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
-		if errors.Is(err, commands.ErrNoTerminalEmulator) {
-			return gui.runAttachCommand(argv)
-		}
-		return gui.createErrorPanel(err.Error())
-	}
-
-	gui.flashStatus(gui.Tr.AttachOpenedInTerminal)
-
-	return nil
 }
 
 func (gui *Gui) handlePruneContainers() error {
@@ -711,7 +688,7 @@ func (gui *Gui) handleContainerViewLogs(g *gocui.Gui, v *gocui.View) error {
 }
 
 // handleContainersTerminal opens the shell for the selected container, or closes
-// the one that is already open, so ctrl+x works as a single toggle.
+// the one that is already open, so e works as a single toggle.
 func (gui *Gui) handleContainersTerminal(g *gocui.Gui, v *gocui.View) error {
 	if gui.currentTerminal() != nil {
 		return gui.closeContainerTerminal()

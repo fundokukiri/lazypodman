@@ -63,22 +63,6 @@ func TestOpenExternalTerminalStartsDetachedLauncher(t *testing.T) {
 	}, "\n"), string(got))
 }
 
-func TestAttachFullLogsArgvReplaysLogsBeforeAttach(t *testing.T) {
-	got := AttachFullLogsTerminalArgv("/usr/bin/podman", "abc123")
-
-	assert.Equal(t, "sh", got[0])
-	assert.Equal(t, "-c", got[1])
-	assert.Equal(t, "lazypodman-attach", got[3])
-	assert.Equal(t, "/usr/bin/podman", got[4])
-	assert.Equal(t, "abc123", got[5])
-
-	script := got[2]
-	assert.Contains(t, script, `"$bin" logs "$ref"`)
-	assert.Contains(t, script, `exec "$bin" attach --sig-proxy=false "$ref"`)
-	assert.Less(t, strings.Index(script, " logs "), strings.Index(script, " attach "))
-	assert.Less(t, strings.Index(script, `"$bin" logs "$ref"`), strings.Index(script, "kill -WINCH"), "nudge after the log replay")
-}
-
 func TestOpenExternalTerminalLeavesTheLauncherInItsOwnSession(t *testing.T) {
 	// Without this the attached window shares lazypodman's process group and
 	// session, so quitting lazypodman (ctrl+c, closing the terminal hosting it)

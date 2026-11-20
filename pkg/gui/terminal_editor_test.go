@@ -19,7 +19,7 @@ func TestTerminalInputBytesRejectsModifiersAndControlKeys(t *testing.T) {
 		t.Fatal("alt-modified rune must not be typed")
 	}
 
-	if _, ok := terminalInputBytes(gocui.KeyCtrlX, 0, gocui.ModNone); ok {
+	if _, ok := terminalInputBytes(gocui.KeyCtrlE, 0, gocui.ModNone); ok {
 		t.Fatal("control keys must keep their bindings")
 	}
 }

@@ -13,9 +13,3 @@ func attachTerminalArgv(podmanBinary, ref string) []string {
 
 	return []string{"sh", "-c", script, "lazypodman-attach", podmanBinary, ref}
 }
-
-func attachFullLogsTerminalArgv(podmanBinary, ref string) []string {
-	script := `bin=$1; ref=$2; "$bin" logs "$ref"; ` + attachWinchNudge + ` exec "$bin" attach --sig-proxy=false "$ref"`
-
-	return []string{"sh", "-c", script, "lazypodman-attach", podmanBinary, ref}
-}

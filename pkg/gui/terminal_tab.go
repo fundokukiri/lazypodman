@@ -114,7 +114,7 @@ func (gui *Gui) terminalTabFor(container *commands.Container) bool {
 	return container != nil && gui.terminalFor(container.ID) != nil
 }
 
-// startContainerTerminal opens a new shell inside the container (ctrl+x).
+// startContainerTerminal opens a new shell inside the container (e).
 func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 	return gui.startTerminalTab(container, false)
 }
@@ -575,7 +575,7 @@ func (gui *Gui) terminalOptionsMap() map[string]string {
 	return map[string]string{
 		"wheel/PgUp/PgDn": gui.Tr.Scroll,
 		"ctrl+o":          gui.Tr.LeaveShell,
-		"ctrl+x":          gui.Tr.CloseShell,
+		"ctrl+e":          gui.Tr.CloseShell,
 		"ctrl+q":          gui.Tr.Quit,
 	}
 }
@@ -695,7 +695,7 @@ func terminalInputBytes(key gocui.Key, ch rune, mod gocui.Modifier) ([]byte, boo
 
 // terminalKeyBindings forwards keystrokes to the PTY. They live on the terminal
 // view only, so normal panels keep their bindings. ctrl+o leaves the shell
-// focused but keeps it running; ctrl+x closes it.
+// focused but keeps it running; ctrl+e closes it.
 func (gui *Gui) terminalKeyBindings() []*Binding {
 	bindings := make([]*Binding, 0, 140)
 
@@ -728,12 +728,12 @@ func (gui *Gui) terminalKeyBindings() []*Binding {
 		&Binding{ViewName: "terminal", Key: gocui.KeyPgup, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyPgdn, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.scrollTerminal(-10) }, Description: gui.Tr.Scroll},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlO, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.leaveTerminalFocus() }, Description: gui.Tr.LeaveShell},
-		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlX, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.closeContainerTerminal() }, Description: gui.Tr.CloseShell},
+		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlE, Modifier: gocui.ModNone, Handler: func(_ *gocui.Gui, _ *gocui.View) error { return gui.closeContainerTerminal() }, Description: gui.Tr.CloseShell},
 		&Binding{ViewName: "terminal", Key: gocui.KeyCtrlQ, Modifier: gocui.ModNone, Handler: gui.quit, Description: gui.Tr.Quit},
 	)
 
 	for key := gocui.KeyCtrlA; key <= gocui.KeyCtrlZ; key++ {
-		if key == gocui.KeyCtrlX || key == gocui.KeyCtrlO || key == gocui.KeyCtrlQ {
+		if key == gocui.KeyCtrlE || key == gocui.KeyCtrlO || key == gocui.KeyCtrlQ {
 			continue
 		}
 

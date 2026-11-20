@@ -34,22 +34,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: borrar
-  <kbd>e</kbd>: esconder/mostrar contenedores parados
+  <kbd>e</kbd>: ejecutar shell
+  <kbd>H</kbd>: esconder/mostrar contenedores parados
   <kbd>p</kbd>: pausa
   <kbd>s</kbd>: parar
   <kbd>r</kbd>: reiniciar
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
   <kbd>a</kbd>: attach in a separate terminal
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>ctrl+a</kbd>: attach with full logs
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: ver logs
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Quadlet
-  <kbd>ctrl+x</kbd>: ejecutar shell
   <kbd>c</kbd>: ejecutar comando personalizado
   <kbd>b</kbd>: ver comandos masivos
   <kbd>w</kbd>: abrir en navegador (first port is http)
@@ -71,8 +70,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: reiniciar
   <kbd>S</kbd>: iniciar
   <kbd>a</kbd>: attach in a separate terminal
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
+  <kbd>e</kbd>: ejecutar shell
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: ver logs
   <kbd>U</kbd>: levantar proyecto
@@ -80,7 +80,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>R</kbd>: ver opciones de reinicio
   <kbd>c</kbd>: ejecutar comando personalizado
   <kbd>b</kbd>: ver comandos masivos
-  <kbd>ctrl+x</kbd>: ejecutar shell
   <kbd>w</kbd>: abrir en navegador (first port is http)
   <kbd>enter</kbd>: enfocar panel principal
   <kbd>[</kbd>: anterior pestaña
@@ -142,7 +141,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>Ċ</kbd>: scroll
   <kbd>ċ</kbd>: scroll
   <kbd>ctrl+o</kbd>: leave shell, keep it running
-  <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+e</kbd>: close shell
   <kbd>ctrl+q</kbd>: salir
 </pre>
 

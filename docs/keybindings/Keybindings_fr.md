@@ -34,22 +34,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: supprimer
-  <kbd>e</kbd>: cacher/montrer les conteneurs arrêtés
+  <kbd>e</kbd>: exécuter le shell
+  <kbd>H</kbd>: cacher/montrer les conteneurs arrêtés
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: arrêter
   <kbd>r</kbd>: redémarrer
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
   <kbd>a</kbd>: attacher
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>ctrl+a</kbd>: attach with full logs
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: voir les enregistrements
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Quadlet
-  <kbd>ctrl+x</kbd>: exécuter le shell
   <kbd>c</kbd>: exécuter une commande prédéfinie
   <kbd>b</kbd>: voir les commandes groupées
   <kbd>w</kbd>: ouvrir dans le navigateur (le premier port est http)
@@ -71,8 +70,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: redémarrer
   <kbd>S</kbd>: démarrer
   <kbd>a</kbd>: attacher
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
+  <kbd>e</kbd>: exécuter le shell
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: voir les enregistrements
   <kbd>U</kbd>: up project
@@ -80,7 +80,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>R</kbd>: voir les options de redémarrage
   <kbd>c</kbd>: exécuter une commande prédéfinie
   <kbd>b</kbd>: voir les commandes groupées
-  <kbd>ctrl+x</kbd>: exécuter le shell
   <kbd>w</kbd>: ouvrir dans le navigateur (le premier port est http)
   <kbd>enter</kbd>: focus panneau principal
   <kbd>[</kbd>: onglet précédent
@@ -142,7 +141,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>Ċ</kbd>: faire défiler
   <kbd>ċ</kbd>: faire défiler
   <kbd>ctrl+o</kbd>: leave shell, keep it running
-  <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+e</kbd>: close shell
   <kbd>ctrl+q</kbd>: quit
 </pre>
 

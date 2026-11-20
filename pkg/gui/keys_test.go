@@ -165,15 +165,20 @@ func TestGetKeyRendersCtrlShift(t *testing.T) {
 func TestAttachShellTabKeyIsBound(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
-	found := map[string]bool{}
-	for _, binding := range gui.staticKeybindings() {
-		if binding.GetKey() == "F2" && binding.Modifier == gocui.ModNone {
-			found[binding.ViewName] = true
-		}
-	}
+	for _, view := range []string{"containers", "services"} {
+		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "ctrl+a" {
+				continue
+			}
 
-	assert.True(t, found["containers"])
-	assert.True(t, found["services"])
+			found = true
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.AttachShellTab, binding.Description)
+		}
+
+		assert.True(t, found, "%s must bind ctrl+a", view)
+	}
 }
 
 func TestTranscriptLogsKeyIsBound(t *testing.T) {
@@ -194,28 +199,13 @@ func TestTranscriptLogsKeyIsBound(t *testing.T) {
 	}
 }
 
-func TestAttachFullLogsKeyIsBound(t *testing.T) {
-	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
-
-	found := false
-	for _, binding := range gui.staticKeybindings() {
-		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+a" {
-			found = true
-			assert.NotNil(t, binding.Handler)
-			assert.Equal(t, gui.Tr.AttachFullLogs, binding.Description)
-		}
-	}
-
-	assert.True(t, found, "containers must bind ctrl+a")
-}
-
 func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
 	for _, view := range []string{"containers", "services"} {
 		found := false
 		for _, binding := range gui.staticKeybindings() {
-			if binding.ViewName != view || binding.GetKey() != "A" {
+			if binding.ViewName != view || binding.GetKey() != "F2" {
 				continue
 			}
 
@@ -224,35 +214,62 @@ func TestAttachInCurrentTerminalKeyIsBound(t *testing.T) {
 			assert.Equal(t, gui.Tr.AttachCurrentTerminal, binding.Description)
 		}
 
-		assert.True(t, found, "%s must bind uppercase A", view)
+		assert.True(t, found, "%s must bind F2", view)
 	}
 }
 
-// E opens the in-app terminal and stays visible in the x options menu; x itself
-// must keep opening that menu (the global binding), not a panel-specific one.
-func TestExecShellOpensTerminalTab(t *testing.T) {
+func TestHideStoppedKeyIsBound(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
 	found := false
 	for _, binding := range gui.staticKeybindings() {
-		if binding.ViewName == "containers" && binding.GetKey() == "ctrl+x" {
+		if binding.ViewName == "containers" && binding.GetKey() == "H" {
 			found = true
-
-			if binding.Description != gui.Tr.ExecShell {
-				t.Errorf("ctrl+x description = %q, want exec shell", binding.Description)
-			}
-
-			if binding.Handler == nil {
-				t.Error("ctrl+x has no handler")
-			}
+			assert.NotNil(t, binding.Handler)
+			assert.Equal(t, gui.Tr.HideStopped, binding.Description)
 		}
 
-		if binding.ViewName == "containers" && (binding.GetKey() == "E" || binding.GetKey() == "x") {
-			t.Errorf("containers must not bind %s", binding.GetKey())
+		// h stays the vim-style "previous panel" key.
+		if binding.ViewName == "containers" && binding.GetKey() == "h" {
+			t.Error("containers must not bind lowercase h")
 		}
 	}
 
-	if !found {
-		t.Fatal("ctrl+x exec-shell binding for the containers panel is missing")
+	assert.True(t, found, "containers must bind uppercase H for hide/show stopped")
+}
+
+// e opens the in-app terminal and stays visible in the x options menu; x itself
+// must keep opening that menu (the global binding), not a panel-specific one.
+func TestExecShellOpensTerminalTab(t *testing.T) {
+	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
+
+	for _, view := range []string{"containers", "services"} {
+		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "e" {
+				continue
+			}
+
+			found = true
+
+			if binding.Description != gui.Tr.ExecShell {
+				t.Errorf("e description = %q, want exec shell", binding.Description)
+			}
+
+			if binding.Handler == nil {
+				t.Error("e has no handler")
+			}
+		}
+
+		assert.True(t, found, "e exec-shell binding for the %s panel is missing", view)
+	}
+
+	for _, binding := range gui.staticKeybindings() {
+		if binding.ViewName != "containers" && binding.ViewName != "services" {
+			continue
+		}
+
+		assert.NotEqual(t, "ctrl+x", binding.GetKey(), "ctrl+x is gone: e opens and closes the shell")
+		assert.NotEqual(t, "A", binding.GetKey(), "uppercase A is gone")
 	}
 }

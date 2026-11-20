@@ -17,13 +17,13 @@ func TestTrimTerminalRows(t *testing.T) {
 	assert.Equal(t, []string{"hello", "", "world"}, rows)
 }
 
-func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
+func TestTerminalKeysAreForwardedAndCtrlECloses(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
 	var (
 		closeCount int
 		printables int
-		ctrlX      bool
+		ctrlE      bool
 		ctrlO      bool
 		ctrlQ      bool
 	)
@@ -35,8 +35,8 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 			printables++
 		}
 
-		if binding.Key == gocui.KeyCtrlX {
-			ctrlX = true
+		if binding.Key == gocui.KeyCtrlE {
+			ctrlE = true
 			closeCount++
 		}
 
@@ -54,10 +54,10 @@ func TestTerminalKeysAreForwardedAndCtrlXCloses(t *testing.T) {
 	}
 
 	assert.Equal(t, 94, printables, "all printable ASCII keys are forwarded")
-	assert.True(t, ctrlX)
+	assert.True(t, ctrlE)
 	assert.True(t, ctrlO, "ctrl+o leaves the shell focused")
 	assert.True(t, ctrlQ, "ctrl+q quits while the shell has focus")
-	assert.Equal(t, 1, closeCount, "ctrl+x closes the shell exactly once")
+	assert.Equal(t, 1, closeCount, "ctrl+e closes the shell exactly once")
 }
 
 func containerSummary(image, status string) dockertypes.Summary {
@@ -188,9 +188,9 @@ func TestTerminalOptionsShowHowToClose(t *testing.T) {
 		"wheel/PgUp/PgDn": gui.Tr.Scroll,
 		"ctrl+o":          gui.Tr.LeaveShell,
 		"ctrl+q":          gui.Tr.Quit,
-		"ctrl+x":          gui.Tr.CloseShell,
+		"ctrl+e":          gui.Tr.CloseShell,
 	}, options)
-	assert.Equal(t, "ctrl+o: leave shell, keep it running, ctrl+q: quit, ctrl+x: close shell, wheel/PgUp/PgDn: scroll", gui.optionsMapToString(options))
+	assert.Equal(t, "ctrl+e: close shell, ctrl+o: leave shell, keep it running, ctrl+q: quit, wheel/PgUp/PgDn: scroll", gui.optionsMapToString(options))
 }
 
 func TestANSIWidthIgnoresColourSequences(t *testing.T) {

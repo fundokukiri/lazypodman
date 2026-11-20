@@ -34,22 +34,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: 移除
-  <kbd>e</kbd>: 隐藏/显示已停止的容器
+  <kbd>e</kbd>: 执行shell
+  <kbd>H</kbd>: 隐藏/显示已停止的容器
   <kbd>p</kbd>: 暂停
   <kbd>s</kbd>: 停止
   <kbd>r</kbd>: 重新启动
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
   <kbd>a</kbd>: attach in a separate terminal
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>ctrl+a</kbd>: attach with full logs
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Quadlet
-  <kbd>ctrl+x</kbd>: 执行shell
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>b</kbd>: 查看批量命令
   <kbd>w</kbd>: 在浏览器中打开(第一个端口为http)
@@ -71,8 +70,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: 重新启动
   <kbd>S</kbd>: 启动项目
   <kbd>a</kbd>: attach in a separate terminal
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
+  <kbd>e</kbd>: 执行shell
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>U</kbd>: 创建并启动容器
@@ -80,7 +80,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>R</kbd>: 查看重启选项
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>b</kbd>: 查看批量命令
-  <kbd>ctrl+x</kbd>: 执行shell
   <kbd>w</kbd>: 在浏览器中打开(第一个端口为http)
   <kbd>enter</kbd>: 聚焦主面板
   <kbd>[</kbd>: 上一个选项卡
@@ -142,7 +141,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>Ċ</kbd>: 滚动
   <kbd>ċ</kbd>: 滚动
   <kbd>ctrl+o</kbd>: leave shell, keep it running
-  <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+e</kbd>: close shell
   <kbd>ctrl+q</kbd>: 退出
 </pre>
 

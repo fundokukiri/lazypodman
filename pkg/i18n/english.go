@@ -650,7 +650,7 @@ func englishSet() TranslationSet {
 		PlainLogs:                "view as plain logs",
 		TranscriptDetected:       "transcript output detected, switched to transcript view",
 		JumpToLatest:             "jump to latest logs",
-		ShellCloseHint:           "shell open: ctrl+x closes it",
+		ShellCloseHint:           "shell open: ctrl+e closes it",
 		ShellExited:              "shell exited",
 		CloseShell:               "close shell",
 		LeaveShell:               "leave shell, keep it running",

@@ -34,22 +34,21 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: entfernen
-  <kbd>e</kbd>: hide/show stopped containers
+  <kbd>e</kbd>: exec shell
+  <kbd>H</kbd>: hide/show stopped containers
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: anhalten
   <kbd>r</kbd>: neustarten
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
   <kbd>a</kbd>: anbinden
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>ctrl+a</kbd>: attach with full logs
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: zeige Protokolle
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
   <kbd>Q</kbd>: Quadlet
-  <kbd>ctrl+x</kbd>: exec shell
   <kbd>c</kbd>: führe vordefinierten benutzerdefinierten Befehl aus
   <kbd>b</kbd>: view bulk commands
   <kbd>w</kbd>: open in browser (first port is http)
@@ -71,8 +70,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: neustarten
   <kbd>S</kbd>: start
   <kbd>a</kbd>: anbinden
-  <kbd>A</kbd>: attach in this terminal
-  <kbd>F2</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>F2</kbd>: attach in this terminal
+  <kbd>e</kbd>: exec shell
   <kbd>ctrl+e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: zeige Protokolle
   <kbd>U</kbd>: up project
@@ -80,7 +80,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>R</kbd>: zeige Neustartoptionen
   <kbd>c</kbd>: führe vordefinierten benutzerdefinierten Befehl aus
   <kbd>b</kbd>: view bulk commands
-  <kbd>ctrl+x</kbd>: exec shell
   <kbd>w</kbd>: open in browser (first port is http)
   <kbd>enter</kbd>: fokussieren aufs Hauptpanel
   <kbd>[</kbd>: vorheriges Tab
@@ -142,7 +141,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>Ċ</kbd>: scrollen
   <kbd>ċ</kbd>: scrollen
   <kbd>ctrl+o</kbd>: leave shell, keep it running
-  <kbd>ctrl+x</kbd>: close shell
+  <kbd>ctrl+e</kbd>: close shell
   <kbd>ctrl+q</kbd>: quit
 </pre>
 

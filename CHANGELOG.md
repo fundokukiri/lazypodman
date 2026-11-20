@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The window opened by `a` now outlives lazypodman**: it used to be started
+  inside lazypodman's process group and session, so quitting lazypodman with
+  `ctrl+c` (or closing the terminal hosting it) signalled the attached window
+  too and `podman attach` died with the UI. The terminal launcher now runs in
+  its own session, so the container keeps running and the window stays open
+  after lazypodman exits.
+
 ## [1.0.3] - 2026-11-20
 
 ### Changed

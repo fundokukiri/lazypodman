@@ -21,6 +21,7 @@ func (c *OSCommand) OpenExternalTerminal(argv []string) error {
 	cmd.Stdin = nil
 	cmd.Stdout = nil
 	cmd.Stderr = nil
+	detachLauncher(cmd)
 
 	if err := cmd.Start(); err != nil {
 		return err

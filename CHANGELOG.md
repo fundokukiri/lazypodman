@@ -20,11 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New key layout for getting into a container**: `a` still attaches to the
   container's own process in a separate terminal window. On top of that,
   `ctrl+a` now attaches in the in-app shell tab (was `F2`), `F2` now attaches in
-  the current terminal (was `A`), `e` opens and closes the shell tab (was
-  `ctrl+x`), and `ctrl+e` still opens a `zsh` shell in a separate terminal
-  window. `A` and `ctrl+x` are gone, and hiding stopped containers moved from
-  `e` to `H` so `h` keeps meaning "previous panel". Inside the shell tab,
-  `ctrl+e` closes it and `ctrl+x` is forwarded to the shell again.
+  the current terminal (was `A`), `ctrl+e` opens and closes the shell tab (was
+  `ctrl+x`, and it stays the close key inside the tab), and `e` opens a `zsh`
+  shell in a separate terminal window (it was `ctrl+e`). `A` and `ctrl+x` are
+  gone, and hiding stopped containers moved from `e` to `H` so `h` keeps meaning
+  "previous panel".
 
 ### Removed
 

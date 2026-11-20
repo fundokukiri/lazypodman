@@ -17,9 +17,10 @@ projects, logs and stats in one window, every common action one keypress away.
   RAM usage, uptime, or of any stat path you configure
 - Attach to a container's own process: `a` in a separate terminal window (or
   via `TERMINAL`), `F2` in the current terminal, `ctrl+a` in the in-app shell
-  tab. `e` instead opens a new shell (`zsh` when the container has it, otherwise
-  `bash`, then `sh`) in the in-app tab, so you can look around without touching
-  the running process; `ctrl+e` opens that shell in a separate terminal window.
+  tab. `ctrl+e` instead opens a new shell (`zsh` when the container has it,
+  otherwise `bash`, then `sh`) in the in-app tab, so you can look around without
+  touching the running process; `e` opens that shell in a separate terminal
+  window.
   View processes (`top`), config and env in their own tabs
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
@@ -239,11 +240,11 @@ numbers (`1`…`6`).
 
 **Containers**: `d` remove · `H` show/hide stopped · `p` pause · `s` stop ·
 `r` restart · `a` attach in a new terminal · `F2` attach in this terminal ·
-`ctrl+a` attach in the shell tab · `e` open/close the shell tab ·
-`ctrl+e` exec shell in a new terminal ·
+`ctrl+a` attach in the shell tab · `ctrl+e` open/close the shell tab ·
+`e` exec shell in a new terminal ·
 `m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
 `t` run healthcheck · `C` commit to an image · `v` container files ·
-`Q` Quadlet menu · `e` open/close the in-app shell tab ·
+`Q` Quadlet menu · `ctrl+e` open/close the in-app shell tab ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
 browser · `space` mark/unmark · `Q` export a Quadlet unit.
 
@@ -273,7 +274,7 @@ change the failing streak and may trigger `--health-on-failure` behaviour.
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
 terminal · `F2` attach in this terminal · `ctrl+a` attach in the shell tab ·
-`e` open/close the shell tab · `ctrl+e` exec shell in a new terminal ·
+`ctrl+e` open/close the shell tab · `e` exec shell in a new terminal ·
 `m` logs · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
@@ -337,11 +338,11 @@ commands (prune).
 
 ### In-app shell
 
-- Select a container (or service) and press `e` to open or close the **Shell**
-  tab. A real PTY opens there, the tab comes first while it exists, and the app
-  switches to it. Lazypodman uses `zsh` if the container has it, otherwise
-  `bash`, then `sh`. `ctrl+e` runs the same shell in a separate terminal window,
-  which also works on containers that cannot be attached to.
+- Select a container (or service) and press `ctrl+e` to open or close the
+  **Shell** tab. A real PTY opens there, the tab comes first while it exists, and
+  the app switches to it. Lazypodman uses `zsh` if the container has it,
+  otherwise `bash`, then `sh`. `e` runs the same shell in a separate terminal
+  window, which also works on containers that cannot be attached to.
 - The terminal is a VT10x screen, so `vim`, `htop` and `less` work. The line above
   it shows the container name (yellow), image (magenta), status (green/red),
   short ID (grey) and pod when there is one.
@@ -483,7 +484,7 @@ The full generated list for every language lives in
 ### Typical workflows
 
 1. **Debug a failing service**: select it, `m` for logs, `ctrl+l` if you need the
-   full history, `]` for the Stats tab, `e` to open a shell.
+   full history, `]` for the Stats tab, `ctrl+e` to open a shell.
 2. **Redeploy after a code change**: select the service, `R`, pick
    recreate/rebuild (driven by `commandTemplates.recreateService` /
    `rebuildService`).

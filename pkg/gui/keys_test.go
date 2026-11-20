@@ -238,13 +238,33 @@ func TestHideStoppedKeyIsBound(t *testing.T) {
 	assert.True(t, found, "containers must bind uppercase H for hide/show stopped")
 }
 
-// e opens the in-app terminal and stays visible in the x options menu; x itself
-// must keep opening that menu (the global binding), not a panel-specific one.
+// ctrl+e opens the in-app terminal and stays visible in the x options menu; x
+// itself must keep opening that menu (the global binding), not a panel-specific
+// one. e opens the same shell in a separate terminal window instead.
 func TestExecShellOpensTerminalTab(t *testing.T) {
 	gui := newKubeGui(&fakeHealthPodClient{}, t.TempDir())
 
 	for _, view := range []string{"containers", "services"} {
 		found := false
+		for _, binding := range gui.staticKeybindings() {
+			if binding.ViewName != view || binding.GetKey() != "ctrl+e" {
+				continue
+			}
+
+			found = true
+
+			if binding.Description != gui.Tr.ExecShell {
+				t.Errorf("ctrl+e description = %q, want exec shell", binding.Description)
+			}
+
+			if binding.Handler == nil {
+				t.Error("ctrl+e has no handler")
+			}
+		}
+
+		assert.True(t, found, "ctrl+e exec-shell binding for the %s panel is missing", view)
+
+		found = false
 		for _, binding := range gui.staticKeybindings() {
 			if binding.ViewName != view || binding.GetKey() != "e" {
 				continue
@@ -252,16 +272,12 @@ func TestExecShellOpensTerminalTab(t *testing.T) {
 
 			found = true
 
-			if binding.Description != gui.Tr.ExecShell {
-				t.Errorf("e description = %q, want exec shell", binding.Description)
-			}
-
-			if binding.Handler == nil {
-				t.Error("e has no handler")
+			if binding.Description != gui.Tr.ExecShellExternal {
+				t.Errorf("e description = %q, want exec shell in a separate terminal", binding.Description)
 			}
 		}
 
-		assert.True(t, found, "e exec-shell binding for the %s panel is missing", view)
+		assert.True(t, found, "e external-shell binding for the %s panel is missing", view)
 	}
 
 	for _, binding := range gui.staticKeybindings() {
@@ -269,7 +285,7 @@ func TestExecShellOpensTerminalTab(t *testing.T) {
 			continue
 		}
 
-		assert.NotEqual(t, "ctrl+x", binding.GetKey(), "ctrl+x is gone: e opens and closes the shell")
+		assert.NotEqual(t, "ctrl+x", binding.GetKey(), "ctrl+x is gone: ctrl+e opens and closes the shell")
 		assert.NotEqual(t, "A", binding.GetKey(), "uppercase A is gone")
 	}
 }

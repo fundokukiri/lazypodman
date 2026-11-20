@@ -240,7 +240,7 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
-			Key:         'e',
+			Key:         gocui.KeyCtrlE,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainersTerminal,
 			Description: gui.Tr.ExecShell,
@@ -310,7 +310,7 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
-			Key:         gocui.KeyCtrlE,
+			Key:         'e',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerExecShellExternal,
 			Description: gui.Tr.ExecShellExternal,
@@ -431,14 +431,14 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "services",
-			Key:         'e',
+			Key:         gocui.KeyCtrlE,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServicesExecShell,
 			Description: gui.Tr.ExecShell,
 		},
 		{
 			ViewName:    "services",
-			Key:         gocui.KeyCtrlE,
+			Key:         'e',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceExecShellExternal,
 			Description: gui.Tr.ExecShellExternal,

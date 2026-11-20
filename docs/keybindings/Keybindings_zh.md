@@ -34,7 +34,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: 移除
-  <kbd>e</kbd>: 执行shell
+  <kbd>ctrl+e</kbd>: 执行shell
   <kbd>H</kbd>: 隐藏/显示已停止的容器
   <kbd>p</kbd>: 暂停
   <kbd>s</kbd>: 停止
@@ -44,7 +44,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: attach in a separate terminal
   <kbd>ctrl+a</kbd>: attach in shell tab
   <kbd>F2</kbd>: attach in this terminal
-  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
+  <kbd>e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
@@ -72,8 +72,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: attach in a separate terminal
   <kbd>ctrl+a</kbd>: attach in shell tab
   <kbd>F2</kbd>: attach in this terminal
-  <kbd>e</kbd>: 执行shell
-  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
+  <kbd>ctrl+e</kbd>: 执行shell
+  <kbd>e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: 查看日志
   <kbd>U</kbd>: 创建并启动容器
   <kbd>D</kbd>: 停止并移除容器

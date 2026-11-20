@@ -34,7 +34,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 
 <pre>
   <kbd>d</kbd>: supprimer
-  <kbd>e</kbd>: exécuter le shell
+  <kbd>ctrl+e</kbd>: exécuter le shell
   <kbd>H</kbd>: cacher/montrer les conteneurs arrêtés
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: arrêter
@@ -44,7 +44,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: attacher
   <kbd>ctrl+a</kbd>: attach in shell tab
   <kbd>F2</kbd>: attach in this terminal
-  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
+  <kbd>e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: voir les enregistrements
   <kbd>t</kbd>: Run healthcheck (recorded in the podman health log)
   <kbd>space</kbd>: mark/unmark container
@@ -72,8 +72,8 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>a</kbd>: attacher
   <kbd>ctrl+a</kbd>: attach in shell tab
   <kbd>F2</kbd>: attach in this terminal
-  <kbd>e</kbd>: exécuter le shell
-  <kbd>ctrl+e</kbd>: exec shell in a separate terminal
+  <kbd>ctrl+e</kbd>: exécuter le shell
+  <kbd>e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: voir les enregistrements
   <kbd>U</kbd>: up project
   <kbd>D</kbd>: down project

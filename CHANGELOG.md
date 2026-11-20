@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Stats is the first tab again**: Containers, Services and Pods open on
+  **Stats** instead of **Logs**, so moving through the list no longer asks the
+  Podman service for a log tail per container. `m` (or `]`) still reaches Logs
+  in one key, and closing the in-app shell falls back to Stats. The in-app
+  **Shell** tab still comes first while it exists.
+
 ### Fixed
 
 - **The `x` menu is no longer hidden by the shell tab**: every layout pass

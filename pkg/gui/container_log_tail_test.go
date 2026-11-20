@@ -124,17 +124,19 @@ func TestDefaultTranscriptReplayIsBounded(t *testing.T) {
 	assert.Equal(t, 500, config.GetDefaultConfig().Logs.TranscriptTail)
 }
 
-func TestLogsIsTheFirstTab(t *testing.T) {
+// Stats is first so selecting another container does not stream logs the user
+// did not ask for; logs stays one tab away.
+func TestStatsIsTheFirstTab(t *testing.T) {
 	gui := logsGuiWithTail("20")
 
 	containers := gui.getContainersPanel()
-	assert.Equal(t, "logs", containers.ContextState.GetMainTabs()[0].Key)
+	assert.Equal(t, "stats", containers.ContextState.GetMainTabs()[0].Key)
 
 	services := gui.getServicesPanel()
-	assert.Equal(t, "logs", services.ContextState.GetMainTabs()[0].Key)
+	assert.Equal(t, "stats", services.ContextState.GetMainTabs()[0].Key)
 
 	pods := gui.getPodsPanel()
-	assert.Equal(t, "logs", pods.ContextState.GetMainTabs()[0].Key)
+	assert.Equal(t, "stats", pods.ContextState.GetMainTabs()[0].Key)
 }
 
 func TestDefaultLogsTailIsBounded(t *testing.T) {

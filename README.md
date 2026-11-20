@@ -334,7 +334,7 @@ commands (prune).
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
 - `m` opens logs for the selected container or service; closing the in-app
-  shell lands on the first tab, Logs.
+  shell lands on the first tab, Stats, so no logs are streamed until you ask.
 
 ### In-app shell
 

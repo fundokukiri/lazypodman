@@ -23,14 +23,14 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.Service] {
 			GetMainTabs: func() []panels.MainTab[*commands.Service] {
 				return []panels.MainTab[*commands.Service]{
 					{
-						Key:    "logs",
-						Title:  gui.Tr.LogsTitle,
-						Render: gui.renderServiceLogs,
-					},
-					{
 						Key:    "stats",
 						Title:  gui.Tr.StatsTitle,
 						Render: gui.renderServiceStats,
+					},
+					{
+						Key:    "logs",
+						Title:  gui.Tr.LogsTitle,
+						Render: gui.renderServiceLogs,
 					},
 					{
 						Key:    "container-env",

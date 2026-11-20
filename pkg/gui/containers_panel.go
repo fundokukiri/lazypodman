@@ -39,14 +39,14 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 			GetMainTabs: func() []panels.MainTab[*commands.Container] {
 				tabs := []panels.MainTab[*commands.Container]{
 					{
-						Key:    "logs",
-						Title:  gui.Tr.LogsTitle,
-						Render: gui.renderContainerLogsToMain,
-					},
-					{
 						Key:    "stats",
 						Title:  gui.Tr.StatsTitle,
 						Render: gui.renderContainerStats,
+					},
+					{
+						Key:    "logs",
+						Title:  gui.Tr.LogsTitle,
+						Render: gui.renderContainerLogsToMain,
 					},
 					{
 						Key:    "diagnose",

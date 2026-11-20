@@ -700,8 +700,13 @@ func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View
 }
 
 // handleContainerAttachShellTab is the ctrl+a path: attach the in-app Shell tab
-// to the container's own process.
+// to the container's own process, or close the tab that is already open, so
+// ctrl+a is a toggle like e.
 func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error {
+	if gui.currentTerminal() != nil {
+		return gui.closeContainerTerminal()
+	}
+
 	ctr, err := gui.Panels.Containers.GetSelectedItem()
 	if err != nil {
 		return nil

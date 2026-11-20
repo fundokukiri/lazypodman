@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`ctrl+a` is a toggle**: it attaches the in-app Shell tab to the container's
+  process and pressing it again closes the tab, exactly like `ctrl+e`. Inside
+  the tab `ctrl+a` closes it too, so the shell no longer sees `ctrl+a`
+  (readline beginning-of-line); use `Home`.
+
 ### Added
 
 - **The separate terminal windows are named**: `a` and `e` open a window titled

@@ -42,7 +42,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>C</kbd>: commit to image
   <kbd>v</kbd>: container files
   <kbd>a</kbd>: anexar
-  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab (ctrl+a closes it)
   <kbd>F2</kbd>: attach in this terminal
   <kbd>e</kbd>: exec shell in a separate terminal
   <kbd>m</kbd>: ver logs
@@ -70,7 +70,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: reiniciar
   <kbd>S</kbd>: iniciar
   <kbd>a</kbd>: anexar
-  <kbd>ctrl+a</kbd>: attach in shell tab
+  <kbd>ctrl+a</kbd>: attach in shell tab (ctrl+a closes it)
   <kbd>F2</kbd>: attach in this terminal
   <kbd>ctrl+e</kbd>: executar shell
   <kbd>e</kbd>: exec shell in a separate terminal
@@ -141,6 +141,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>Ċ</kbd>: rolar
   <kbd>ċ</kbd>: rolar
   <kbd>ctrl+o</kbd>: leave shell, keep it running
+  <kbd>ctrl+a</kbd>: close shell
   <kbd>ctrl+e</kbd>: close shell
   <kbd>ctrl+q</kbd>: sair
 </pre>

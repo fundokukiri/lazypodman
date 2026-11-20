@@ -241,7 +241,7 @@ numbers (`1`…`6`).
 
 **Containers**: `d` remove · `H` show/hide stopped · `p` pause · `s` stop ·
 `r` restart · `a` attach in a new terminal · `F2` attach in this terminal ·
-`ctrl+a` attach in the shell tab · `ctrl+e` open/close the shell tab ·
+`ctrl+a` attach in the shell tab, or close it · `ctrl+e` open/close the shell tab ·
 `e` exec shell in a new terminal ·
 `m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
 `t` run healthcheck · `C` commit to an image · `v` container files ·
@@ -274,8 +274,8 @@ change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
-terminal · `F2` attach in this terminal · `ctrl+a` attach in the shell tab ·
-`ctrl+e` open/close the shell tab · `e` exec shell in a new terminal ·
+terminal · `F2` attach in this terminal · `ctrl+a` attach in the shell tab, or
+close it · `ctrl+e` open/close the shell tab · `e` exec shell in a new terminal ·
 `m` logs · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
@@ -348,13 +348,14 @@ commands (prune).
   it shows the container name (yellow), image (magenta), status (green/red),
   short ID (grey) and pod when there is one.
 - `ctrl+a` attaches to the container's own process in this same tab, instead of
-  opening a shell there. A container started without stdin (`-i`) cannot be
+  opening a shell there, and pressing it again closes the tab (toggle).
+  A container started without stdin (`-i`) cannot be
   attached to, so `ctrl+a` reports that instead of opening a dead terminal.
-  `ctrl+e` closes the shell, `ctrl+o` leaves it running in the background.
+  `ctrl+a`/`ctrl+e` close the shell, `ctrl+o` leaves it running in the background.
 - Each container can keep its own shell. Opening a shell in another container
   leaves the first one running in the background; going back to that container
   shows its shell tab again.
-- `ctrl+e` closes the shell, wipes the view and reloads the logs; exiting the
+- `ctrl+a`/`ctrl+e` close the shell, wipes the view and reloads the logs; exiting the
   shell inside the container closes the tab too. The tab only exists while a
   shell is open, so nothing is spawned at startup.
 - `PgUp`/`PgDn` or the mouse wheel page through up to **2000 lines** of

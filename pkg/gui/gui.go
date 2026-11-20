@@ -75,10 +75,11 @@ type Gui struct {
 	// explicitly switched transcript mode off.
 	transcriptAutoDisabled map[string]bool
 
-	// logViewCache keeps the last rendered Logs view while the user visits
-	// another main tab. Returning to Logs restores it instantly and resumes with
-	// --tail 0 instead of replaying the whole tail.
-	logViewCache           *logViewCache
+	// logViewCaches keeps the rendered Logs view of recently visited containers,
+	// so returning to one restores it instantly and resumes with --since instead
+	// of replaying the whole tail. Bounded by maxCachedLogViews.
+	logViewCaches          map[string]*logViewCache
+	logViewCacheOrder      []string
 	logViewCacheGeneration int
 	logViewCacheMutex      sync.Mutex
 
@@ -261,7 +262,9 @@ func (gui *Gui) Run() error {
 		return err
 	}
 
-	throttledRefresh := throttle.ThrottleFunc(time.Millisecond*50, true, gui.refresh)
+	// 500ms rather than 50ms: one refresh lists the store and inspects every
+	// container, and a crash-looping container emits events faster than that.
+	throttledRefresh := throttle.ThrottleFunc(time.Millisecond*500, true, gui.refresh)
 	defer throttledRefresh.Stop()
 
 	go func() {
@@ -316,7 +319,6 @@ func (gui *Gui) Run() error {
 		throttledRefresh.Trigger()
 
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
-		gui.goEvery(time.Millisecond*1000, gui.updateContainerDetails)
 		gui.goEvery(time.Millisecond*1000, gui.checkForContextChange)
 		// we need to regularly re-render these because their stats will be changed in the background
 		gui.goEvery(time.Millisecond*1000, gui.renderContainersAndServices)
@@ -340,10 +342,6 @@ func (gui *Gui) setPanels() {
 		Networks:   gui.getNetworksPanel(),
 		Menu:       gui.getMenuPanel(),
 	}
-}
-
-func (gui *Gui) updateContainerDetails() error {
-	return gui.PodmanCommand.RefreshContainerDetails(gui.Panels.Containers.List.GetAllItems())
 }
 
 func (gui *Gui) refresh() {

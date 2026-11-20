@@ -6,6 +6,7 @@ FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
 ARG GOARCH=amd64
 ARG GOARM
 ARG VERSION
+ARG VCS_REF=unknown
 
 WORKDIR /tmp/gobuild
 COPY ./ .

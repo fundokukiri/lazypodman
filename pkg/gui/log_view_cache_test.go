@@ -74,17 +74,39 @@ func TestLogTrimWriterAdoptsRestoredContent(t *testing.T) {
 	assert.Equal(t, 1, target.originY)
 }
 
-func TestLogViewCacheDoesNotSurviveAnotherContainer(t *testing.T) {
+func TestLogViewCacheSurvivesAnotherContainer(t *testing.T) {
+	// Browsing the list with j/k should not reload the logs of a container you
+	// come back to; each container keeps its own entry.
 	gui := &Gui{}
 	first := cachedContainer()
-	gui.cacheLogView(first, &fakeLogTarget{content: "old\n"}, gui.logCacheGeneration())
+	gui.cacheLogView(first, &fakeLogTarget{content: "first\n"}, gui.logCacheGeneration())
 
 	second := &commands.Container{ID: "other"}
 	second.Container.State = "running"
-	restored, _ := gui.restoreLogView(second, &fakeLogTarget{})
+	gui.cacheLogView(second, &fakeLogTarget{content: "second\n"}, gui.logCacheGeneration())
+
+	target := &fakeLogTarget{content: "stats\n"}
+	restored, _ := gui.restoreLogView(first, target)
+	assert.True(t, restored)
+	assert.Equal(t, "first\n", target.content)
+}
+
+func TestLogViewCacheKeepsOnlyTheMostRecentEntries(t *testing.T) {
+	gui := &Gui{}
+	containers := make([]*commands.Container, 0, maxCachedLogViews+1)
+
+	for i := 0; i <= maxCachedLogViews; i++ {
+		ctr := &commands.Container{ID: string(rune('a' + i))}
+		ctr.Container.State = "running"
+		containers = append(containers, ctr)
+		gui.cacheLogView(ctr, &fakeLogTarget{content: ctr.ID + "\n"}, gui.logCacheGeneration())
+	}
+
+	// The first one was evicted, the last one is still there.
+	restored, _ := gui.restoreLogView(containers[0], &fakeLogTarget{})
 	assert.False(t, restored)
-	restored, _ = gui.restoreLogView(first, &fakeLogTarget{})
-	assert.False(t, restored)
+	restored, _ = gui.restoreLogView(containers[maxCachedLogViews], &fakeLogTarget{})
+	assert.True(t, restored)
 }
 
 func TestLogViewCacheDoesNotSaveAfterInvalidation(t *testing.T) {

@@ -43,11 +43,18 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 	cmd.Stdin = os.Stdin
 
 	stop := make(chan os.Signal, 1)
+	done := make(chan struct{})
 	defer signal.Stop(stop)
+	defer close(done)
 
 	go func() {
 		signal.Notify(stop, os.Interrupt)
-		<-stop
+
+		select {
+		case <-stop:
+		case <-done:
+			return
+		}
 
 		if err := gui.OSCommand.Kill(cmd); err != nil {
 			gui.Log.Error(err)

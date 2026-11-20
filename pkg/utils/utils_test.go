@@ -319,3 +319,15 @@ quux:
 		}
 	}
 }
+
+func TestApplyTemplateWithUnparsableTemplateReturnsEmpty(t *testing.T) {
+	// The template comes from the user's config, so a typo must not panic.
+	assert.Equal(t, "", ApplyTemplate("podman logs {{.Container.Name", map[string]string{}))
+}
+
+func TestFormatBytesAboveTwoGiB(t *testing.T) {
+	// Sizes arrive as int64 (layer and memory sizes). Converting them to int
+	// first truncates on 32-bit builds, so the formatters take int64 directly.
+	assert.Equal(t, "3.00GiB", FormatBinaryBytes(3<<30))
+	assert.Equal(t, "3.22GB", FormatDecimalBytes(3221225472))
+}

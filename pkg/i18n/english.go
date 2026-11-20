@@ -637,7 +637,7 @@ func englishSet() TranslationSet {
 		QuadletTitle:             "Quadlet",
 		ToggleMark:               "mark/unmark container",
 		ContainerShellTitle:      "container shell",
-		ShellTitle:               "shell",
+		ShellTitle:               "Shell",
 		ShellHeader:              "container: %s · image: %s · status: %s · id: %s",
 		ShellHeaderPod:           " · pod: %s",
 		AllLogs:                  "load all logs",

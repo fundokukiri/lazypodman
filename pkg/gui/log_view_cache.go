@@ -8,17 +8,21 @@ import (
 	"github.com/fundokukiri/lazypodman/pkg/commands"
 )
 
-// logViewCache remembers what the Logs tab showed when the user switched to
-// another tab of the same container. Without it every return to Logs replays
-// the whole configured tail, so the tab looks like it is loading again.
+// logViewCache remembers what the Logs tab showed for one container. Without it
+// every return to Logs replays the whole configured tail, so the tab looks like
+// it is loading again. Entries live in gui.logViewCaches, keyed by container and
+// state, so switching container and coming back does not reload either.
 type logViewCache struct {
-	// key is the container id plus its state, the same value the panel uses as
-	// its context cache key. A different container or a restarted one misses.
-	key     string
 	content string
 	originY int
 	savedAt time.Time
 }
+
+// maxCachedLogViews bounds how many containers keep a rendered Logs view. Each
+// entry is already capped by the Logs.MaxBytes budget (1 MiB by default).
+// shortcut: a count, not a byte budget; accepted because 4 x MaxBytes is small
+// and this only ever holds what the view already had in memory.
+const maxCachedLogViews = 4
 
 // logViewBuffer is the subset of *gocui.View the cache touches. It keeps the
 // cache testable without constructing a full gocui view.
@@ -58,27 +62,43 @@ func (gui *Gui) cacheLogView(container *commands.Container, view logViewBuffer, 
 		return
 	}
 
-	gui.logViewCache = &logViewCache{
-		key:     gui.logCacheKey(container),
+	if gui.logViewCaches == nil {
+		gui.logViewCaches = map[string]*logViewCache{}
+	}
+
+	key := gui.logCacheKey(container)
+	gui.logViewCaches[key] = &logViewCache{
 		content: content,
 		originY: view.OriginY(),
 		savedAt: time.Now(),
 	}
+
+	// Save order doubles as the eviction order: re-saving a container moves it
+	// to the back, so a long list never grows past maxCachedLogViews.
+	order := make([]string, 0, len(gui.logViewCacheOrder)+1)
+
+	for _, cachedKey := range gui.logViewCacheOrder {
+		if cachedKey != key {
+			order = append(order, cachedKey)
+		}
+	}
+
+	gui.logViewCacheOrder = append(order, key)
+
+	for len(gui.logViewCacheOrder) > maxCachedLogViews {
+		delete(gui.logViewCaches, gui.logViewCacheOrder[0])
+		gui.logViewCacheOrder = gui.logViewCacheOrder[1:]
+	}
 }
 
-// restoreLogView puts the cached Logs content back and reports whether it did.
+// restoreLogView puts a cached Logs content back and reports whether it did.
 func (gui *Gui) restoreLogView(container *commands.Container, view logViewBuffer) (bool, time.Time) {
 	gui.logViewCacheMutex.Lock()
-	cache := gui.logViewCache
+	cache := gui.logViewCaches[gui.logCacheKey(container)]
 	gui.logViewCacheMutex.Unlock()
 
 	if cache == nil {
-		return false, time.Time{}
-	}
-	if cache.key != gui.logCacheKey(container) {
-		// Visiting another container ends this tab's cache. Coming back should
-		// load fresh logs rather than a stale snapshot.
-		gui.invalidateLogViewCache()
+		// First visit of this container, or it restarted: read a fresh tail.
 		return false, time.Time{}
 	}
 
@@ -93,7 +113,8 @@ func (gui *Gui) invalidateLogViewCache() {
 	defer gui.logViewCacheMutex.Unlock()
 
 	gui.logViewCacheGeneration++
-	gui.logViewCache = nil
+	gui.logViewCaches = nil
+	gui.logViewCacheOrder = nil
 }
 
 // adoptCurrentContent seeds the writer with what is already in the view, so the

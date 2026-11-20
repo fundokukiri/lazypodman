@@ -143,6 +143,9 @@ func (gui *Gui) handleContainerHealthcheckRun(g *gocui.Gui, v *gocui.View) error
 
 // refreshHealthAfterRun re-fetches the details so the Health tab and the list
 // colour show the probe that was just recorded, without waiting for the ticker.
+// The ticker itself also re-fetches the container it displays, because health
+// changes only reach us through Podman events, and older Podman versions (and
+// a dropped event stream) do not send health_status events.
 func (gui *Gui) refreshHealthAfterRun(ctr *commands.Container) {
 	if err := gui.PodmanCommand.RefreshContainerDetails([]*commands.Container{ctr}); err != nil {
 		gui.Log.Warn(err)
@@ -154,11 +157,16 @@ func (gui *Gui) refreshHealthAfterRun(ctr *commands.Container) {
 }
 
 // renderContainerHealth is the Health tab: status and probe history from inspect
-// data already on disk in memory, refreshed by the existing details ticker. No
-// extra podman process, no extra socket call.
+// data, re-read once per tick for the container on screen.
 func (gui *Gui) renderContainerHealth(ctr *commands.Container) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
+			// One inspect per second for the container on screen, so the health
+			// status and history cannot freeze when no event arrives.
+			if err := gui.PodmanCommand.RefreshContainerDetails([]*commands.Container{ctr}); err != nil {
+				gui.Log.Warn(err)
+			}
+
 			gui.reRenderStringMain(gui.healthTabContents(ctr))
 		},
 		Duration:   time.Second,

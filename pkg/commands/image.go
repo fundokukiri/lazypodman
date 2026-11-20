@@ -59,7 +59,7 @@ func getHistoryResponseItemDisplayStrings(layer image.HistoryResponseItem) []str
 
 	createdBy = strings.Replace(createdBy, "\t", " ", -1)
 
-	size := utils.FormatBinaryBytes(int(layer.Size))
+	size := utils.FormatBinaryBytes(layer.Size)
 	sizeColor := color.FgWhite
 	if size == "0B" {
 		sizeColor = color.FgBlue

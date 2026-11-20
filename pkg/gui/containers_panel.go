@@ -39,6 +39,11 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 			GetMainTabs: func() []panels.MainTab[*commands.Container] {
 				tabs := []panels.MainTab[*commands.Container]{
 					{
+						Key:    "stats",
+						Title:  gui.Tr.StatsTitle,
+						Render: gui.renderContainerStats,
+					},
+					{
 						Key:    "logs",
 						Title:  gui.Tr.LogsTitle,
 						Render: gui.renderContainerLogsToMain,
@@ -47,11 +52,6 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 						Key:    "diagnose",
 						Title:  gui.Tr.DiagnoseTitle,
 						Render: gui.renderContainerDiagnosis,
-					},
-					{
-						Key:    "stats",
-						Title:  gui.Tr.StatsTitle,
-						Render: gui.renderContainerStats,
 					},
 					{
 						Key:    "health",
@@ -82,14 +82,15 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 
 				if gui.Panels.Containers != nil {
 					if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.terminalTabFor(container) {
-						// The shell tab only exists after x -> exec shell, right after Logs.
-						tabs = append(tabs[:1], append([]panels.MainTab[*commands.Container]{
+						// The shell tab only exists after x -> exec shell. It sits first so
+						// the shell is the tab you land on, and closing it falls back to Stats.
+						tabs = append([]panels.MainTab[*commands.Container]{
 							{
 								Key:    terminalTabKey,
 								Title:  gui.Tr.ShellTitle,
 								Render: gui.renderContainerTerminal,
 							},
-						}, tabs[1:]...)...)
+						}, tabs...)
 					}
 				}
 
@@ -332,10 +333,6 @@ func (gui *Gui) renderContainerTop(container *commands.Container) tasks.TaskFunc
 		Duration: time.Second,
 		Before: func(ctx context.Context) {
 			gui.clearMainView()
-			// `podman inspect --size` can take seconds on a large rootfs, so it
-			// must not delay the first stats render. The next tick picks the
-			// values up once this finishes (or the line stays unavailable).
-			go gui.refreshContainerSize(ctx, container)
 		},
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
@@ -452,11 +449,11 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 	podman := gui.Config.PodmanBinary()
 	menuItems := []*types.MenuItem{
 		{
-			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + targets[0].ID[1:10]},
+			LabelColumns: []string{gui.Tr.Remove, podman + " rm " + targets[0].ID[:12]},
 			OnPress:      func() error { return removeAll(container.RemoveOptions{}) },
 		},
 		{
-			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + targets[0].ID[1:10]},
+			LabelColumns: []string{gui.Tr.RemoveWithVolumes, podman + " rm --volumes " + targets[0].ID[:12]},
 			OnPress:      func() error { return removeAll(container.RemoveOptions{RemoveVolumes: true}) },
 		},
 	}
@@ -787,7 +784,9 @@ func (gui *Gui) openContainerInBrowser(ctr *commands.Container) error {
 		return nil
 	}
 	ip := port.IP
-	if ip == "0.0.0.0" {
+	if ip == "0.0.0.0" || ip == "::" {
+		// An unspecified address is not reachable from a browser; both mean
+		// "every interface", so the host is what the user wants.
 		ip = "localhost"
 	}
 	link := fmt.Sprintf("http://%s:%d/", ip, port.PublicPort)

@@ -612,13 +612,6 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "main",
-			Key:         gocui.KeyCtrlF,
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleLogSearch,
-			Description: gui.Tr.LogSearchTitle,
-		},
-		{
-			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleExitMain,

@@ -78,7 +78,7 @@ func containerDiagnosis(tr *i18n.TranslationSet, ctr *commands.Container) string
 		field(tr.ErrorTitle, state.Error)
 	}
 	if ctr.DetailsSnapshot().HostConfig.Memory > 0 {
-		field(tr.DiagnoseMemoryLimit, utils.FormatDecimalBytes(int(ctr.DetailsSnapshot().HostConfig.Memory)))
+		field(tr.DiagnoseMemoryLimit, utils.FormatDecimalBytes(ctr.DetailsSnapshot().HostConfig.Memory))
 	}
 	if health := state.Health; health != nil && health.Status != "" && health.Status != container.NoHealthcheck {
 		value := health.Status

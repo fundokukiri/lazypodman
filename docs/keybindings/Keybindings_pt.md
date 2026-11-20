@@ -131,7 +131,6 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>ctrl+t</kbd>: view as transcript
   <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>G</kbd>: jump to latest logs
-  <kbd>ctrl+f</kbd>: Search logs across containers
   <kbd>esc</kbd>: retornar
 </pre>
 

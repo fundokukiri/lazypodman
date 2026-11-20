@@ -224,8 +224,8 @@ func (gui *Gui) closeContainerTerminal() error {
 		}
 	}
 
-	// Always land back on Logs and force a re-render so the tab strip drops the
-	// shell tab even when Logs was already the current context.
+	// Always land back on the first tab (Stats) and force a re-render so the tab
+	// strip drops the shell tab even when that tab was already the current context.
 	gui.Panels.Containers.ContextState.SetMainTabIndex(0)
 	gui.State.Panels.Main.ObjectKey = ""
 

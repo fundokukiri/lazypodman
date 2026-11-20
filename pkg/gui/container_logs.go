@@ -351,6 +351,11 @@ func (gui *Gui) renderContainerLogsToMainAux(container *commands.Container, ctx 
 // renderContainerTranscriptToMain replays the log stream through a terminal
 // emulator and draws the resulting screen. This makes output from full-screen
 // programs readable instead of showing their raw cursor/erase sequences.
+//
+// shortcut: unlike plain logs this cannot resume from the view cache, because the
+// terminal state lives in the stopped task. Switching tabs re-reads the tail.
+// Accepted: transcript mode is the rare case, and replaying is what makes the
+// screen correct.
 func (gui *Gui) renderContainerTranscriptToMain(container *commands.Container, ctx context.Context, notifyStopped chan struct{}) {
 	defer func() { notifyStopped <- struct{}{} }()
 

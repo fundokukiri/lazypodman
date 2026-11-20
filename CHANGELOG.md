@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `x` menu is no longer hidden by the shell tab**: every layout pass
+  raised the shell view to the very top of the stack, so with a shell tab open
+  the options menu (and the confirmation panel) drew underneath it and the key
+  looked dead. The shell is now kept above the main view it overlaps and below
+  the popups.
+
 ### Changed
 
 - **New key layout for getting into a container**: `a` still attaches to the

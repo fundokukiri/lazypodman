@@ -369,9 +369,13 @@ func (gui *Gui) layoutTerminalView(g *gocui.Gui) error {
 		}
 	}
 
-	_, err := g.SetViewOnTop("terminal")
+	return raiseTerminalView(g)
+}
 
-	return err
+// raiseTerminalView puts the shell above the main view it overlaps. Raising it
+// to the very top instead hid every popup (menu, confirmation) behind it.
+func raiseTerminalView(g *gocui.Gui) error {
+	return g.SetViewOnTopOf("terminal", "main")
 }
 
 func (gui *Gui) renderContainerTerminal(container *commands.Container) tasks.TaskFunc {

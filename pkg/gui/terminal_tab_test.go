@@ -202,3 +202,31 @@ func TestTruncateANSIPreservesColourSequences(t *testing.T) {
 	assert.Equal(t, "\x1b[0;31mab\x1b[0m", truncateANSI("\x1b[0;31mabcd\x1b[0m", 2))
 	assert.Equal(t, "\x1b[0;31mabc\x1b[0m", truncateANSI("\x1b[0;31mabc\x1b[0m", 3))
 }
+
+func TestShellStaysBelowPopups(t *testing.T) {
+	g, err := gocui.NewGui(gocui.NewGuiOpts{Headless: true, Width: 100, Height: 30})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+
+	// Same order as createAllViews: the shell overlaps main only, and the popups
+	// are created after it so they draw over whatever is underneath.
+	for _, name := range []string{"main", "terminal", "menu"} {
+		if _, err := g.SetView(name, 0, 0, 10, 10, 0); err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+			t.Fatal(err)
+		}
+	}
+
+	if err := raiseTerminalView(g); err != nil {
+		t.Fatal(err)
+	}
+
+	index := map[string]int{}
+	for i, view := range g.Views() {
+		index[view.Name()] = i
+	}
+
+	assert.Greater(t, index["terminal"], index["main"], "the shell must cover the main view")
+	assert.Greater(t, index["menu"], index["terminal"], "the options menu must draw over the shell")
+}

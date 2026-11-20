@@ -233,5 +233,57 @@ func TestOpenAttachTerminalAttachesToTheContainer(t *testing.T) {
 	requireNoError(t, err)
 	defer func() { _ = terminal.Close() }()
 
-	assert.Contains(t, readRecordedArgv(t, argvFile), "[attach]\n[--sig-proxy=false]\n[abc123]\n")
+	assert.Contains(t, waitForRecordedArgv(t, argvFile, "[attach]"), "[attach]\n[--sig-proxy=false]\n[abc123]\n")
+}
+
+// writeLoggingFakePodman answers `logs` with a marker line and otherwise runs a
+// shell, so a test can tell whether the replay reached the screen.
+func writeLoggingFakePodman(t *testing.T) (string, string) {
+	t.Helper()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("fake podman script requires a POSIX shell")
+	}
+
+	dir := t.TempDir()
+	binary := filepath.Join(dir, "podman")
+	argvFile := filepath.Join(dir, "argv.log")
+
+	script := `#!/bin/sh
+for arg in "$@"; do printf '[%s]\n' "$arg"; done >> "$ARGV_FILE"
+printf -- '---\n' >> "$ARGV_FILE"
+if [ "$1" = "logs" ]; then printf 'before-attach\n'; exit 0; fi
+exec /bin/sh
+`
+
+	requireNoError(t, os.WriteFile(binary, []byte(script), 0o755))
+	t.Setenv("ARGV_FILE", argvFile)
+
+	return binary, argvFile
+}
+
+func TestOpenAttachTerminalReplaysTheConsoleLog(t *testing.T) {
+	binary, argvFile := writeLoggingFakePodman(t)
+
+	client := &cliPodmanClient{binary: binary}
+	terminal, err := client.OpenAttachTerminal(context.Background(), "abc123", 60, 10)
+	requireNoError(t, err)
+	defer func() { _ = terminal.Close() }()
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.Contains(t, strings.Join(rows, "\n"), "before-attach", "the output from before the attach must be on screen")
+	assert.Contains(t, readRecordedArgv(t, argvFile), "[logs]\n[--tail]\n[500]\n[abc123]\n")
+}
+
+func TestOpenTerminalDoesNotReplayLogs(t *testing.T) {
+	binary, argvFile := writeLoggingFakePodman(t)
+
+	client := &cliPodmanClient{binary: binary}
+	terminal, err := client.OpenTerminal(context.Background(), "abc123", 60, 10)
+	requireNoError(t, err)
+	defer func() { _ = terminal.Close() }()
+
+	rows, _, _, _ := terminal.Snapshot()
+	assert.NotContains(t, strings.Join(rows, "\n"), "before-attach", "a fresh shell has no history to replay")
+	assert.NotContains(t, waitForRecordedArgv(t, argvFile, "---"), "[logs]")
 }

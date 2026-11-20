@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -57,16 +58,16 @@ func ShellTerminalArgv(podmanBinary, ref string) []string {
 func (c *cliPodmanClient) OpenTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error) {
 	return c.openTerminal(ctx, ref, cols, rows, []string{
 		"exec", "-it", "--", ref, "/bin/sh", "-c", interactiveShellCommand,
-	})
+	}, false)
 }
 
 // OpenAttachTerminal attaches a PTY to the container's own process, so the Shell
 // tab shows what the container is running instead of a new shell.
 func (c *cliPodmanClient) OpenAttachTerminal(ctx context.Context, ref string, cols, rows int) (*Terminal, error) {
-	return c.openTerminal(ctx, ref, cols, rows, []string{"attach", "--sig-proxy=false", ref})
+	return c.openTerminal(ctx, ref, cols, rows, []string{"attach", "--sig-proxy=false", ref}, true)
 }
 
-func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, rows int, args []string) (*Terminal, error) {
+func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, rows int, args []string, primeWithLogs bool) (*Terminal, error) {
 	if err := validatePodRef(ref); err != nil {
 		return nil, err
 	}
@@ -80,6 +81,19 @@ func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, ro
 	command := exec.CommandContext(execCtx, c.binary, args...)
 	command.WaitDelay = TerminalBudget
 
+	terminal := &Terminal{
+		screen:        vt10x.New(vt10x.WithSize(cols, rows)),
+		historyScreen: vt10x.New(vt10x.WithSize(cols, HistoryRows)),
+		cancel:        cancel,
+		done:          make(chan struct{}),
+	}
+
+	if primeWithLogs {
+		// The screens must hold the earlier output before the process starts, so
+		// the replay and the live stream never write into them at the same time.
+		c.primeConsoleLogs(ctx, terminal, ref)
+	}
+
 	file, err := pty.StartWithSize(command, &pty.Winsize{Cols: uint16(cols), Rows: uint16(rows)})
 	if err != nil {
 		cancel()
@@ -87,13 +101,7 @@ func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, ro
 		return nil, err
 	}
 
-	terminal := &Terminal{
-		screen:        vt10x.New(vt10x.WithSize(cols, rows)),
-		historyScreen: vt10x.New(vt10x.WithSize(cols, HistoryRows)),
-		pty:           file,
-		cancel:        cancel,
-		done:          make(chan struct{}),
-	}
+	terminal.pty = file
 
 	go func() {
 		defer close(terminal.done)
@@ -102,6 +110,43 @@ func (c *cliPodmanClient) openTerminal(ctx context.Context, ref string, cols, ro
 	}()
 
 	return terminal, nil
+}
+
+// TerminalPrimeRows bounds how much of the container's console log is replayed
+// into a fresh screen before attaching.
+const TerminalPrimeRows = 500
+
+// TerminalPrimeBudget bounds the replay so a slow log driver cannot delay the
+// tab for long.
+const TerminalPrimeBudget = 2 * time.Second
+
+// primeConsoleLogs replays the container's console log into the screens before
+// attaching. `podman attach` only streams what the process prints from then on,
+// so without the replay the tab opens blank.
+func (c *cliPodmanClient) primeConsoleLogs(ctx context.Context, terminal *Terminal, ref string) {
+	primeCtx, cancel := context.WithTimeout(ctx, TerminalPrimeBudget)
+	defer cancel()
+
+	command := exec.CommandContext(primeCtx, c.binary, "logs", "--tail", strconv.Itoa(TerminalPrimeRows), ref)
+	command.WaitDelay = TerminalBudget
+
+	out, err := command.Output()
+	if err != nil || len(out) == 0 {
+		return
+	}
+
+	terminal.Prime(out)
+}
+
+// Prime writes terminal output into the screens before the process starts. The
+// screens lock themselves, so it must not hold their lock while writing.
+func (t *Terminal) Prime(data []byte) {
+	if t == nil {
+		return
+	}
+
+	_, _ = t.screen.Write(data)
+	_, _ = t.historyScreen.Write(data)
 }
 
 // Write forwards raw bytes (keystrokes) to the shell.

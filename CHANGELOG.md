@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Attaching shows what came before**: `ctrl+a` replays the container's last 500
+  console log lines into the Shell tab before `podman attach` (bounded to 2s, best
+  effort), so the tab no longer opens blank.
+
 ### Changed
 
 - **`ctrl+a` is a toggle**: it attaches the in-app Shell tab to the container's

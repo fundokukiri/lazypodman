@@ -243,6 +243,26 @@ func readRecordedArgv(t *testing.T, argvFile string) string {
 	return string(content)
 }
 
+// waitForRecordedArgv waits for a launcher that runs in its own PTY, which can
+// still be starting when the terminal is returned.
+func waitForRecordedArgv(t *testing.T, argvFile, contains string) string {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		content, err := os.ReadFile(argvFile)
+		if err == nil && strings.Contains(string(content), contains) {
+			return string(content)
+		}
+
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for %q in %s", contains, argvFile)
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
 func TestPodArgv(t *testing.T) {
 	argv, err := podArgv("start", "web api")
 	assert.NoError(t, err)

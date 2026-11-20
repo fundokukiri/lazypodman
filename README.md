@@ -349,7 +349,9 @@ commands (prune).
   short ID (grey) and pod when there is one.
 - `ctrl+a` attaches to the container's own process in this same tab, instead of
   opening a shell there, and pressing it again closes the tab (toggle).
-  A container started without stdin (`-i`) cannot be
+  `podman attach` only streams what the process prints from then on, so the tab
+  first replays the last 500 console log lines (at most 2s) to show what came
+  before. A container started without stdin (`-i`) cannot be
   attached to, so `ctrl+a` reports that instead of opening a dead terminal.
   `ctrl+a`/`ctrl+e` close the shell, `ctrl+o` leaves it running in the background.
 - Each container can keep its own shell. Opening a shell in another container

@@ -286,6 +286,10 @@ func (f *fakeHealthPodClient) StreamKube(_ context.Context, _, _ []string, onLin
 	return nil
 }
 
+func (f *fakeHealthPodClient) OpenAttachTerminal(_ context.Context, _ string, _, _ int) (*commands.Terminal, error) {
+	return nil, nil
+}
+
 func (f *fakeHealthPodClient) OpenTerminal(_ context.Context, _ string, _, _ int) (*commands.Terminal, error) {
 	return nil, nil
 }

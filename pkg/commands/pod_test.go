@@ -290,3 +290,7 @@ func (f *fakePodClient) StreamPodman(_ context.Context, _ []string, _ func(strin
 func (f *fakePodClient) OpenTerminal(_ context.Context, _ string, _, _ int) (*Terminal, error) {
 	return nil, nil
 }
+
+func (f *fakePodClient) OpenAttachTerminal(_ context.Context, _ string, _, _ int) (*Terminal, error) {
+	return nil, nil
+}

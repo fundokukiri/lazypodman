@@ -310,6 +310,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         gocui.KeyCtrlE,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleContainerExecShellExternal,
+			Description: gui.Tr.ExecShellExternal,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'm',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleContainerViewLogs,
@@ -428,6 +435,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceAttachShellTab,
 			Description: gui.Tr.AttachShellTab,
+		},
+		{
+			ViewName:    "services",
+			Key:         gocui.KeyCtrlE,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceExecShellExternal,
+			Description: gui.Tr.ExecShellExternal,
 		},
 		{
 			ViewName:    "services",

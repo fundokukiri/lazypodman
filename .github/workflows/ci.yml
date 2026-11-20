@@ -86,7 +86,7 @@ jobs:
       - name: Show Podman version
         run: |
           podman --version
-          podman info --format '{{.Host.OCIRuntime.Name}}'
+          podman info --format '{{.Host.OCIRuntime.Name}}' || true
       - name: Test against Podman
         run: |
           go test -tags integration ./pkg/commands/

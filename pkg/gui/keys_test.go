@@ -104,6 +104,10 @@ func (fakeEnabledPodClient) StreamPodman(context.Context, []string, func(string)
 	return nil
 }
 
+func (fakeEnabledPodClient) OpenAttachTerminal(context.Context, string, int, int) (*commands.Terminal, error) {
+	return nil, nil
+}
+
 func (fakeEnabledPodClient) OpenTerminal(context.Context, string, int, int) (*commands.Terminal, error) {
 	return nil, nil
 }

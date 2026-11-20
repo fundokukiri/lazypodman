@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quit from the Shell tab**: `ctrl+q` quits Lazypodman while the terminal has
   focus. Plain `q` remains part of the shell input and is not a quit key there.
 
-- **Shell selection everywhere a shell is opened**: `ctrl+x`, `E`, the `x`
-  menu's **exec shell**, and `a`/`A`/`F2` now run `zsh` when the container has
-  it, otherwise `bash`, and fall back to `sh`. `a`/`A`/`F2` therefore start a
-  new `podman exec` shell instead of attaching to the container's main process;
-  `ctrl+a` remains the full-log attach path.
+- **Shell selection everywhere a shell is opened**: `ctrl+x`, the `x` menu's
+  **exec shell** and the new `ctrl+e` (shell in a separate terminal) run `zsh` when
+  the container has it, otherwise `bash`, and fall back to `sh`. `a`, `A` and `F2` keep attaching to the container's own
+  process (separate terminal, current terminal, in-app shell tab), so the tab
+  shows what the container is running; `ctrl+a` is the same attach with the full
+  logs replayed first. A container started without stdin reports that instead of
+  opening a dead terminal.
 
 - **Run Container menu improvements**: image inspect prefills the command,
   entrypoint, working directory, user and health command; exposed image ports
@@ -63,6 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sequences and switches automatically; `ctrl+t` still toggles it back, and an
   explicit switch to plain logs is remembered for that container.
 
+- **Stats is the first tab**: the Containers, Services and Pods panels open on
+  **Stats**, with Logs second. The in-app **Shell** tab comes first while it
+  exists, so `ctrl+x`/`F2` lands on it and closing it falls back to Stats.
+
+- **Logs survive a switch**: the Logs tab keeps the rendered view of the last
+  four containers, so browsing the list with `j`/`k` and coming back resumes with
+  `--since` instead of replaying the whole tail. `ctrl+l`, `ctrl+t` and a
+  container restart still force a reload.
+
 ### Fixed
 
 - **Shell scrollback no longer panics when the screen shrinks**: the
@@ -73,6 +84,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   container using a full core is no longer reported as a fraction of one core
   on multi-core hosts, and a restarted stats stream cannot produce a negative
   percentage.
+
+- **Pod logs no longer hang with many containers**: the "N containers omitted"
+  notice is written inside the closing goroutine, so a pod with more containers
+  than the process cap does not deadlock on an unread pipe.
+
+- **Health status no longer freezes**: the Health tab re-reads the container on
+  screen once per tick, so it updates on Podman versions that emit no
+  `health_status` event, and the tab no longer depends on the deleted per-second
+  details refresh.
+
+- **Removing containers shows the real ID**: the confirmation preview said
+  `podman rm <id>` with the first character cut off; it now shows the same
+  12-character ID as the rest of the app.
+
+- **`$EDITOR` with arguments works**: `EDITOR="code --wait"` or `"vim -u NONE"`
+  opens the editor instead of failing on a program named after the whole string.
+
+- **`o` opens IPv6 publishes**: an address of `::` is treated like `0.0.0.0`
+  instead of building the link `http://:::8080/`.
+
+- **Byte sizes stay correct above 2 GiB on 32-bit builds**: the size formatters
+  take `int64` instead of truncating through `int`.
+
+- **A broken log template no longer panics**: an unparsable template returns an
+  empty command instead of `template.Must` panicking at startup.
+
+- **An empty configured command fails cleanly** with "no command" instead of
+  panicking on an empty argv slice.
+
+- **SSH tunnels clean up after a failed dial**: the retried command is killed and
+  the socket directory removed, so a reconnect does not leave stale sockets.
 
 - **Leaving the log view no longer leaks a signal goroutine**: the interrupt
   watcher exits with the log view context.

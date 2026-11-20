@@ -67,6 +67,8 @@ type TranslationSet struct {
 	AttachFullLogs              string
 	AttachShellTab              string
 	AttachOpenedInTerminal      string
+	ShellOpenedInTerminal       string
+	ExecShellExternal           string
 	NoExternalTerminal          string
 	ViewLogs                    string
 	UpProject                   string
@@ -408,11 +410,13 @@ func englishSet() TranslationSet {
 		Recreate:                    "recreate",
 		PreviousContext:             "previous tab",
 		NextContext:                 "next tab",
-		Attach:                      "shell in a separate terminal",
-		AttachCurrentTerminal:       "shell in this terminal",
+		Attach:                      "attach in a separate terminal",
+		AttachCurrentTerminal:       "attach in this terminal",
 		AttachFullLogs:              "attach with full logs",
-		AttachShellTab:              "shell in shell tab",
-		AttachOpenedInTerminal:      "shell opened in a separate terminal",
+		AttachShellTab:              "attach in shell tab",
+		AttachOpenedInTerminal:      "attached in a separate terminal",
+		ShellOpenedInTerminal:       "shell opened in a separate terminal",
+		ExecShellExternal:           "exec shell in a separate terminal",
 		NoExternalTerminal:          "no terminal emulator found; set the TERMINAL environment variable or install xterm, kitty, alacritty, wezterm, foot, konsole or gnome-terminal",
 		ViewLogs:                    "view logs",
 		UpProject:                   "up project",

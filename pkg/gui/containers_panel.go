@@ -574,16 +574,16 @@ func (gui *Gui) handleContainerAttach(g *gocui.Gui, v *gocui.View) error {
 	return gui.openContainerAttachTerminal(ctr)
 }
 
-// openContainerAttachTerminal opens the preferred shell in a separate terminal
+// openContainerAttachTerminal attaches to the container in a separate terminal
 // window, where the user gets that terminal's own scrollback instead of
 // suspending the lazypodman UI. Without a terminal emulator it falls back to
 // the current terminal instead of failing.
 func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
-	if !containerIsRunning(ctr) {
-		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
 	}
 
-	argv := commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	argv := commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
 	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
 		if errors.Is(err, commands.ErrNoTerminalEmulator) {
 			return gui.attachInCurrentTerminal(ctr)
@@ -596,21 +596,52 @@ func (gui *Gui) openContainerAttachTerminal(ctr *commands.Container) error {
 	return nil
 }
 
-// attachInCurrentTerminal suspends the UI and runs the preferred shell in the
+// attachInCurrentTerminal suspends the UI and attaches to the container in the
 // current terminal. `A` always uses this path; `a` only uses it as a fallback
 // when no external terminal emulator is available.
 func (gui *Gui) attachInCurrentTerminal(ctr *commands.Container) error {
-	if !containerIsRunning(ctr) {
-		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
+	if err := ctr.CanAttach(); err != nil {
+		return gui.createErrorPanel(err.Error())
 	}
 
-	return gui.runAttachCommand(commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
+	return gui.runAttachCommand(commands.AttachTerminalArgv(gui.Config.PodmanBinary(), ctr.ID))
 }
 
 func (gui *Gui) runAttachCommand(argv []string) error {
 	cmd := gui.OSCommand.NewCmd(argv[0], argv[1:]...)
 
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromContainerShortCut)
+}
+
+// openContainerShellTerminal opens a new shell in a separate terminal window.
+// `a` attaches to the container's own process instead; this is the shell path,
+// and it works on containers that cannot be attached to.
+func (gui *Gui) openContainerShellTerminal(ctr *commands.Container) error {
+	if !containerIsRunning(ctr) {
+		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
+	}
+
+	argv := commands.ShellTerminalArgv(gui.Config.PodmanBinary(), ctr.ID)
+	if err := gui.OSCommand.OpenExternalTerminal(argv); err != nil {
+		if errors.Is(err, commands.ErrNoTerminalEmulator) {
+			return gui.runSubprocess(gui.OSCommand.NewCmd(argv[0], argv[1:]...))
+		}
+
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.flashStatus(gui.Tr.ShellOpenedInTerminal)
+
+	return nil
+}
+
+func (gui *Gui) handleContainerExecShellExternal(g *gocui.Gui, v *gocui.View) error {
+	ctr, err := gui.Panels.Containers.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.openContainerShellTerminal(ctr)
 }
 
 func (gui *Gui) handleContainerAttachCurrentTerminal(g *gocui.Gui, v *gocui.View) error {
@@ -630,7 +661,7 @@ func (gui *Gui) handleContainerAttachShellTab(g *gocui.Gui, v *gocui.View) error
 		return nil
 	}
 
-	return gui.startContainerTerminal(ctr)
+	return gui.attachContainerTerminal(ctr)
 }
 
 func (gui *Gui) handleContainerAttachFullLogs(g *gocui.Gui, v *gocui.View) error {

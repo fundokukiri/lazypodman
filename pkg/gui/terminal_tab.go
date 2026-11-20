@@ -114,7 +114,19 @@ func (gui *Gui) terminalTabFor(container *commands.Container) bool {
 	return container != nil && gui.terminalFor(container.ID) != nil
 }
 
+// startContainerTerminal opens a new shell inside the container (ctrl+x).
 func (gui *Gui) startContainerTerminal(container *commands.Container) error {
+	return gui.startTerminalTab(container, false)
+}
+
+// attachContainerTerminal opens the Shell tab attached to the container's own
+// process (F2), so the tab shows what the container is running instead of a
+// fresh shell.
+func (gui *Gui) attachContainerTerminal(container *commands.Container) error {
+	return gui.startTerminalTab(container, true)
+}
+
+func (gui *Gui) startTerminalTab(container *commands.Container, attach bool) error {
 	if container == nil {
 		return nil
 	}
@@ -131,6 +143,13 @@ func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 		return gui.createErrorPanel(gui.Tr.ContainerNotRunning)
 	}
 
+	if attach {
+		// podman attach needs the container's stdin to be open; a shell does not.
+		if err := container.CanAttach(); err != nil {
+			return gui.createErrorPanel(err.Error())
+		}
+	}
+
 	client := gui.PodmanCommand.Pods()
 	if client == nil {
 		return gui.createErrorPanel("cli off: podman CLI not available")
@@ -142,7 +161,11 @@ func (gui *Gui) startContainerTerminal(container *commands.Container) error {
 		terminal *commands.Terminal
 		err      error
 	)
-	terminal, err = client.OpenTerminal(context.Background(), container.ID, cols, rows)
+	if attach {
+		terminal, err = client.OpenAttachTerminal(context.Background(), container.ID, cols, rows)
+	} else {
+		terminal, err = client.OpenTerminal(context.Background(), container.ID, cols, rows)
+	}
 	if err != nil {
 		return gui.createErrorPanel(err.Error())
 	}

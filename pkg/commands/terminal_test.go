@@ -223,3 +223,15 @@ func TestSGRColorCodes(t *testing.T) {
 		})
 	}
 }
+
+func TestOpenAttachTerminalAttachesToTheContainer(t *testing.T) {
+	// F2 attaches to the container's own process; only ctrl+x opens a new shell.
+	binary, argvFile := writeInteractiveFakePodman(t)
+
+	client := &cliPodmanClient{binary: binary}
+	terminal, err := client.OpenAttachTerminal(context.Background(), "abc123", 60, 10)
+	requireNoError(t, err)
+	defer func() { _ = terminal.Close() }()
+
+	assert.Contains(t, readRecordedArgv(t, argvFile), "[attach]\n[--sig-proxy=false]\n[abc123]\n")
+}

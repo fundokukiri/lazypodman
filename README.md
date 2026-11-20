@@ -15,11 +15,12 @@ projects, logs and stats in one window, every common action one keypress away.
   view, full-history toggle and jump-to-newest
 - ASCII graphs of container CPU/memory, disk usage (total and writable layer),
   RAM usage, uptime, or of any stat path you configure
-- Open a shell in a container in a separate terminal window (or via
-  `TERMINAL`); `A` opens it in the current terminal, and `a` falls back to it
-  when no emulator exists. `F2` opens the same shell in the in-app shell tab.
-  The shell is `zsh` when the container has it, otherwise `bash`, then `sh`.
-  `ctrl+a` still attaches to the existing container process with the full logs.
+- Attach to a container's own process: `a` in a separate terminal window (or
+  via `TERMINAL`), `A` in the current terminal, `F2` in the in-app shell tab.
+  `x` or `ctrl+x` instead opens a new shell (`zsh` when the container has it,
+  otherwise `bash`, then `sh`), so you can look around without touching the
+  running process; `ctrl+e` opens that shell in a separate terminal window.
+  `ctrl+a` attaches with the full logs replayed first.
   View processes (`top`), config and env in their own tabs
 - Start/stop/restart/pause/remove/rebuild containers and services, run a new
   container from an image, build an image from a Containerfile, or commit a
@@ -211,8 +212,9 @@ Flags:
 | `--version`, `-h` | version and help |
 
 Layout: the left column holds **Project → Services → Pods → Containers → Images
-→ Volumes → Networks**; the main panel shows the selected item's **Logs /
-Diagnose / Stats / Health / Config / Env / Top / Compose Config / About** tabs.
+→ Volumes → Networks**; the main panel shows the selected item's **Stats /
+Logs / Diagnose / Health / Env / Config / Top / Events / Compose Config /
+About** tabs.
 The Networks panel has **Ports / Config** tabs. When the pods feature is
 unavailable the Pods panel is hidden and the remaining panels keep contiguous
 numbers (`1`…`6`).
@@ -237,8 +239,9 @@ numbers (`1`…`6`).
 ### Panel keys
 
 **Containers**: `d` remove · `e` show/hide stopped · `p` pause · `s` stop ·
-`r` restart · `a` shell in a new terminal · `A` shell in this terminal ·
-`ctrl+a` attach with full logs · `F2` shell in the shell tab ·
+`r` restart · `a` attach in a new terminal · `A` attach in this terminal ·
+`ctrl+e` exec shell in a new terminal · `ctrl+a` attach with full logs ·
+`F2` attach in the shell tab ·
 `m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
 `t` run healthcheck · `C` commit to an image · `v` container files ·
 `Q` Quadlet menu · `ctrl+x` open/close the in-app shell tab ·
@@ -269,8 +272,9 @@ not an error. The run is recorded by Podman: it appends to the health log, can
 change the failing streak and may trigger `--health-on-failure` behaviour.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
-stop/start · `r`/`R` restart / restart menu · `p` pause · `a` shell in a new
-terminal · `A` shell in this terminal · `F2` shell in the shell tab ·
+stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
+terminal · `A` attach in this terminal · `ctrl+e` exec shell in a new terminal ·
+`F2` attach in the shell tab ·
 `m` logs · `ctrl+x` open/close shell · `c`/`b` custom / bulk command · `w` open port.
 
 **Pods**: `s` stop · `S` start · `r` restart · `p` pause/unpause · `d` remove
@@ -315,22 +319,24 @@ commands (prune).
   back, and that choice is remembered per container.
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
-- `m` opens logs for the selected container or service; the Logs tab is also the
-  place you land after closing the in-app shell.
+- `m` opens logs for the selected container or service; closing the in-app
+  shell lands on the first tab, Stats.
 
 ### In-app shell
 
 - Select a container (or service) and press `x` → **exec shell**, or press
-  `ctrl+x` directly. A real PTY opens in the **shell** tab right after
-  **Logs**, and the app switches to it. Lazypodman uses `zsh` if the container
-  has it, otherwise `bash`, then `sh`. `a`, `A` and `F2` use the same shell
-  selection.
+  `ctrl+x` directly. A real PTY opens in the **Shell** tab, which comes first
+  while it exists, and the app switches to it. Lazypodman uses `zsh` if the
+  container has it, otherwise `bash`, then `sh`. `ctrl+e` runs the same shell in
+  a separate terminal window, which also works on containers that cannot be
+  attached to.
 - The terminal is a VT10x screen, so `vim`, `htop` and `less` work. The line above
   it shows the container name (yellow), image (magenta), status (green/red),
   short ID (grey) and pod when there is one.
-- `F2` opens the preferred shell in this same shell tab instead of an external
-  terminal. `ctrl+a` is still the one that attaches to the container's main
-  process and replays its full logs.
+- `F2` attaches to the container's own process in this same tab, instead of
+  opening a shell there. A container started without stdin (`-i`) cannot be
+  attached to, so `F2` reports that instead of opening a dead terminal.
+  `ctrl+a` is the same attach with the full logs replayed first.
 - Each container can keep its own shell. Opening a shell in another container
   leaves the first one running in the background; going back to that container
   shows its shell tab again.
@@ -465,7 +471,7 @@ The full generated list for every language lives in
 ### Typical workflows
 
 1. **Debug a failing service**: select it, `m` for logs, `ctrl+l` if you need the
-   full history, `]` for the Stats tab, `ctrl+x` to open a shell.
+   full history, `]` for the Logs tab, `ctrl+x` to open a shell.
 2. **Redeploy after a code change**: select the service, `R`, pick
    recreate/rebuild (driven by `commandTemplates.recreateService` /
    `rebuildService`).

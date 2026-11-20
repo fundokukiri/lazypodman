@@ -212,8 +212,8 @@ Flags:
 | `--version`, `-h` | version and help |
 
 Layout: the left column holds **Project → Services → Pods → Containers → Images
-→ Volumes → Networks**; the main panel shows the selected item's **Stats /
-Logs / Diagnose / Health / Env / Config / Top / Events / Compose Config /
+→ Volumes → Networks**; the main panel shows the selected item's **Logs /
+Stats / Diagnose / Health / Env / Config / Top / Events / Compose Config /
 About** tabs.
 The Networks panel has **Ports / Config** tabs. When the pods feature is
 unavailable the Pods panel is hidden and the remaining panels keep contiguous
@@ -327,7 +327,7 @@ commands (prune).
 - `G` jumps to the newest line and resumes following. Scrolling up pauses
   following; the scrollbar on the right shows where you are.
 - `m` opens logs for the selected container or service; closing the in-app
-  shell lands on the first tab, Stats.
+  shell lands on the first tab, Logs.
 
 ### In-app shell
 
@@ -478,7 +478,7 @@ The full generated list for every language lives in
 ### Typical workflows
 
 1. **Debug a failing service**: select it, `m` for logs, `ctrl+l` if you need the
-   full history, `]` for the Logs tab, `ctrl+x` to open a shell.
+   full history, `]` for the Stats tab, `ctrl+x` to open a shell.
 2. **Redeploy after a code change**: select the service, `R`, pick
    recreate/rebuild (driven by `commandTemplates.recreateService` /
    `rebuildService`).

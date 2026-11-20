@@ -67,9 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sequences and switches automatically; `ctrl+t` still toggles it back, and an
   explicit switch to plain logs is remembered for that container.
 
-- **Stats is the first tab**: the Containers, Services and Pods panels open on
-  **Stats**, with Logs second. The in-app **Shell** tab comes first while it
-  exists, so `ctrl+x`/`F2` lands on it and closing it falls back to Stats.
+- **The in-app Shell tab comes first while it exists**, so `ctrl+x` and `F2`
+  land on it and closing it falls back to Logs, the first tab of the Containers,
+  Services and Pods panels.
 
 - **Logs survive a switch**: the Logs tab keeps the rendered view of the last
   four containers, so browsing the list with `j`/`k` and coming back resumes with

@@ -39,14 +39,14 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 			GetMainTabs: func() []panels.MainTab[*commands.Container] {
 				tabs := []panels.MainTab[*commands.Container]{
 					{
-						Key:    "stats",
-						Title:  gui.Tr.StatsTitle,
-						Render: gui.renderContainerStats,
-					},
-					{
 						Key:    "logs",
 						Title:  gui.Tr.LogsTitle,
 						Render: gui.renderContainerLogsToMain,
+					},
+					{
+						Key:    "stats",
+						Title:  gui.Tr.StatsTitle,
+						Render: gui.renderContainerStats,
 					},
 					{
 						Key:    "diagnose",
@@ -83,7 +83,7 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 				if gui.Panels.Containers != nil {
 					if container, err := gui.Panels.Containers.GetSelectedItem(); err == nil && gui.terminalTabFor(container) {
 						// The shell tab only exists after x -> exec shell. It sits first so
-						// the shell is the tab you land on, and closing it falls back to Stats.
+						// the shell is the tab you land on, and closing it falls back to Logs.
 						tabs = append([]panels.MainTab[*commands.Container]{
 							{
 								Key:    terminalTabKey,

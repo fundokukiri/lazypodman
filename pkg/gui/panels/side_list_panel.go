@@ -134,7 +134,7 @@ func (self *SideListPanel[T]) renderContext(item T) error {
 		return nil
 	}
 
-	// A different item starts on its first tab (Stats for containers) rather than
+	// A different item starts on its first tab (Logs for containers) rather than
 	// inheriting the tab that was open on the previous item.
 	self.ContextState.SyncItem(item)
 

@@ -37,7 +37,7 @@ type MainTab[T any] struct {
 
 // SyncItem resets the main tab when the selected item changes. Without this,
 // opening Env on one container and then selecting another would show Env for
-// the new container instead of its first tab (Stats).
+// the new container instead of its first tab (Logs).
 func (self *ContextState[T]) SyncItem(item T) {
 	key := self.GetItemContextCacheKey(item)
 	if self.hasLastItemKey && key != self.lastItemKey {

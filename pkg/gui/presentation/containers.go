@@ -160,7 +160,10 @@ func getHealthStatus(guiConfig *config.GuiConfig, c *commands.Container) string 
 	return ""
 }
 
-// getDisplayCPUPerc colors the cpu percentage based on how extreme it is
+// getDisplayCPUPerc colors the cpu percentage based on how extreme it is. The
+// percentage is a share of the whole host, so one busy core on a 16-core host is
+// only 6.25%: warn as soon as a full core is busy, and go red when most of the
+// host is.
 func getDisplayCPUPerc(c *commands.Container) string {
 	stats, ok := c.GetLastStats()
 	if !ok {
@@ -168,18 +171,24 @@ func getDisplayCPUPerc(c *commands.Container) string {
 	}
 
 	percentage := stats.DerivedStats.CPUPercentage
-	formattedPercentage := fmt.Sprintf("%.2f%%", stats.DerivedStats.CPUPercentage)
+	formattedPercentage := fmt.Sprintf("%.2f%%", percentage)
 
-	var clr color.Attribute
-	if percentage > 90 {
-		clr = color.FgRed
-	} else if percentage > 50 {
-		clr = color.FgYellow
-	} else {
-		clr = color.FgWhite
+	return utils.ColoredString(formattedPercentage, cpuColor(percentage, stats.ClientStats.Cores()))
+}
+
+// cpuColor warns once a full core is busy, because the percentage is a share of
+// the whole host: one busy core on a 16-core host is only 6.25%.
+func cpuColor(percentage float64, cores int) color.Attribute {
+	coresBusy := percentage * float64(cores) / 100
+
+	switch {
+	case percentage > 90:
+		return color.FgRed
+	case coresBusy >= 1:
+		return color.FgYellow
+	default:
+		return color.FgWhite
 	}
-
-	return utils.ColoredString(formattedPercentage, clr)
 }
 
 // getContainerColor Container color

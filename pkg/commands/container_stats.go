@@ -136,24 +136,33 @@ type ContainerStats struct {
 // together, and a single cgroup tick over such a gap is noise.
 const minCPUStatsInterval = 100 * time.Millisecond
 
-// CalculateContainerCPUPercentage reports how much CPU the container is using
-// as a percentage of one core, like `podman stats`: 250% means it kept 2.5
-// cores busy.
+// Cores is how many CPUs the container may use, at least 1: Podman reports the
+// container's CPU affinity in online_cpus.
+func (s *ContainerStats) Cores() int {
+	if s.CPUStats.OnlineCpus > 0 {
+		return s.CPUStats.OnlineCpus
+	}
+	if cpus := len(s.CPUStats.CPUUsage.PercpuUsage); cpus > 0 {
+		return cpus
+	}
+
+	return 1
+}
+
+// CalculateContainerCPUPercentage reports how much of the host's CPU the
+// container is using, from 0 to 100%: a container pinning one core of a
+// 16-core host reads 6.25%.
 //
-// The docker client divides the container's CPU time by the change in
-// system_cpu_usage and multiplies by the online CPUs. That only works when
-// system_cpu_usage is the host's total capacity. Podman fills it with the CPU
-// the host actually *used* (it sums cpu.stat usage_usec over the cgroups), so on
-// an idle host the ratio explodes: 0.3 cores of an 8-core machine reads as
-// 240%. cpu_usage.total_usage is nanoseconds of CPU time, so dividing it by the
-// nanoseconds elapsed between the two samples is the honest number.
+// cpu_usage.total_usage is nanoseconds of CPU time used, so dividing the growth
+// since the previous sample by the nanoseconds elapsed gives the number of
+// cores busy; dividing that by the container's CPUs gives the host share.
 func (s *ContainerStats) CalculateContainerCPUPercentage(elapsed time.Duration) float64 {
 	cpuUsageDelta := s.CPUStats.CPUUsage.TotalUsage - s.PrecpuStats.CPUUsage.TotalUsage
 	if cpuUsageDelta <= 0 || elapsed < minCPUStatsInterval {
 		return 0
 	}
 
-	return float64(cpuUsageDelta) * 100 / float64(elapsed)
+	return float64(cpuUsageDelta) * 100 / float64(elapsed) / float64(s.Cores())
 }
 
 // CalculateContainerMemoryUsage reports the memory usage as a percentage of the

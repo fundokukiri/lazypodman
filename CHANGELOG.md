@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   console log lines into the Shell tab before `podman attach` (bounded to 2s, best
   effort), so the tab no longer opens blank.
 
+- **The separate terminal windows are named**: `a` and `e` open a window titled
+  `Container: <name> - <id>`, and attach appends the name of the process it
+  attached to (`- nginx`), read from the inspect data the UI already holds. The
+  title is sent as an OSC sequence (the one mechanism every emulator honours)
+  and on Windows it is the `start` window title.
+
 ### Changed
 
 - **CPU is a share of the host, not of one core**: the Containers and Services
@@ -34,31 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the tab `ctrl+a` closes it too, so the shell no longer sees `ctrl+a`
   (readline beginning-of-line); use `Home`.
 
-### Added
-
-- **The separate terminal windows are named**: `a` and `e` open a window titled
-  `Container: <name> - <id>`, and attach appends the name of the process it
-  attached to (`- nginx`), read from the inspect data the UI already holds. The
-  title is sent as an OSC sequence (the one mechanism every emulator honours)
-  and on Windows it is the `start` window title.
-
-### Changed
-
 - **Stats is the first tab again**: Containers, Services and Pods open on
   **Stats** instead of **Logs**, so moving through the list no longer asks the
   Podman service for a log tail per container. `m` (or `]`) still reaches Logs
   in one key, and closing the in-app shell falls back to Stats. The in-app
   **Shell** tab still comes first while it exists.
-
-### Fixed
-
-- **The `x` menu is no longer hidden by the shell tab**: every layout pass
-  raised the shell view to the very top of the stack, so with a shell tab open
-  the options menu (and the confirmation panel) drew underneath it and the key
-  looked dead. The shell is now kept above the main view it overlaps and below
-  the popups.
-
-### Changed
 
 - **New key layout for getting into a container**: `a` still attaches to the
   container's own process in a separate terminal window. On top of that,
@@ -76,6 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`a`, `F2`, `ctrl+a`) is unchanged.
 
 ### Fixed
+
+- **The `x` menu is no longer hidden by the shell tab**: every layout pass
+  raised the shell view to the very top of the stack, so with a shell tab open
+  the options menu (and the confirmation panel) drew underneath it and the key
+  looked dead. The shell is now kept above the main view it overlaps and below
+  the popups.
 
 - **The window opened by `a` now outlives lazypodman**: it used to be started
   inside lazypodman's process group and session, so quitting lazypodman with

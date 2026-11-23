@@ -277,7 +277,8 @@ The **Removal lock** (`L` on a container or an image) protects what is expensive
 to lose: the row shows `[locked] ` in front of its name, and removing it (`d`, or
 "remove all containers") asks for the first 4 characters of its ID before anything
 is deleted. Unlocking with `L` asks for the same 4 characters, so a stray key
-cannot leave an item unprotected. A wrong ID changes nothing. Unlocked items are
+cannot leave an item unprotected. Every prompt prints the item's short ID in
+front of the instruction, so the characters to type are on screen. A wrong ID changes nothing. Unlocked items are
 removed as before, and stop, restart, kill, pause, exec and logs are never
 affected. The list lives in `removal-lock.yml` next to `config.yml`, keyed by ID,
 as plain text you can edit or delete. Two limits: prune runs through the Podman

@@ -275,7 +275,9 @@ panel) to add it to the removal lock; press `L` again to take it off. Locked row
 show `[locked] ` in front of their name.
 
 Both directions ask for the first 4 characters of the item's ID: locking, and
-unlocking again, so neither happens on a mis-pressed key. Deleting a locked
+unlocking again, so neither happens on a mis-pressed key. The prompt shows the
+item's short ID (the first 12 characters) in front of the instruction, so there
+is nothing to look up elsewhere. Deleting a locked
 container or image (`d`, or the bulk "remove all containers") asks for the same
 4 characters before anything is removed: the ID is the `ID:` line of the Config
 tab, or `podman ps -a --no-trunc` / `podman images --no-trunc`. Typing it wrong

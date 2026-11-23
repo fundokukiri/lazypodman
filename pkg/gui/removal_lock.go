@@ -12,22 +12,37 @@ import (
 // images panels. It is text rather than an icon so the table keeps its width.
 const removalLockHint = "[locked] "
 
-// lockedRemoval is one item whose deletion needs confirming first: the name we
-// show and the characters the user has to type.
+// lockedRemoval is one item the user marks as locked: the name we show, the ID
+// printed in the prompt so the answer is in sight, and the characters typed.
 type lockedRemoval struct {
-	name   string
-	secret string
+	name    string
+	display string
+	secret  string
 }
 
 // removalLockIDChars is how many leading characters of the ID the user types to
 // confirm any lock change, on or off.
 const removalLockIDChars = 4
 
+// removalLockDisplayChars is how much of the ID the prompt prints. It is the
+// short id every podman listing shows, so the characters to type are on screen.
+const removalLockDisplayChars = 12
+
 // shortID is the part of an ID the user types to confirm a lock change.
 func shortID(id string) string {
+	return trimID(id, removalLockIDChars)
+}
+
+// displayID is the part of an ID the prompt shows, longer than the secret so
+// reading it is easy without printing the whole 64 characters in a title.
+func displayID(id string) string {
+	return trimID(id, removalLockDisplayChars)
+}
+
+func trimID(id string, chars int) string {
 	id = strings.TrimPrefix(id, "sha256:")
-	if len(id) > removalLockIDChars {
-		id = id[:removalLockIDChars]
+	if len(id) > chars {
+		id = id[:chars]
 	}
 
 	return strings.ToLower(id)
@@ -54,7 +69,7 @@ func (gui *Gui) containerRemovalLocks(containers []*commands.Container) []locked
 
 	for _, ctr := range containers {
 		if gui.removalLocks.ContainerLocked(ctr.ID) {
-			locked = append(locked, lockedRemoval{name: ctr.Name, secret: shortID(ctr.ID)})
+			locked = append(locked, newLockedRemoval(ctr.Name, ctr.ID))
 		}
 	}
 
@@ -66,11 +81,16 @@ func (gui *Gui) imageRemovalLocks(images ...*commands.Image) []lockedRemoval {
 
 	for _, img := range images {
 		if gui.removalLocks.ImageLocked(img.ID) {
-			locked = append(locked, lockedRemoval{name: img.Name, secret: shortID(img.ID)})
+			locked = append(locked, newLockedRemoval(img.Name, img.ID))
 		}
 	}
 
 	return locked
+}
+
+// newLockedRemoval builds the prompt data for one item.
+func newLockedRemoval(name, id string) lockedRemoval {
+	return lockedRemoval{name: name, display: displayID(id), secret: shortID(id)}
 }
 
 // confirmLockedRemovals asks for the ID of every locked item in turn, then runs
@@ -83,17 +103,19 @@ func (gui *Gui) confirmLockedRemovals(locks []lockedRemoval, after func() error)
 
 	lock := locks[0]
 
-	return gui.askLockID(gui.Tr.RemovalLockPrompt, lock.name, lock.secret, func() error {
+	return gui.askLockID(gui.Tr.RemovalLockPrompt, lock, func() error {
 		return gui.confirmLockedRemovals(locks[1:], after)
 	})
 }
 
 // askLockID asks for the first characters of an item's ID before running after,
-// so neither locking nor unlocking happens on a mis-pressed key. prompt takes
-// the character count and the name as arguments.
-func (gui *Gui) askLockID(prompt, name, secret string, after func() error) error {
-	return gui.createPromptPanel(fmt.Sprintf(prompt, removalLockIDChars, name), func(g *gocui.Gui, v *gocui.View) error {
-		if strings.ToLower(strings.TrimSpace(gui.trimmedContent(v))) != secret {
+// so neither locking nor unlocking happens on a mis-pressed key. The prompt
+// prints the ID (display), the name and the number of characters to type.
+func (gui *Gui) askLockID(prompt string, lock lockedRemoval, after func() error) error {
+	title := fmt.Sprintf(prompt, lock.display, lock.name, removalLockIDChars)
+
+	return gui.createPromptPanel(title, func(g *gocui.Gui, v *gocui.View) error {
+		if strings.ToLower(strings.TrimSpace(gui.trimmedContent(v))) != lock.secret {
 			return gui.createErrorPanel(gui.Tr.RemovalLockWrongID)
 		}
 
@@ -114,7 +136,7 @@ func (gui *Gui) handleToggleContainerLock(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if gui.removalLocks.ContainerLocked(ctr.ID) {
-		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, ctr.Name, shortID(ctr.ID), func() error {
+		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, newLockedRemoval(ctr.Name, ctr.ID), func() error {
 			return gui.toggleContainerLock(ctr)
 		})
 	}
@@ -142,7 +164,7 @@ func (gui *Gui) handleToggleImageLock(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	if gui.removalLocks.ImageLocked(img.ID) {
-		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, img.Name, shortID(img.ID), func() error {
+		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, newLockedRemoval(img.Name, img.ID), func() error {
 			return gui.toggleImageLock(img)
 		})
 	}

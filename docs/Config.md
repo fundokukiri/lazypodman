@@ -274,12 +274,14 @@ Press `L` on a container (in the Containers panel) or on an image (in the Images
 panel) to add it to the removal lock; press `L` again to take it off. Locked rows
 show `[locked] ` in front of their name.
 
-Deleting a locked container or image (`d`, or the bulk "remove all containers")
-asks for the first 6 characters of its ID before anything is removed: the ID is
-the `ID:` line of the Config tab, or `podman ps -a --no-trunc` /
-`podman images --no-trunc`. Typing it wrong deletes nothing. Items that are not
-locked are removed without a prompt, exactly as before, and stop, restart, kill,
-pause, exec and logs are never affected by the lock.
+Both directions ask for the first 4 characters of the item's ID: locking, and
+unlocking again, so neither happens on a mis-pressed key. Deleting a locked
+container or image (`d`, or the bulk "remove all containers") asks for the same
+4 characters before anything is removed: the ID is the `ID:` line of the Config
+tab, or `podman ps -a --no-trunc` / `podman images --no-trunc`. Typing it wrong
+changes nothing. Items that are not locked are removed without a prompt, exactly
+as before, and stop, restart, kill, pause, exec and logs are never affected by
+the lock.
 
 The list lives in `removal-lock.yml` next to `config.yml` (see Locations above)
 and is keyed by ID, so it is a plain text file you can edit or delete. Two

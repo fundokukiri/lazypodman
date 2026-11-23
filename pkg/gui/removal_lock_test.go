@@ -9,8 +9,8 @@ import (
 )
 
 func TestShortID(t *testing.T) {
-	assert.Equal(t, "abcdef", shortID("abcdef0123456789"))
-	assert.Equal(t, "abcdef", shortID("sha256:ABCDEF0123456789"))
+	assert.Equal(t, "abcd", shortID("abcdef0123456789"))
+	assert.Equal(t, "abcd", shortID("sha256:ABCDEF0123456789"))
 	assert.Equal(t, "abc", shortID("abc"))
 }
 
@@ -36,7 +36,7 @@ func TestContainerRemovalLocksOnlyIncludesLockedContainers(t *testing.T) {
 
 	gui := &Gui{removalLocks: &config.RemovalLock{Containers: []string{locked.ID}}}
 
-	assert.Equal(t, []lockedRemoval{{name: "db", secret: "abcdef"}}, gui.containerRemovalLocks([]*commands.Container{locked, other}))
+	assert.Equal(t, []lockedRemoval{{name: "db", secret: "abcd"}}, gui.containerRemovalLocks([]*commands.Container{locked, other}))
 	assert.Equal(t, removalLockHint, gui.containerLockPrefix(locked.ID))
 	assert.Equal(t, "", gui.containerLockPrefix(other.ID))
 }
@@ -48,5 +48,5 @@ func TestImageRemovalLocksStripTheSHA256Prefix(t *testing.T) {
 
 	gui := &Gui{removalLocks: &config.RemovalLock{Images: []string{img.ID}}}
 
-	assert.Equal(t, []lockedRemoval{{name: "alpine", secret: "abcdef"}}, gui.imageRemovalLocks(img))
+	assert.Equal(t, []lockedRemoval{{name: "alpine", secret: "abcd"}}, gui.imageRemovalLocks(img))
 }

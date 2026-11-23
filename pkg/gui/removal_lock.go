@@ -19,11 +19,15 @@ type lockedRemoval struct {
 	secret string
 }
 
-// shortID is the part of an ID the user types to confirm a deletion.
+// removalLockIDChars is how many leading characters of the ID the user types to
+// confirm any lock change, on or off.
+const removalLockIDChars = 4
+
+// shortID is the part of an ID the user types to confirm a lock change.
 func shortID(id string) string {
 	id = strings.TrimPrefix(id, "sha256:")
-	if len(id) > 6 {
-		id = id[:6]
+	if len(id) > removalLockIDChars {
+		id = id[:removalLockIDChars]
 	}
 
 	return strings.ToLower(id)
@@ -79,12 +83,21 @@ func (gui *Gui) confirmLockedRemovals(locks []lockedRemoval, after func() error)
 
 	lock := locks[0]
 
-	return gui.createPromptPanel(fmt.Sprintf(gui.Tr.RemovalLockPrompt, lock.name), func(g *gocui.Gui, v *gocui.View) error {
-		if strings.ToLower(strings.TrimSpace(gui.trimmedContent(v))) != lock.secret {
+	return gui.askLockID(gui.Tr.RemovalLockPrompt, lock.name, lock.secret, func() error {
+		return gui.confirmLockedRemovals(locks[1:], after)
+	})
+}
+
+// askLockID asks for the first characters of an item's ID before running after,
+// so neither locking nor unlocking happens on a mis-pressed key. prompt takes
+// the character count and the name as arguments.
+func (gui *Gui) askLockID(prompt, name, secret string, after func() error) error {
+	return gui.createPromptPanel(fmt.Sprintf(prompt, removalLockIDChars, name), func(g *gocui.Gui, v *gocui.View) error {
+		if strings.ToLower(strings.TrimSpace(gui.trimmedContent(v))) != secret {
 			return gui.createErrorPanel(gui.Tr.RemovalLockWrongID)
 		}
 
-		return gui.confirmLockedRemovals(locks[1:], after)
+		return after()
 	})
 }
 
@@ -100,6 +113,17 @@ func (gui *Gui) handleToggleContainerLock(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	if gui.removalLocks.ContainerLocked(ctr.ID) {
+		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, ctr.Name, shortID(ctr.ID), func() error {
+			return gui.toggleContainerLock(ctr)
+		})
+	}
+
+	return gui.toggleContainerLock(ctr)
+}
+
+// toggleContainerLock flips the lock and saves the list.
+func (gui *Gui) toggleContainerLock(ctr *commands.Container) error {
 	if gui.removalLocks.ToggleContainer(ctr.ID) {
 		gui.flashStatus(fmt.Sprintf(gui.Tr.RemovalLockOn, ctr.Name))
 	} else {
@@ -117,6 +141,17 @@ func (gui *Gui) handleToggleImageLock(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	if gui.removalLocks.ImageLocked(img.ID) {
+		return gui.askLockID(gui.Tr.RemovalUnlockPrompt, img.Name, shortID(img.ID), func() error {
+			return gui.toggleImageLock(img)
+		})
+	}
+
+	return gui.toggleImageLock(img)
+}
+
+// toggleImageLock flips the lock and saves the list.
+func (gui *Gui) toggleImageLock(img *commands.Image) error {
 	if gui.removalLocks.ToggleImage(img.ID) {
 		gui.flashStatus(fmt.Sprintf(gui.Tr.RemovalLockOn, img.Name))
 	} else {

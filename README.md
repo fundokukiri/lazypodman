@@ -275,12 +275,14 @@ change the failing streak and may trigger `--health-on-failure` behaviour.
 
 The **Removal lock** (`L` on a container or an image) protects what is expensive
 to lose: the row shows `[locked] ` in front of its name, and removing it (`d`, or
-"remove all containers") asks for the first 6 characters of its ID before anything
-is deleted. A wrong ID deletes nothing. Unlocked items are removed as before, and
-stop, restart, kill, pause, exec and logs are never affected. The list lives in
-`removal-lock.yml` next to `config.yml`, keyed by ID, as plain text you can edit or
-delete. Two limits: prune runs through the Podman CLI and does not stop for the
-lock, and a recreated container gets a new ID, so it is no longer locked.
+"remove all containers") asks for the first 4 characters of its ID before anything
+is deleted. Unlocking with `L` asks for the same 4 characters, so a stray key
+cannot leave an item unprotected. A wrong ID changes nothing. Unlocked items are
+removed as before, and stop, restart, kill, pause, exec and logs are never
+affected. The list lives in `removal-lock.yml` next to `config.yml`, keyed by ID,
+as plain text you can edit or delete. Two limits: prune runs through the Podman
+CLI and does not stop for the lock, and a recreated container gets a new ID, so
+it is no longer locked.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new

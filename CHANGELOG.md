@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Removal lock for containers and images**: `L` in the Containers or Images
+  panel locks the selected item (it shows `[locked] ` in front of its name), and
+  deleting a locked item asks for the first 6 characters of its ID first. Items
+  that are not locked are removed without a prompt, and stop, restart, kill,
+  pause, exec and logs are never affected. The list is kept in
+  `removal-lock.yml` next to `config.yml`; prune and recreated containers are not
+  covered (see `docs/Config.md`).
+
 - **Attaching shows what came before**: `ctrl+a` replays the container's last 500
   console log lines into the Shell tab before `podman attach` (bounded to 2s, best
   effort), so the tab no longer opens blank.

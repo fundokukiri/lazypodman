@@ -247,6 +247,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "containers",
+			Key:         'L',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleContainerLock,
+			Description: gui.Tr.RemovalLock,
+		},
+		{
+			ViewName:    "containers",
 			Key:         'H',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleHideStoppedContainers,
@@ -512,6 +519,13 @@ func (gui *Gui) staticKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleImagesUpdate,
 			Description: gui.Tr.UpdateImage,
+		},
+		{
+			ViewName:    "images",
+			Key:         'L',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleImageLock,
+			Description: gui.Tr.RemovalLock,
 		},
 		{
 			ViewName:    "images",

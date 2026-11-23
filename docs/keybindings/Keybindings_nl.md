@@ -35,6 +35,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>d</kbd>: verwijder
   <kbd>ctrl+e</kbd>: exec shell
+  <kbd>L</kbd>: lock/unlock
   <kbd>H</kbd>: verberg gestopte containers
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: stop
@@ -93,6 +94,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: draai een vooraf bedacht aangepaste opdracht
   <kbd>u</kbd>: update image
+  <kbd>L</kbd>: lock/unlock
   <kbd>d</kbd>: verwijder image
   <kbd>b</kbd>: view bulk commands
   <kbd>enter</kbd>: focus hoofdpaneel

@@ -35,6 +35,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>d</kbd>: kaldır
   <kbd>ctrl+e</kbd>: exec shell
+  <kbd>L</kbd>: lock/unlock
   <kbd>H</kbd>: hide/show stopped containers
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: durdur
@@ -93,6 +94,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: önceden tanımlanmış özel komutu çalıştır
   <kbd>u</kbd>: update image
+  <kbd>L</kbd>: lock/unlock
   <kbd>d</kbd>: imajı kaldır
   <kbd>b</kbd>: view bulk commands
   <kbd>enter</kbd>: ana panele odaklan

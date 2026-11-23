@@ -35,6 +35,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>d</kbd>: supprimer
   <kbd>ctrl+e</kbd>: exécuter le shell
+  <kbd>L</kbd>: lock/unlock
   <kbd>H</kbd>: cacher/montrer les conteneurs arrêtés
   <kbd>p</kbd>: pause
   <kbd>s</kbd>: arrêter
@@ -93,6 +94,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: exécuter une commande prédéfinie
   <kbd>u</kbd>: update image
+  <kbd>L</kbd>: lock/unlock
   <kbd>d</kbd>: supprimer l'image
   <kbd>b</kbd>: voir les commandes groupées
   <kbd>enter</kbd>: focus panneau principal

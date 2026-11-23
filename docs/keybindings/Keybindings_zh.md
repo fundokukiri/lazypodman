@@ -35,6 +35,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 <pre>
   <kbd>d</kbd>: 移除
   <kbd>ctrl+e</kbd>: 执行shell
+  <kbd>L</kbd>: lock/unlock
   <kbd>H</kbd>: 隐藏/显示已停止的容器
   <kbd>p</kbd>: 暂停
   <kbd>s</kbd>: 停止
@@ -93,6 +94,7 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
   <kbd>r</kbd>: run container
   <kbd>c</kbd>: 运行预定义的自定义命令
   <kbd>u</kbd>: update image
+  <kbd>L</kbd>: lock/unlock
   <kbd>d</kbd>: 移除镜像
   <kbd>b</kbd>: 查看批量命令
   <kbd>enter</kbd>: 聚焦主面板

@@ -27,6 +27,7 @@ projects, logs and stats in one window, every common action one keypress away.
   container from an image, build an image from a Containerfile, or commit a
   container to an image with fully editable menus
 - Inspect image layers, prune containers, images, volumes and networks
+- Lock a container or image with `L` so deleting it needs part of its ID first
 - Custom commands and bulk commands, configured per panel
 - Pods, kube generate/play/down, a Health tab with healthcheck runs, a live
   `podman events` tab, multi-select, a command palette, Quadlet export and

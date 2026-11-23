@@ -62,7 +62,13 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 
 			return a.ID < b.ID
 		},
-		GetTableCells: presentation.GetImageDisplayStrings,
+		GetTableCells: func(image *commands.Image) []string {
+			cells := presentation.GetImageDisplayStrings(image)
+			// The lock is part of the name cell so the table keeps its width.
+			cells[0] = gui.imageLockPrefix(image.ID) + cells[0]
+
+			return cells
+		},
 	}
 }
 
@@ -165,11 +171,13 @@ func (gui *Gui) handleImagesRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 				color.New(color.FgRed).Sprint(option.command),
 			},
 			OnPress: func() error {
-				if err := img.Remove(option.configOptions); err != nil {
-					return gui.createErrorPanel(err.Error())
-				}
+				return gui.confirmLockedRemovals(gui.imageRemovalLocks(img), func() error {
+					if err := img.Remove(option.configOptions); err != nil {
+						return gui.createErrorPanel(err.Error())
+					}
 
-				return nil
+					return nil
+				})
 			},
 		}
 	})

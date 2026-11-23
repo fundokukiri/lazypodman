@@ -153,8 +153,8 @@ func (gui *Gui) getContainersPanel() *panels.SideListPanel[*commands.Container] 
 		},
 		GetTableCells: func(container *commands.Container) []string {
 			cells := presentation.GetContainerDisplayStrings(&gui.Config.UserConfig.Gui, container, gui.podColumnEnabled())
-			// The mark is part of the name cell so the table keeps its width.
-			cells[2] = gui.containerMarkPrefix(container.ID) + cells[2]
+			// The lock and the mark are part of the name cell so the table keeps its width.
+			cells[2] = gui.containerLockPrefix(container.ID) + gui.containerMarkPrefix(container.ID) + cells[2]
 
 			return cells
 		},
@@ -424,26 +424,28 @@ func (gui *Gui) handleContainersRemoveMenu(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	removeAll := func(configOptions container.RemoveOptions) error {
-		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			for _, ctr := range targets {
-				if err := ctr.Remove(configOptions); err != nil {
-					if commands.HasErrorCode(err, commands.MustStopContainer) {
-						return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.MustForceToRemoveContainer, func(g *gocui.Gui, v *gocui.View) error {
-							return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-								configOptions.Force = true
+		return gui.confirmLockedRemovals(gui.containerRemovalLocks(targets), func() error {
+			return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
+				for _, ctr := range targets {
+					if err := ctr.Remove(configOptions); err != nil {
+						if commands.HasErrorCode(err, commands.MustStopContainer) {
+							return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.MustForceToRemoveContainer, func(g *gocui.Gui, v *gocui.View) error {
+								return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
+									configOptions.Force = true
 
-								return ctr.Remove(configOptions)
-							})
-						}, nil)
+									return ctr.Remove(configOptions)
+								})
+							}, nil)
+						}
+
+						return gui.createErrorPanel(err.Error())
 					}
-
-					return gui.createErrorPanel(err.Error())
 				}
-			}
 
-			gui.clearMarkedContainers()
+				gui.clearMarkedContainers()
 
-			return nil
+				return nil
+			})
 		})
 	}
 
@@ -783,17 +785,21 @@ func (gui *Gui) handleStopContainers() error {
 }
 
 func (gui *Gui) handleRemoveContainers() error {
-	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.ConfirmRemoveContainers, func(g *gocui.Gui, v *gocui.View) error {
-		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			for _, ctr := range gui.Panels.Containers.List.GetAllItems() {
-				if err := ctr.Remove(container.RemoveOptions{Force: true}); err != nil {
-					gui.Log.Error(err)
-				}
-			}
+	all := gui.Panels.Containers.List.GetAllItems()
 
-			return nil
-		})
-	}, nil)
+	return gui.confirmLockedRemovals(gui.containerRemovalLocks(all), func() error {
+		return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.ConfirmRemoveContainers, func(g *gocui.Gui, v *gocui.View) error {
+			return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
+				for _, ctr := range gui.Panels.Containers.List.GetAllItems() {
+					if err := ctr.Remove(container.RemoveOptions{Force: true}); err != nil {
+						gui.Log.Error(err)
+					}
+				}
+
+				return nil
+			})
+		}, nil)
+	})
 }
 
 func (gui *Gui) handleContainersBulkCommand(g *gocui.Gui, v *gocui.View) error {

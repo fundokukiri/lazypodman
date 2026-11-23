@@ -102,6 +102,11 @@ type TranslationSet struct {
 	RemoveWithForce             string
 	PruneImages                 string
 	PruneContainers             string
+	RemovalLockPrompt           string
+	RemovalLock                 string
+	RemovalLockWrongID          string
+	RemovalLockOn               string
+	RemovalLockOff              string
 	PruneVolumes                string
 	PruneNetworks               string
 	ConfirmPruneContainers      string
@@ -515,6 +520,11 @@ func englishSet() TranslationSet {
 		MustForceToRemoveContainer:  "You cannot remove a running container unless you force it. Do you want to force it?",
 		NotEnoughSpace:              "Not enough space to render panels",
 		ConfirmPruneImages:          "Are you sure you want to prune all unused images?",
+		RemovalLockPrompt:           "locked: type the first 6 characters of %s's id",
+		RemovalLock:                 "lock/unlock",
+		RemovalLockWrongID:          "Wrong id. Nothing was deleted.",
+		RemovalLockOn:               "%s is now locked",
+		RemovalLockOff:              "%s is unlocked",
 		ConfirmPruneContainers:      "Are you sure you want to prune all stopped containers?",
 		ConfirmStopContainers:       "Are you sure you want to stop all containers?",
 		ConfirmRemoveContainers:     "Are you sure you want to remove all containers?",

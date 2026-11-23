@@ -47,6 +47,10 @@ type Gui struct {
 
 	Panels Panels
 
+	// removalLocks holds the containers and images the user marked as "do not
+	// delete by accident", loaded from <configDir>/removal-lock.yml.
+	removalLocks *config.RemovalLock
+
 	// MarkedContainerIDs holds the containers selected with the mark key. It is keyed
 	// by container ID so a refresh that rebuilds the list keeps the selection.
 	markedContainerIDs   map[string]bool
@@ -197,6 +201,12 @@ func NewGui(log *logrus.Entry, podmanCommand *commands.PodmanCommand, oSCommand 
 		taskManager:   tasks.NewTaskManager(log, tr),
 		ErrorChan:     errorChan,
 	}
+
+	removalLocks, err := gui.Config.LoadRemovalLock()
+	if err != nil {
+		log.Error(err)
+	}
+	gui.removalLocks = removalLocks
 
 	deadlock.Opts.Disable = !gui.Config.Debug
 	deadlock.Opts.DeadlockTimeout = 10 * time.Second

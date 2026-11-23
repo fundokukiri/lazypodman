@@ -37,10 +37,6 @@ const (
 	// unset: a screen is at most a few dozen rows, and a full-screen program
 	// redraws well within this many lines.
 	defaultTranscriptTail = 500
-	// logViewFullHistoryScale multiplies both budgets when the user asked for
-	// the whole history with ctrl+l. Keeping only the newest megabyte of a
-	// multi-megabyte history makes scrolling back through it pointless.
-	logViewFullHistoryScale = 10
 )
 
 // logTrimTarget is the part of *gocui.View the trimmer needs.

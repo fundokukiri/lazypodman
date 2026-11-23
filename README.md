@@ -246,9 +246,9 @@ numbers (`1`…`6`).
 `e` exec shell in a new terminal ·
 `m` logs · `ctrl+f` search logs across containers · `ctrl+t` transcript view ·
 `t` run healthcheck · `C` commit to an image · `v` container files ·
-`Q` Quadlet menu · `ctrl+e` open/close the in-app shell tab ·
+`Q` Quadlet menu · `L` lock/unlock ·
 `c` custom command · `b` bulk commands · `w` open first published port in the
-browser · `space` mark/unmark · `Q` export a Quadlet unit.
+browser · `space` mark/unmark.
 
 The **Ports** tab on the Networks panel lists every published host port with
 its container, protocol and network, marks host-port collisions, and needs no
@@ -272,6 +272,15 @@ process or socket call. `t` runs `podman healthcheck run` once and reports
 `healthy` or `unhealthy` on the status line; an unhealthy result is a result,
 not an error. The run is recorded by Podman: it appends to the health log, can
 change the failing streak and may trigger `--health-on-failure` behaviour.
+
+The **Removal lock** (`L` on a container or an image) protects what is expensive
+to lose: the row shows `[locked] ` in front of its name, and removing it (`d`, or
+"remove all containers") asks for the first 6 characters of its ID before anything
+is deleted. A wrong ID deletes nothing. Unlocked items are removed as before, and
+stop, restart, kill, pause, exec and logs are never affected. The list lives in
+`removal-lock.yml` next to `config.yml`, keyed by ID, as plain text you can edit or
+delete. Two limits: prune runs through the Podman CLI and does not stop for the
+lock, and a recreated container gets a new ID, so it is no longer locked.
 
 **Services**: `u` up service · `U` up project · `D` down project · `s`/`S`
 stop/start · `r`/`R` restart / restart menu · `p` pause · `a` attach in a new
@@ -301,9 +310,9 @@ The kube menu keeps manifests in `gui.kubeDir` (default
   assumed; if neither works the corner shows `kube generate off:` / `kube play off:`. 
   `--replace` and `--build` are not passed.
 
-**Images**: `r` run · `u` update · `d` remove · `c` custom command · `b` bulk
-commands (prune). **Volumes, Networks**: `d` remove · `c` custom command · `b` bulk
-commands (prune).
+**Images**: `r` run · `u` update · `d` remove · `L` lock/unlock · `c` custom
+command · `b` bulk commands (prune). **Volumes, Networks**: `d` remove · `c`
+custom command · `b` bulk commands (prune).
 
 ### Logs
 

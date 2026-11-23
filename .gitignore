@@ -12,3 +12,5 @@ profile.out
 .agents/
 
 dist/
+package.json
+package-lock.json
